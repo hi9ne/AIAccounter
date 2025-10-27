@@ -3,14 +3,26 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"]
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
       },
-      "id": "telegram-trigger",
+      "id": "3f61769a-8e0e-45d6-a13a-7fbf02922efc",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [240, 400],
-      "webhookId": "budget-system"
+      "position": [
+        -448,
+        112
+      ],
+      "webhookId": "budget-system",
+      "credentials": {
+        "telegramApi": {
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
+        }
+      }
     },
     {
       "parameters": {
@@ -65,96 +77,43 @@
               "outputKey": "Check Budget"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "command-router",
+      "id": "38ca69bc-5ada-486f-9277-dff80cd242de",
       "name": "Роутер команд",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [460, 400]
+      "position": [
+        -224,
+        112
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const text = $input.item.json.message.text;\nconst parts = text.split(' ');\n\nif (parts.length < 2) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Укажите сумму бюджета\\nПример: /budget 50000'\n    }\n  };\n}\n\nconst amount = parseFloat(parts[1]);\n\nif (isNaN(amount) || amount <= 0) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Неверная сумма'\n    }\n  };\n}\n\nconst userId = $input.item.json.message.from.id;\nconst currentMonth = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric', timeZone: 'Asia/Bishkek' });\n\nreturn {\n  json: {\n    user_id: userId,\n    chat_id: $input.item.json.message.chat.id,\n    budget_amount: amount,\n    month: currentMonth,\n    date: new Date().toISOString()\n  }\n};"
+        "jsCode": "const text = $json.message.text || '';\nconst match = text.match(/\\/budget\\s+(\\d+)/);\n\nif (match) {\n  const amount = parseFloat(match[1]);\n  const userId = $json.message.from.id;\n  const now = new Date();\n  const month = now.toLocaleString('ru-RU', { \n    year: 'numeric', \n    month: '2-digit',\n    timeZone: 'Asia/Bishkek'\n  }).replace('.', '-').slice(0, 7);\n  \n  return {\n    json: {\n      user_id: userId,\n      month: month,\n      budget_amount: amount,\n      telegram_chat_id: $json.message.chat.id\n    }\n  };\n} else {\n  throw new Error('Формат: /budget <сумма>');\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300],
-      "id": "parse-budget",
+      "position": [
+        0,
+        0
+      ],
+      "id": "ee16460d-e16b-4ffd-b026-d0f0652080c0",
       "name": "Парсить /budget"
     },
     {
       "parameters": {
-        "jsCode": "const text = $input.item.json.message.text;\nconst parts = text.split(' ');\n\nif (parts.length < 3) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Укажите категорию и сумму\\nПример: /limit продукты 15000'\n    }\n  };\n}\n\nconst category = parts.slice(1, -1).join(' ');\nconst amount = parseFloat(parts[parts.length - 1]);\n\nif (isNaN(amount) || amount <= 0) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Неверная сумма'\n    }\n  };\n}\n\nconst userId = $input.item.json.message.from.id;\nconst currentMonth = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric', timeZone: 'Asia/Bishkek' });\n\nreturn {\n  json: {\n    user_id: userId,\n    chat_id: $input.item.json.message.chat.id,\n    category: category,\n    limit_amount: amount,\n    month: currentMonth,\n    date: new Date().toISOString()\n  }\n};"
+        "jsCode": "const text = $json.message.text || '';\nconst match = text.match(/\\/limit\\s+([^\\d]+)\\s+(\\d+)/);\n\nif (match) {\n  const category = match[1].trim();\n  const amount = parseFloat(match[2]);\n  const userId = $json.message.from.id;\n  const now = new Date();\n  const month = now.toLocaleString('ru-RU', { \n    year: 'numeric', \n    month: '2-digit',\n    timeZone: 'Asia/Bishkek'\n  }).replace('.', '-').slice(0, 7);\n  \n  return {\n    json: {\n      user_id: userId,\n      category: category,\n      limit_amount: amount,\n      month: month,\n      telegram_chat_id: $json.message.chat.id\n    }\n  };\n} else {\n  throw new Error('Формат: /limit <категория> <сумма>');\n}"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 500],
-      "id": "parse-limit",
+      "position": [
+        0,
+        208
+      ],
+      "id": "28cdda92-192a-4d59-9824-7288ee5e0465",
       "name": "Парсить /limit"
-    },
-    {
-      "parameters": {
-        "operation": "appendOrUpdate",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=budgets",
-          "mode": "id",
-          "cachedResultName": "Бюджеты"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "User ID": "={{ $json.user_id }}",
-            "Month": "={{ $json.month }}",
-            "Budget Amount": "={{ $json.budget_amount }}",
-            "Last Updated": "={{ $json.date }}"
-          }
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [900, 300],
-      "id": "save-budget",
-      "name": "Сохранить бюджет"
-    },
-    {
-      "parameters": {
-        "operation": "appendOrUpdate",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=limits",
-          "mode": "id",
-          "cachedResultName": "Лимиты"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "User ID": "={{ $json.user_id }}",
-            "Category": "={{ $json.category }}",
-            "Limit Amount": "={{ $json.limit_amount }}",
-            "Month": "={{ $json.month }}",
-            "Last Updated": "={{ $json.date }}"
-          }
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [900, 500],
-      "id": "save-limit",
-      "name": "Сохранить лимит"
     },
     {
       "parameters": {
@@ -164,9 +123,19 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 300],
-      "id": "confirm-budget",
-      "name": "Подтверждение бюджета"
+      "position": [
+        448,
+        0
+      ],
+      "id": "b3cde8cd-193a-41a4-b6da-9719eee2da13",
+      "name": "Подтверждение бюджета",
+      "webhookId": "9e0eecc4-5ed8-4e14-ad2c-964a1a0b7d42",
+      "credentials": {
+        "telegramApi": {
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
+        }
+      }
     },
     {
       "parameters": {
@@ -176,11 +145,64 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 500],
-      "id": "confirm-limit",
-      "name": "Подтверждение лимита"
+      "position": [
+        448,
+        208
+      ],
+      "id": "96c94a50-3854-4bed-b364-914a1b37b46c",
+      "name": "Подтверждение лимита",
+      "webhookId": "b3fdd42b-6872-47c6-a177-7fbeaec62c27",
+      "credentials": {
+        "telegramApi": {
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO budgets (user_id, month, budget_amount)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.month }}',\n  {{ $json.budget_amount }}\n)\nON CONFLICT (user_id, month)\nDO UPDATE SET\n  budget_amount = EXCLUDED.budget_amount,\n  last_updated = NOW()\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e1d31026-4951-4656-9dc1-ca17f953efe5",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO limits (user_id, category, limit_amount, month)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.category }}',\n  {{ $json.limit_amount }},\n  '{{ $json.month }}'\n)\nON CONFLICT (user_id, category, month)\nDO UPDATE SET\n  limit_amount = EXCLUDED.limit_amount,\n  last_updated = NOW()\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        208
+      ],
+      "id": "9273d329-cb71-4127-94c4-e2f77b86e810",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
+  "pinData": {},
   "connections": {
     "Telegram Trigger": {
       "main": [
@@ -215,7 +237,7 @@
       "main": [
         [
           {
-            "node": "Сохранить бюджет",
+            "node": "Execute a SQL query",
             "type": "main",
             "index": 0
           }
@@ -226,14 +248,14 @@
       "main": [
         [
           {
-            "node": "Сохранить лимит",
+            "node": "Execute a SQL query1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Сохранить бюджет": {
+    "Execute a SQL query": {
       "main": [
         [
           {
@@ -244,7 +266,7 @@
         ]
       ]
     },
-    "Сохранить лимит": {
+    "Execute a SQL query1": {
       "main": [
         [
           {
@@ -260,5 +282,11 @@
   "settings": {
     "executionOrder": "v1"
   },
+  "versionId": "5b0ca10e-7a4d-4081-9c7a-b97eacca4df2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
+  },
+  "id": "yHWx4R3y5lPHZrKN",
   "tags": []
 }

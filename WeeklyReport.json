@@ -7,109 +7,28 @@
           "interval": [
             {}
           ]
-        },
-        "cronExpression": "0 20 * * 0"
+        }
       },
-      "id": "schedule-trigger",
+      "id": "20555b04-93f5-44cd-859d-ee542a769162",
       "name": "Schedule: Sunday 20:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 300]
+      "position": [
+        -448,
+        112
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const now = new Date();\nconst dayOfWeek = now.getDay();\nconst diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;\n\nconst monday = new Date(now);\nmonday.setDate(now.getDate() + diffToMonday);\nmonday.setHours(0, 0, 0, 0);\n\nconst sunday = new Date(monday);\nsunday.setDate(monday.getDate() + 6);\nsunday.setHours(23, 59, 59, 999);\n\nconst formatDate = (date) => {\n  const day = String(date.getDate()).padStart(2, '0');\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const year = date.getFullYear();\n  return `${day}.${month}.${year}`;\n};\n\nreturn {\n  json: {\n    week_start: formatDate(monday),\n    week_end: formatDate(sunday),\n    week_start_timestamp: monday.toISOString(),\n    week_end_timestamp: sunday.toISOString(),\n    week_number: Math.ceil(((now - new Date(now.getFullYear(), 0, 1)) / 86400000 + 1) / 7)\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [460, 300],
-      "id": "calc-week-range",
-      "name": "Рассчитать неделю"
-    },
-    {
-      "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": 1490011688,
-          "mode": "list",
-          "cachedResultName": "Доходы"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [680, 200],
-      "id": "read-income",
-      "name": "Читать доходы"
-    },
-    {
-      "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": 598940202,
-          "mode": "list",
-          "cachedResultName": "Расходы"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [680, 400],
-      "id": "read-expenses",
-      "name": "Читать расходы"
-    },
-    {
-      "parameters": {
-        "jsCode": "const weekData = $('Рассчитать неделю').first().json;\nconst incomeData = $('Читать доходы').all().map(item => item.json);\nconst expenseData = $('Читать расходы').all().map(item => item.json);\n\nconst totalIncome = incomeData.reduce((sum, item) => sum + parseFloat(item['Сумма'] || 0), 0);\nconst totalExpenses = expenseData.reduce((sum, item) => sum + parseFloat(item['Сумма'] || 0), 0);\nconst profit = totalIncome - totalExpenses;\n\nconst expensesByCategory = {};\nexpenseData.forEach(item => {\n  const category = item['Категория'] || 'Прочее';\n  const amount = parseFloat(item['Сумма'] || 0);\n  expensesByCategory[category] = (expensesByCategory[category] || 0) + amount;\n});\n\nconst topCategories = Object.entries(expensesByCategory)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 3);\n\nconst emojis = ['1️⃣', '2️⃣', '3️⃣'];\nconst topCategoriesText = topCategories\n  .map(([cat, amount], index) => {\n    const percent = totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0;\n    return `${emojis[index]} ${cat}: ${Math.round(amount).toLocaleString('ru-RU')} сом (${percent}%)`;\n  })\n  .join('\\n');\n\nconst message = `📊 Недельная финансовая сводка\\n🗓 ${weekData.week_start} - ${weekData.week_end}\\n\\n💰 ДОХОДЫ: ${Math.round(totalIncome).toLocaleString('ru-RU')} сом\\n💸 РАСХОДЫ: ${Math.round(totalExpenses).toLocaleString('ru-RU')} сом\\n📈 ПРИБЫЛЬ: ${Math.round(profit).toLocaleString('ru-RU')} сом\\n\\n🏆 ТОП-3 КАТЕГОРИИ РАСХОДОВ:\\n${topCategoriesText || 'Нет данных'}\\n\\n💡 Операций за неделю: ${incomeData.length + expenseData.length}`;\n\nreturn {\n  json: {\n    message: message,\n    total_income: totalIncome,\n    total_expenses: totalExpenses,\n    profit: profit,\n    transactions_count: incomeData.length + expenseData.length,\n    top_categories: topCategories\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [900, 300],
-      "id": "calc-statistics",
-      "name": "Рассчитать статистику"
-    },
-    {
-      "parameters": {
-        "operation": "read",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Пользователи",
-          "mode": "name"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
-      "position": [1120, 300],
-      "id": "get-users",
-      "name": "Получить пользователей"
-    },
-    {
-      "parameters": {
-        "batchSize": 1,
         "options": {}
       },
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [1340, 300],
-      "id": "split-users",
+      "position": [
+        80,
+        112
+      ],
+      "id": "64472c1f-7b79-49d4-b9c9-7b28ee9691ac",
       "name": "Разделить по пользователям"
     },
     {
@@ -120,72 +39,139 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1560, 300],
-      "id": "send-report",
+      "position": [
+        1120,
+        80
+      ],
+      "id": "d5a3bce2-5bc8-4cdf-bc3a-dfd41b56c6e5",
       "name": "Отправить отчёт",
+      "webhookId": "0903e86c-df58-402f-8be0-c055fa004811",
       "credentials": {
         "telegramApi": {
-          "id": "ink5DVmWPQ53OHzH",
-          "name": "Telegram account"
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT user_id, username, first_name, telegram_chat_id\nFROM users\nWHERE is_active = true\nORDER BY user_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -240,
+        112
+      ],
+      "id": "2fafee05-3973-484d-a66f-c7a9e309ba03",
+      "name": "Получить пользователей",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH week_range AS (\n  SELECT \n    DATE_TRUNC('week', CURRENT_DATE AT TIME ZONE 'Asia/Bishkek') as week_start,\n    DATE_TRUNC('week', CURRENT_DATE AT TIME ZONE 'Asia/Bishkek') + INTERVAL '6 days' as week_end\n),\nincome_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= (SELECT week_start FROM week_range)::date\n    AND date <= (SELECT week_end FROM week_range)::date\n),\nexpense_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= (SELECT week_start FROM week_range)::date\n    AND date <= (SELECT week_end FROM week_range)::date\n),\ntop_categories AS (\n  SELECT \n    category,\n    SUM(amount) as total,\n    COUNT(*) as count\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= (SELECT week_start FROM week_range)::date\n    AND date <= (SELECT week_end FROM week_range)::date\n  GROUP BY category\n  ORDER BY total DESC\n  LIMIT 3\n),\ntransaction_count AS (\n  SELECT \n    (SELECT COUNT(*) FROM income WHERE user_id = {{ $json.user_id }} \n     AND date >= (SELECT week_start FROM week_range)::date\n     AND date <= (SELECT week_end FROM week_range)::date) as income_count,\n    (SELECT COUNT(*) FROM expenses WHERE user_id = {{ $json.user_id }}\n     AND date >= (SELECT week_start FROM week_range)::date\n     AND date <= (SELECT week_end FROM week_range)::date) as expense_count\n)\nSELECT \n  TO_CHAR((SELECT week_start FROM week_range), 'DD.MM.YYYY') as week_start_formatted,\n  TO_CHAR((SELECT week_end FROM week_range), 'DD.MM.YYYY') as week_end_formatted,\n  (SELECT total FROM income_sum) as total_income,\n  (SELECT total FROM expense_sum) as total_expenses,\n  (SELECT total FROM income_sum) - (SELECT total FROM expense_sum) as profit,\n  (SELECT income_count FROM transaction_count) as income_count,\n  (SELECT expense_count FROM transaction_count) as expense_count,\n  (SELECT income_count + expense_count FROM transaction_count) as total_transactions,\n  COALESCE((SELECT JSON_AGG(JSON_BUILD_OBJECT(\n    'category', category,\n    'total', total,\n    'count', count\n  )) FROM top_categories), '[]'::json) as top_categories;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        96
+      ],
+      "id": "ad069464-e6c4-4dbb-b90c-50929f07ced0",
+      "name": "Получить статистику недели",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\n// Если нет транзакций - пропускаем пользователя\nif (data.total_transactions === 0) {\n  return null; // Не отправляем отчёт если нет данных\n}\n\nconst topCategories = JSON.parse(data.top_categories || '[]');\nconst emojis = ['1️⃣', '2️⃣', '3️⃣'];\n\nconst topCategoriesText = topCategories.map((cat, index) => {\n  const percent = data.total_expenses > 0 \n    ? Math.round((cat.total / data.total_expenses) * 100) \n    : 0;\n  return `${emojis[index]} ${cat.category}: ${Math.round(cat.total).toLocaleString('ru-RU')} сом (${percent}%)`;\n}).join('\\n');\n\nconst message = `📊 Недельная финансовая сводка\n🗓 ${data.week_start_formatted} - ${data.week_end_formatted}\n\n💰 ДОХОДЫ: ${Math.round(data.total_income).toLocaleString('ru-RU')} сом\n💸 РАСХОДЫ: ${Math.round(data.total_expenses).toLocaleString('ru-RU')} сом\n📈 ПРИБЫЛЬ: ${Math.round(data.profit).toLocaleString('ru-RU')} сом\n\n🏆 ТОП-3 КАТЕГОРИИ РАСХОДОВ:\n${topCategoriesText || 'Нет данных'}\n\n💡 Операций за неделю: ${data.total_transactions}`;\n\nreturn {\n  json: {\n    message: message,\n    telegram_chat_id: $('Split In Batches').first().json.telegram_chat_id\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        96
+      ],
+      "id": "cfd47f07-9209-432f-8803-137a85a6d83a",
+      "name": "Форматировать отчёт"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6eadcac0-507a-4747-bf38-2abafa84397c",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        96
+      ],
+      "id": "508698b4-4fc1-4819-8e44-63a8864d63c2",
+      "name": "Проверка данных"
     }
   ],
+  "pinData": {},
   "connections": {
     "Schedule: Sunday 20:00": {
       "main": [
         [
           {
-            "node": "Рассчитать неделю",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Рассчитать неделю": {
-      "main": [
-        [
-          {
-            "node": "Читать доходы",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Читать расходы",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Читать доходы": {
-      "main": [
-        [
-          {
-            "node": "Рассчитать статистику",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Читать расходы": {
-      "main": [
-        [
-          {
-            "node": "Рассчитать статистику",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Рассчитать статистику": {
-      "main": [
-        [
-          {
             "node": "Получить пользователей",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Разделить по пользователям": {
+      "main": [
+        [
+          {
+            "node": "Получить статистику недели",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить отчёт": {
+      "main": [
+        [
+          {
+            "node": "Разделить по пользователям",
             "type": "main",
             "index": 0
           }
@@ -203,7 +189,29 @@
         ]
       ]
     },
-    "Разделить по пользователям": {
+    "Получить статистику недели": {
+      "main": [
+        [
+          {
+            "node": "Форматировать отчёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Форматировать отчёт": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
       "main": [
         [
           {
@@ -213,23 +221,17 @@
           }
         ]
       ]
-    },
-    "Отправить отчёт": {
-      "main": [
-        [
-          {
-            "node": "Разделить по пользователям",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1",
-    "timezone": "Asia/Bishkek"
+    "executionOrder": "v1"
   },
+  "versionId": "e0627499-afdb-449d-922a-4956da09d4b5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
+  },
+  "id": "Fedy4Ys9AHC9ODTk",
   "tags": []
 }

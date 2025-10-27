@@ -1,5 +1,5 @@
 {
-  "name": "AnaliziFinance - Fixed v3",
+  "name": "AnaliziFinance",
   "nodes": [
     {
       "parameters": {
@@ -16,11 +16,17 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1344,
-        208
+        64,
+        384
       ],
-      "id": "openai-chat-model",
-      "name": "OpenAI Chat Model"
+      "id": "f8e37618-2ff3-422c-94cb-cec0098950ec",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SyI2pOUeSfbt1JRh",
+          "name": "AIAccounter"
+        }
+      }
     },
     {
       "parameters": {
@@ -29,19 +35,19 @@
         ],
         "additionalFields": {}
       },
-      "id": "telegram-bot-trigger",
+      "id": "1df29445-94b2-4b64-818b-33dc93075126",
       "name": "Telegram Bot Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [
-        352,
-        208
+        -1040,
+        240
       ],
       "webhookId": "b8605f3e-0f52-4ffc-a4c9-1728eb0e09e2",
       "credentials": {
         "telegramApi": {
-          "id": "ink5DVmWPQ53OHzH",
-          "name": "Telegram account"
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
         }
       }
     },
@@ -102,13 +108,13 @@
         },
         "options": {}
       },
-      "id": "message-type-switch",
+      "id": "b85dc963-107d-4b49-8b5d-2003486f3bd4",
       "name": "Message Type Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        736,
-        208
+        -448,
+        240
       ]
     },
     {
@@ -117,19 +123,19 @@
         "fileId": "={{ $json.message.voice.file_id }}",
         "additionalFields": {}
       },
-      "id": "download-voice-file",
+      "id": "51c7b02f-effd-4526-9bb8-7828748e36d3",
       "name": "Download Voice File",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        848,
-        32
+        -336,
+        64
       ],
       "webhookId": "8fa0a59a-be53-4897-83bb-5b18ed71b529",
       "credentials": {
         "telegramApi": {
-          "id": "ink5DVmWPQ53OHzH",
-          "name": "Telegram account"
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
         }
       }
     },
@@ -139,14 +145,20 @@
         "operation": "transcribe",
         "options": {}
       },
-      "id": "transcribe-audio",
+      "id": "19ee7ab7-a2d9-4d1d-b09b-3d8ba96889a2",
       "name": "Transcribe Audio",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        1056,
-        32
-      ]
+        -128,
+        64
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "SyI2pOUeSfbt1JRh",
+          "name": "AIAccounter"
+        }
+      }
     },
     {
       "parameters": {
@@ -166,10 +178,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1088,
-        368
+        -144,
+        272
       ],
-      "id": "prepare-text-data",
+      "id": "69730705-012a-4259-a381-812ebb1c129f",
       "name": "Prepare Text Data"
     },
     {
@@ -180,10 +192,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        1472,
-        192
+        272,
+        272
       ],
-      "id": "conversation-memory",
+      "id": "ede32e23-cb3c-4655-a03d-53f93af7bbf9",
       "name": "Conversation Memory"
     },
     {
@@ -197,10 +209,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        1392,
-        -32
+        352,
+        16
       ],
-      "id": "financial-assistant",
+      "id": "aaa00d7e-6fa3-40ab-8eed-4f1aae4424ea",
       "name": "Financial Assistant",
       "onError": "continueErrorOutput"
     },
@@ -209,278 +221,11 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        2128,
-        192
+        1472,
+        -48
       ],
-      "id": "calculator-tool",
+      "id": "8d93eeaa-840d-4786-a199-4eba78336814",
       "name": "Calculator"
-    },
-    {
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list",
-          "cachedResultName": "Бизнес-финансы (Test)",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": 1490011688,
-          "mode": "list",
-          "cachedResultName": "Доходы",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo/edit#gid=1490011688"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Текущая дата": "={{ $fromAI('date') }}",
-            "Категория": "={{ $fromAI('category') }}",
-            "Сумма": "={{ $fromAI('amount') }}",
-            "Описание": "={{ $fromAI('description') }}",
-            "Тип операции": "={{ $fromAI('operation_type') }}",
-            "Источник": "={{ $fromAI('source') }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "Текущая дата",
-              "displayName": "Текущая дата",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Категория",
-              "displayName": "Категория",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Сумма",
-              "displayName": "Сумма",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Описание",
-              "displayName": "Описание",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Тип операции",
-              "displayName": "Тип операции",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Источник",
-              "displayName": "Источник",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheetsTool",
-      "typeVersion": 4.5,
-      "position": [
-        1584,
-        240
-      ],
-      "id": "add-revenue-to-sheets",
-      "name": "AddRevenueGoogleTable",
-      "notesInFlow": true,
-      "notes": "Обработчик для внесение в Google table дохода"
-    },
-    {
-      "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list",
-          "cachedResultName": "Бизнес-финансы (Test)",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": 598940202,
-          "mode": "list",
-          "cachedResultName": "Расходы",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo/edit#gid=598940202"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Текущая дата": "={{ $fromAI('date') }}",
-            "Категория": "={{ $fromAI('category') }}",
-            "Сумма": "={{ $fromAI('amount') }}",
-            "Описание": "={{ $fromAI('description') }}",
-            "Тип операции": "={{ $fromAI('operation_type') }}",
-            "Источник": "={{ $fromAI('source') }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "Текущая дата",
-              "displayName": "Текущая дата",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Категория",
-              "displayName": "Категория",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Сумма",
-              "displayName": "Сумма",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Описание",
-              "displayName": "Описание",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Тип операции",
-              "displayName": "Тип операции",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "Источник",
-              "displayName": "Источник",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheetsTool",
-      "typeVersion": 4.5,
-      "position": [
-        1968,
-        208
-      ],
-      "id": "add-expense-to-sheets",
-      "name": "AddCostGoogleTable",
-      "notesInFlow": true,
-      "onError": "continueRegularOutput",
-      "notes": "Добавить расходы в таблицу учета"
-    },
-    {
-      "parameters": {
-        "description": "Метод анализа расходов и доходов",
-        "workflowId": {
-          "__rl": true,
-          "value": "krvhuAmnGkUpHhgl",
-          "mode": "list",
-          "cachedResultName": "AnaliziFinance"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "month": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('month', `- month: название месяца ТОЛЬКО на русском (январь, февраль, март, апрель, май, июнь, июль, август, сентябрь, октябрь, ноябрь, декабрь)`, 'string') }}",
-            "type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('type', `type: ТОЛЬКО \"доход\" или \"расход\"`, 'string') }}",
-            "category": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('category', `НЕОБЯЗАТЕЛЬНЫЙ параметр:\ncategory: конкретная категория из списка`, 'string') }}"
-          },
-          "matchingColumns": [
-            " text"
-          ],
-          "schema": [
-            {
-              "id": "month",
-              "displayName": "month",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "type",
-              "displayName": "type",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "category",
-              "displayName": "category",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
-      "typeVersion": 2.2,
-      "position": [
-        1792,
-        240
-      ],
-      "id": "workspace-analyze-tool",
-      "name": "workspaceAnalize",
-      "notesInFlow": true,
-      "notes": "Вызывает Workspace обработчика аналитики по финансам"
     },
     {
       "parameters": {
@@ -494,12 +239,219 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1952,
-        -16
+        1408,
+        -256
       ],
-      "id": "send-telegram-response",
+      "id": "78a5fef3-decd-4bc1-9906-255676655d7f",
       "name": "Send Telegram Response",
-      "webhookId": "a2f9609c-4b7a-4d51-aaa6-c889f56aefc9"
+      "webhookId": "a2f9609c-4b7a-4d51-aaa6-c889f56aefc9",
+      "credentials": {
+        "telegramApi": {
+          "id": "Nb8jQBRgnrgZzmCF",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Подготовка расхода",
+        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\nconst userId = $('Telegram Bot Trigger').first().json.message.from.id;\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || ''\n  }\n};"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        992,
+        240
+      ],
+      "id": "39be6e2b-f68a-44bf-bdb1-54fe5325351d",
+      "name": "Code Tool"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'расход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        992,
+        384
+      ],
+      "id": "075b2356-2d19-45e8-b590-019fd85a8f1c",
+      "name": "Добавить расход",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Проверка лимита по категории\nWITH expense_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total_spent\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND date >= DATE_TRUNC('month', CURRENT_DATE)\n),\ncategory_limit AS (\n  SELECT limit_amount\n  FROM limits\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND month = TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  LIMIT 1\n)\nSELECT \n  e.total_spent,\n  l.limit_amount,\n  CASE \n    WHEN l.limit_amount IS NULL THEN NULL\n    WHEN e.total_spent > l.limit_amount THEN 'exceeded'\n    WHEN e.total_spent > (l.limit_amount * 0.8) THEN 'warning'\n    ELSE 'ok'\n  END as limit_status,\n  CASE\n    WHEN l.limit_amount IS NOT NULL THEN ROUND((e.total_spent / l.limit_amount) * 100)\n    ELSE NULL\n  END as percent_used\nFROM expense_sum e\nLEFT JOIN category_limit l ON true;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        992,
+        528
+      ],
+      "id": "cf475125-1e99-4380-a615-2d01a4bf3326",
+      "name": "Проверка лимитов",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\n\nconst userId = $('Telegram Bot Trigger').first().json.message.from.id;\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || '',\n    operation_type: 'доход',\n    source: 'telegram'\n  }\n};"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        592
+      ],
+      "id": "29baab3b-8986-4c97-98b3-95108c4d6cd6",
+      "name": "Подготовка дохода"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'доход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        320,
+        528
+      ],
+      "id": "3cf76964-b9a8-435e-995b-ab592df55bb5",
+      "name": "Добавить доход",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Преобразование месяца в номер\nconst monthNames = {\n  'январь': '01', 'февраль': '02', 'март': '03',\n  'апрель': '04', 'май': '05', 'июнь': '06',\n  'июль': '07', 'август': '08', 'сентябрь': '09',\n  'октябрь': '10', 'ноябрь': '11', 'декабрь': '12'\n};\n\nconst month = $fromAI('month').toLowerCase();\nconst monthNum = monthNames[month] || '10';\nconst year = new Date().getFullYear();\nconst yearMonth = `${year}-${monthNum}`;\n\nconst userId = $('Telegram Bot Trigger').first().json.message.from.id;\nconst type = $fromAI('type'); // \"доход\" или \"расход\"\nconst category = $fromAI('category') || null;\n\nreturn {\n  json: {\n    user_id: userId,\n    year_month: yearMonth,\n    type: type,\n    category: category,\n    month_name: month\n  }\n};"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        720
+      ],
+      "id": "01451097-bc4f-473d-ab79-f32706fcbb50",
+      "name": "Парсинг месяца"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH monthly_data AS (\n  SELECT \n    category,\n    COUNT(*) as transaction_count,\n    SUM(amount) as total_amount,\n    AVG(amount) as avg_amount\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND TO_CHAR(date, 'YYYY-MM') = '{{ $json.year_month }}'\n    {{ $json.category ? \"AND category = '\" + $json.category + \"'\" : \"\" }}\n  GROUP BY category\n  ORDER BY total_amount DESC\n)\nSELECT \n  *,\n  (SELECT SUM(total_amount) FROM monthly_data) as grand_total\nFROM monthly_data;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        784,
+        816
+      ],
+      "id": "7f51d030-328a-40b3-9abf-6042f126f09f",
+      "name": "Анализ доходов",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9af39ade-d2ac-4587-b4cd-bccb18fece32",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "расход",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        464
+      ],
+      "id": "894a5626-98ca-439e-943b-56cbabc84562",
+      "name": "Проверка типа"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH monthly_data AS (\n  SELECT \n    category,\n    COUNT(*) as transaction_count,\n    SUM(amount) as total_amount,\n    AVG(amount) as avg_amount\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND TO_CHAR(date, 'YYYY-MM') = '{{ $json.year_month }}'\n    {{ $json.category ? \"AND category = '\" + $json.category + \"'\" : \"\" }}\n  GROUP BY category\n  ORDER BY total_amount DESC\n)\nSELECT \n  *,\n  (SELECT SUM(total_amount) FROM monthly_data) as grand_total\nFROM monthly_data;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        672
+      ],
+      "id": "3ff919d2-cbd5-4428-a7e3-9712217054e4",
+      "name": "Анализ расходов",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO users (user_id, username, first_name, last_name, telegram_chat_id)\nVALUES (\n  {{ $json.message.from.id }},\n  '{{ $json.message.from.username || \"\" }}',\n  '{{ $json.message.from.first_name || \"\" }}',\n  '{{ $json.message.from.last_name || \"\" }}',\n  {{ $json.message.chat.id }}\n)\nON CONFLICT (user_id) \nDO UPDATE SET \n  username = EXCLUDED.username,\n  last_activity = NOW()\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -800,
+        240
+      ],
+      "id": "d3996e68-eade-4127-80c1-7e3a96babcd9",
+      "name": "Регистрация/обновление пользователя",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -519,7 +471,7 @@
       "main": [
         [
           {
-            "node": "Message Type Switch",
+            "node": "Регистрация/обновление пользователя",
             "type": "main",
             "index": 0
           }
@@ -610,7 +562,7 @@
         ]
       ]
     },
-    "AddRevenueGoogleTable": {
+    "Code Tool": {
       "ai_tool": [
         [
           {
@@ -621,7 +573,7 @@
         ]
       ]
     },
-    "AddCostGoogleTable": {
+    "Добавить расход": {
       "ai_tool": [
         [
           {
@@ -632,25 +584,89 @@
         ]
       ]
     },
-    "workspaceAnalize": {
+    "Проверка лимитов": {
       "ai_tool": [
         [
           {
             "node": "Financial Assistant",
             "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Подготовка дохода": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить доход": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Парсинг месяца": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверка типа": {
+      "main": [
+        [
+          {
+            "node": "Анализ расходов",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Анализ доходов",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Регистрация/обновление пользователя": {
+      "main": [
+        [
+          {
+            "node": "Message Type Switch",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "",
+  "versionId": "e7a871fb-7dae-43a7-87b5-076df9042ce6",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
   },
+  "id": "poGBTuaN7LQs9hwD",
   "tags": []
 }
