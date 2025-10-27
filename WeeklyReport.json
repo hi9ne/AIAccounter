@@ -1,0 +1,235 @@
+{
+  "name": "Weekly Financial Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        },
+        "cronExpression": "0 20 * * 0"
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule: Sunday 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst dayOfWeek = now.getDay();\nconst diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;\n\nconst monday = new Date(now);\nmonday.setDate(now.getDate() + diffToMonday);\nmonday.setHours(0, 0, 0, 0);\n\nconst sunday = new Date(monday);\nsunday.setDate(monday.getDate() + 6);\nsunday.setHours(23, 59, 59, 999);\n\nconst formatDate = (date) => {\n  const day = String(date.getDate()).padStart(2, '0');\n  const month = String(date.getMonth() + 1).padStart(2, '0');\n  const year = date.getFullYear();\n  return `${day}.${month}.${year}`;\n};\n\nreturn {\n  json: {\n    week_start: formatDate(monday),\n    week_end: formatDate(sunday),\n    week_start_timestamp: monday.toISOString(),\n    week_end_timestamp: sunday.toISOString(),\n    week_number: Math.ceil(((now - new Date(now.getFullYear(), 0, 1)) / 86400000 + 1) / 7)\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "id": "calc-week-range",
+      "name": "Рассчитать неделю"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1490011688,
+          "mode": "list",
+          "cachedResultName": "Доходы"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [680, 200],
+      "id": "read-income",
+      "name": "Читать доходы"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 598940202,
+          "mode": "list",
+          "cachedResultName": "Расходы"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [680, 400],
+      "id": "read-expenses",
+      "name": "Читать расходы"
+    },
+    {
+      "parameters": {
+        "jsCode": "const weekData = $('Рассчитать неделю').first().json;\nconst incomeData = $('Читать доходы').all().map(item => item.json);\nconst expenseData = $('Читать расходы').all().map(item => item.json);\n\nconst totalIncome = incomeData.reduce((sum, item) => sum + parseFloat(item['Сумма'] || 0), 0);\nconst totalExpenses = expenseData.reduce((sum, item) => sum + parseFloat(item['Сумма'] || 0), 0);\nconst profit = totalIncome - totalExpenses;\n\nconst expensesByCategory = {};\nexpenseData.forEach(item => {\n  const category = item['Категория'] || 'Прочее';\n  const amount = parseFloat(item['Сумма'] || 0);\n  expensesByCategory[category] = (expensesByCategory[category] || 0) + amount;\n});\n\nconst topCategories = Object.entries(expensesByCategory)\n  .sort((a, b) => b[1] - a[1])\n  .slice(0, 3);\n\nconst emojis = ['1️⃣', '2️⃣', '3️⃣'];\nconst topCategoriesText = topCategories\n  .map(([cat, amount], index) => {\n    const percent = totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0;\n    return `${emojis[index]} ${cat}: ${Math.round(amount).toLocaleString('ru-RU')} сом (${percent}%)`;\n  })\n  .join('\\n');\n\nconst message = `📊 Недельная финансовая сводка\\n🗓 ${weekData.week_start} - ${weekData.week_end}\\n\\n💰 ДОХОДЫ: ${Math.round(totalIncome).toLocaleString('ru-RU')} сом\\n💸 РАСХОДЫ: ${Math.round(totalExpenses).toLocaleString('ru-RU')} сом\\n📈 ПРИБЫЛЬ: ${Math.round(profit).toLocaleString('ru-RU')} сом\\n\\n🏆 ТОП-3 КАТЕГОРИИ РАСХОДОВ:\\n${topCategoriesText || 'Нет данных'}\\n\\n💡 Операций за неделю: ${incomeData.length + expenseData.length}`;\n\nreturn {\n  json: {\n    message: message,\n    total_income: totalIncome,\n    total_expenses: totalExpenses,\n    profit: profit,\n    transactions_count: incomeData.length + expenseData.length,\n    top_categories: topCategories\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "calc-statistics",
+      "name": "Рассчитать статистику"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Пользователи",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1120, 300],
+      "id": "get-users",
+      "name": "Получить пользователей"
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1340, 300],
+      "id": "split-users",
+      "name": "Разделить по пользователям"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json['Telegram Chat ID'] }}",
+        "text": "={{ $('Рассчитать статистику').first().json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1560, 300],
+      "id": "send-report",
+      "name": "Отправить отчёт",
+      "credentials": {
+        "telegramApi": {
+          "id": "ink5DVmWPQ53OHzH",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule: Sunday 20:00": {
+      "main": [
+        [
+          {
+            "node": "Рассчитать неделю",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Рассчитать неделю": {
+      "main": [
+        [
+          {
+            "node": "Читать доходы",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Читать расходы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Читать доходы": {
+      "main": [
+        [
+          {
+            "node": "Рассчитать статистику",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Читать расходы": {
+      "main": [
+        [
+          {
+            "node": "Рассчитать статистику",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Рассчитать статистику": {
+      "main": [
+        [
+          {
+            "node": "Получить пользователей",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Получить пользователей": {
+      "main": [
+        [
+          {
+            "node": "Разделить по пользователям",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Разделить по пользователям": {
+      "main": [
+        [
+          {
+            "node": "Отправить отчёт",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Отправить отчёт": {
+      "main": [
+        [
+          {
+            "node": "Разделить по пользователям",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bishkek"
+  },
+  "tags": []
+}

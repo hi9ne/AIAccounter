@@ -1,0 +1,264 @@
+{
+  "name": "Budget System with Alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 400],
+      "webhookId": "budget-system"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/budget",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Set Budget"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/limit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Set Limit"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/check",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Check Budget"
+            }
+          ]
+        }
+      },
+      "id": "command-router",
+      "name": "Роутер команд",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.item.json.message.text;\nconst parts = text.split(' ');\n\nif (parts.length < 2) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Укажите сумму бюджета\\nПример: /budget 50000'\n    }\n  };\n}\n\nconst amount = parseFloat(parts[1]);\n\nif (isNaN(amount) || amount <= 0) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Неверная сумма'\n    }\n  };\n}\n\nconst userId = $input.item.json.message.from.id;\nconst currentMonth = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric', timeZone: 'Asia/Bishkek' });\n\nreturn {\n  json: {\n    user_id: userId,\n    chat_id: $input.item.json.message.chat.id,\n    budget_amount: amount,\n    month: currentMonth,\n    date: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "id": "parse-budget",
+      "name": "Парсить /budget"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.item.json.message.text;\nconst parts = text.split(' ');\n\nif (parts.length < 3) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Укажите категорию и сумму\\nПример: /limit продукты 15000'\n    }\n  };\n}\n\nconst category = parts.slice(1, -1).join(' ');\nconst amount = parseFloat(parts[parts.length - 1]);\n\nif (isNaN(amount) || amount <= 0) {\n  return {\n    json: {\n      error: true,\n      chat_id: $input.item.json.message.chat.id,\n      message: '❌ Неверная сумма'\n    }\n  };\n}\n\nconst userId = $input.item.json.message.from.id;\nconst currentMonth = new Date().toLocaleString('ru-RU', { month: 'long', year: 'numeric', timeZone: 'Asia/Bishkek' });\n\nreturn {\n  json: {\n    user_id: userId,\n    chat_id: $input.item.json.message.chat.id,\n    category: category,\n    limit_amount: amount,\n    month: currentMonth,\n    date: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 500],
+      "id": "parse-limit",
+      "name": "Парсить /limit"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=budgets",
+          "mode": "id",
+          "cachedResultName": "Бюджеты"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "User ID": "={{ $json.user_id }}",
+            "Month": "={{ $json.month }}",
+            "Budget Amount": "={{ $json.budget_amount }}",
+            "Last Updated": "={{ $json.date }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [900, 300],
+      "id": "save-budget",
+      "name": "Сохранить бюджет"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=limits",
+          "mode": "id",
+          "cachedResultName": "Лимиты"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "User ID": "={{ $json.user_id }}",
+            "Category": "={{ $json.category }}",
+            "Limit Amount": "={{ $json.limit_amount }}",
+            "Month": "={{ $json.month }}",
+            "Last Updated": "={{ $json.date }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [900, 500],
+      "id": "save-limit",
+      "name": "Сохранить лимит"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "=✅ Бюджет установлен: {{ $json.budget_amount.toLocaleString('ru-RU') }} сом на {{ $json.month }}\\n\\n💡 Вы получите уведомление:\\n  • При достижении 80% бюджета\\n  • При превышении 100%",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 300],
+      "id": "confirm-budget",
+      "name": "Подтверждение бюджета"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "=✅ Лимит установлен:\\nКатегория: {{ $json.category }}\\nСумма: {{ $json.limit_amount.toLocaleString('ru-RU') }} сом\\nПериод: {{ $json.month }}\\n\\n💡 Уведомление при превышении",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 500],
+      "id": "confirm-limit",
+      "name": "Подтверждение лимита"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Роутер команд",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Роутер команд": {
+      "main": [
+        [
+          {
+            "node": "Парсить /budget",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Парсить /limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Парсить /budget": {
+      "main": [
+        [
+          {
+            "node": "Сохранить бюджет",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Парсить /limit": {
+      "main": [
+        [
+          {
+            "node": "Сохранить лимит",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сохранить бюджет": {
+      "main": [
+        [
+          {
+            "node": "Подтверждение бюджета",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сохранить лимит": {
+      "main": [
+        [
+          {
+            "node": "Подтверждение лимита",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

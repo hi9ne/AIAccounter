@@ -1,0 +1,271 @@
+{
+  "name": "Bank SMS Parser - Kyrgyzstan",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "postProcessAction": "read",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "forceReconnect": 1
+        }
+      },
+      "id": "email-trigger",
+      "name": "Email Trigger (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.from.value[0].address }}",
+              "operation": "contains",
+              "value2": "@kicb.kg"
+            }
+          ]
+        }
+      },
+      "id": "filter-banks",
+      "name": "Фильтр: Банки КР",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const emailBody = $json.text || $json.html || '';\nconst subject = $json.subject || '';\nconst fullText = subject + ' ' + emailBody;\n\nlet parsed = {\n  bank: 'unknown',\n  type: 'расход',\n  amount: 0,\n  merchant: 'Неизвестно',\n  date: new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' }),\n  raw_text: fullText\n};\n\n// KICB Bank\nif (fullText.includes('KICB') || $json.from.value[0].address.includes('@kicb.kg')) {\n  parsed.bank = 'KICB';\n  \n  // Покупка\n  const purchaseMatch = fullText.match(/покупка[\\s\\S]*?(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (purchaseMatch) {\n    parsed.amount = parseFloat(purchaseMatch[1].replace(/[\\s,]/g, ''));\n    parsed.type = 'расход';\n  }\n  \n  // Пополнение\n  const incomeMatch = fullText.match(/пополнение[\\s\\S]*?(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (incomeMatch) {\n    parsed.amount = parseFloat(incomeMatch[1].replace(/[\\s,]/g, ''));\n    parsed.type = 'доход';\n  }\n  \n  // Merchant\n  const merchantMatch = fullText.match(/(?:покупка|оплата)[\\s]+(?:в|у)[\\s]+([A-Za-zА-Яа-я0-9\\s]+)/i);\n  if (merchantMatch) {\n    parsed.merchant = merchantMatch[1].trim();\n  }\n}\n\n// Optima Bank\nif (fullText.includes('Optima') || $json.from.value[0].address.includes('@optimabank.kg')) {\n  parsed.bank = 'Optima Bank';\n  \n  const amountMatch = fullText.match(/(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (amountMatch) {\n    parsed.amount = parseFloat(amountMatch[1].replace(/[\\s,]/g, ''));\n  }\n  \n  if (fullText.match(/списан[ои]|покупка|оплата/i)) {\n    parsed.type = 'расход';\n  } else if (fullText.match(/зачислен[ои]|пополнение|поступление/i)) {\n    parsed.type = 'доход';\n  }\n}\n\n// Bakai Bank\nif (fullText.includes('Bakai') || fullText.includes('Бакай')) {\n  parsed.bank = 'Бакай Банк';\n  \n  const amountMatch = fullText.match(/(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (amountMatch) {\n    parsed.amount = parseFloat(amountMatch[1].replace(/[\\s,]/g, ''));\n  }\n  \n  if (fullText.match(/расход|списан|покупка/i)) {\n    parsed.type = 'расход';\n  } else if (fullText.match(/доход|зачислен|поступил/i)) {\n    parsed.type = 'доход';\n  }\n}\n\n// Dos-Kredobank\nif (fullText.includes('Dos-Kredobank') || fullText.includes('ДосКредо')) {\n  parsed.bank = 'Дос-Кредобанк';\n  \n  const amountMatch = fullText.match(/(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (amountMatch) {\n    parsed.amount = parseFloat(amountMatch[1].replace(/[\\s,]/g, ''));\n  }\n  \n  if (fullText.match(/операция списания|покупка/i)) {\n    parsed.type = 'расход';\n  } else if (fullText.match(/поступление|зачисление/i)) {\n    parsed.type = 'доход';\n  }\n}\n\nreturn { json: parsed };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 200],
+      "id": "parse-sms",
+      "name": "Парсинг SMS/Email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.amount }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-amount",
+      "name": "Проверка суммы",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Рассчитать категорию').first().json.category_suggestion_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"merchant\": \"{{ $json.merchant }}\",\n  \"amount\": {{ $json.amount }},\n  \"bank\": \"{{ $json.bank }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 200],
+      "id": "suggest-category",
+      "name": "AI категоризация",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $json;\nconst aiCategory = $('AI категоризация').first()?.json?.category || 'Прочее';\n\nlet category = aiCategory;\n\n// Простая логика категоризации на основе merchant\nconst merchant = (parsed.merchant || '').toLowerCase();\n\nif (merchant.includes('bazaar') || merchant.includes('базар')) category = 'базар';\nelse if (merchant.includes('taxi') || merchant.includes('такси')) category = 'такси';\nelse if (merchant.includes('cafe') || merchant.includes('кафе')) category = 'кафе';\nelse if (merchant.includes('market') || merchant.includes('магазин')) category = 'продукты питания';\nelse if (merchant.includes('gas') || merchant.includes('газ')) category = 'транспорт';\nelse if (merchant.includes('pharmacy') || merchant.includes('аптека')) category = 'здоровье и красота';\n\nreturn {\n  json: {\n    date: parsed.date,\n    category: category,\n    amount: parsed.amount,\n    description: `${parsed.bank}: ${parsed.merchant}`,\n    operation_type: parsed.type,\n    source: 'bank_parser',\n    bank: parsed.bank,\n    merchant: parsed.merchant\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 200],
+      "id": "prepare-data",
+      "name": "Рассчитать категорию"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Расходы",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Текущая дата": "={{ $json.date }}",
+            "Категория": "={{ $json.category }}",
+            "Сумма": "={{ $json.amount }}",
+            "Описание": "={{ $json.description }}",
+            "Тип операции": "={{ $json.operation_type }}",
+            "Источник": "={{ $json.source }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1560, 100],
+      "id": "save-expense",
+      "name": "Сохранить расход"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Доходы",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Текущая дата": "={{ $json.date }}",
+            "Категория": "={{ $json.category }}",
+            "Сумма": "={{ $json.amount }}",
+            "Описание": "={{ $json.description }}",
+            "Тип операции": "={{ $json.operation_type }}",
+            "Источник": "={{ $json.source }}"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1560, 300],
+      "id": "save-income",
+      "name": "Сохранить доход"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.operation_type }}",
+              "value2": "расход"
+            }
+          ]
+        }
+      },
+      "id": "check-type",
+      "name": "Тип операции",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    }
+  ],
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "Фильтр: Банки КР",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Фильтр: Банки КР": {
+      "main": [
+        [
+          {
+            "node": "Парсинг SMS/Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Парсинг SMS/Email": {
+      "main": [
+        [
+          {
+            "node": "Проверка суммы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверка суммы": {
+      "main": [
+        [
+          {
+            "node": "AI категоризация",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI категоризация": {
+      "main": [
+        [
+          {
+            "node": "Рассчитать категорию",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Рассчитать категорию": {
+      "main": [
+        [
+          {
+            "node": "Тип операции",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Тип операции": {
+      "main": [
+        [
+          {
+            "node": "Сохранить расход",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Сохранить доход",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bishkek"
+  },
+  "tags": []
+}
