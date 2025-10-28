@@ -16,10 +16,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        480,
-        384
+        -1920,
+        704
       ],
-      "id": "f8e37618-2ff3-422c-94cb-cec0098950ec",
+      "id": "5ece32b2-af30-4701-a80f-5ceaaeee6f31",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -35,13 +35,13 @@
         ],
         "additionalFields": {}
       },
-      "id": "1df29445-94b2-4b64-818b-33dc93075126",
+      "id": "08c6bf39-0175-4ea4-b6b2-ff55962b1900",
       "name": "Telegram Bot Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [
-        -1040,
-        240
+        -3440,
+        560
       ],
       "webhookId": "b8605f3e-0f52-4ffc-a4c9-1728eb0e09e2",
       "credentials": {
@@ -108,13 +108,13 @@
         },
         "options": {}
       },
-      "id": "b85dc963-107d-4b49-8b5d-2003486f3bd4",
+      "id": "2b54b4dd-746c-4193-a52d-68bc9e10d3d8",
       "name": "Message Type Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -256,
-        240
+        -2656,
+        560
       ]
     },
     {
@@ -123,13 +123,13 @@
         "fileId": "={{ $json.message.voice.file_id }}",
         "additionalFields": {}
       },
-      "id": "51c7b02f-effd-4526-9bb8-7828748e36d3",
+      "id": "56af8151-e0b4-457f-825d-37821cb497dc",
       "name": "Download Voice File",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        80,
-        64
+        -2320,
+        384
       ],
       "webhookId": "8fa0a59a-be53-4897-83bb-5b18ed71b529",
       "credentials": {
@@ -145,13 +145,13 @@
         "operation": "transcribe",
         "options": {}
       },
-      "id": "19ee7ab7-a2d9-4d1d-b09b-3d8ba96889a2",
+      "id": "e16713aa-8d23-4371-9db5-670c77f0f7bd",
       "name": "Transcribe Audio",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        288,
-        64
+        -2112,
+        384
       ],
       "credentials": {
         "openAiApi": {
@@ -178,10 +178,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        256,
-        304
+        -2144,
+        624
       ],
-      "id": "69730705-012a-4259-a381-812ebb1c129f",
+      "id": "b097323e-56c4-460b-a40e-e8da167213a5",
       "name": "Prepare Text Data"
     },
     {
@@ -192,10 +192,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        688,
-        288
+        -1712,
+        608
       ],
-      "id": "ede32e23-cb3c-4655-a03d-53f93af7bbf9",
+      "id": "0f3cb388-fccf-4ef3-a32a-55d6d9941290",
       "name": "Conversation Memory"
     },
     {
@@ -209,10 +209,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        784,
-        -64
+        -1616,
+        256
       ],
-      "id": "aaa00d7e-6fa3-40ab-8eed-4f1aae4424ea",
+      "id": "f6f80ca7-f56d-446e-8349-217399bf55f5",
       "name": "Financial Assistant",
       "onError": "continueErrorOutput"
     },
@@ -228,10 +228,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1824,
-        -256
+        -576,
+        64
       ],
-      "id": "78a5fef3-decd-4bc1-9906-255676655d7f",
+      "id": "2358802e-ef52-4ae4-8109-e354e5e58545",
       "name": "Send Telegram Response",
       "webhookId": "a2f9609c-4b7a-4d51-aaa6-c889f56aefc9",
       "credentials": {
@@ -250,10 +250,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1088,
-        832
+        -1312,
+        1152
       ],
-      "id": "7f51d030-328a-40b3-9abf-6042f126f09f",
+      "id": "dbf117bd-78cc-4cb2-80c1-e08a8de732dc",
       "name": "Анализ доходов",
       "credentials": {
         "postgres": {
@@ -290,10 +290,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        736,
-        752
+        -1664,
+        1072
       ],
-      "id": "894a5626-98ca-439e-943b-56cbabc84562",
+      "id": "5c2c08ec-5d19-486c-8356-0033a6f970aa",
       "name": "Проверка типа"
     },
     {
@@ -305,10 +305,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1088,
-        688
+        -1312,
+        1008
       ],
-      "id": "3ff919d2-cbd5-4428-a7e3-9712217054e4",
+      "id": "f74d29f4-67ad-477e-89d4-e47a5cf7be2b",
       "name": "Анализ расходов",
       "credentials": {
         "postgres": {
@@ -326,10 +326,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -784,
-        256
+        -3184,
+        576
       ],
-      "id": "d3996e68-eade-4127-80c1-7e3a96babcd9",
+      "id": "beeede9f-78f3-453c-bfc8-3048ab2b300a",
       "name": "Регистрация/обновление пользователя",
       "credentials": {
         "postgres": {
@@ -356,10 +356,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -560,
-        240
+        -2960,
+        560
       ],
-      "id": "59ff761a-86d1-42b2-a318-370ebca3d854",
+      "id": "c33b6a13-7197-4a1c-92b4-06a0ae940114",
       "name": "Edit Fields"
     },
     {
@@ -369,10 +369,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCode",
       "typeVersion": 1.3,
       "position": [
-        720,
-        544
+        -1680,
+        864
       ],
-      "id": "29baab3b-8986-4c97-98b3-95108c4d6cd6",
+      "id": "fb6dd251-e07b-4cf3-8ef4-ec11378aeb28",
       "name": "Income_preparation"
     },
     {
@@ -384,10 +384,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        880,
-        400
+        -1520,
+        720
       ],
-      "id": "3cf76964-b9a8-435e-995b-ab592df55bb5",
+      "id": "60a4aa55-2039-405f-b04d-cca8c107caa6",
       "name": "Add_income",
       "credentials": {
         "postgres": {
@@ -403,10 +403,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCode",
       "typeVersion": 1.3,
       "position": [
-        1040,
-        432
+        -1360,
+        752
       ],
-      "id": "01451097-bc4f-473d-ab79-f32706fcbb50",
+      "id": "f64b49d6-b13c-4b82-a116-1b228797a435",
       "name": "Parsing_of_the_month"
     },
     {
@@ -417,10 +417,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCode",
       "typeVersion": 1.3,
       "position": [
-        1424,
-        208
+        -976,
+        528
       ],
-      "id": "39be6e2b-f68a-44bf-bdb1-54fe5325351d",
+      "id": "402f4361-911a-4098-9657-7ec790ebe9b7",
       "name": "Adding_expenses"
     },
     {
@@ -432,10 +432,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1456,
-        384
+        -944,
+        704
       ],
-      "id": "075b2356-2d19-45e8-b590-019fd85a8f1c",
+      "id": "53489835-a4fa-499d-bc6f-c544cf2cd85d",
       "name": "Add_expense",
       "credentials": {
         "postgres": {
@@ -453,10 +453,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1408,
-        528
+        -944,
+        864
       ],
-      "id": "cf475125-1e99-4380-a615-2d01a4bf3326",
+      "id": "2aae980b-ec4a-45eb-abc1-66ff0597e0a7",
       "name": "Checking_limits",
       "credentials": {
         "postgres": {
@@ -470,24 +470,11 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        1680,
-        128
+        -720,
+        448
       ],
-      "id": "8d93eeaa-840d-4786-a199-4eba78336814",
+      "id": "1fd0a6ac-be73-4e0c-9e1a-5442b3611cdf",
       "name": "Calc"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        1184,
-        496
-      ],
-      "id": "6780b7ce-8eb9-4caf-a197-78d77b58b8ce",
-      "name": "AI Agent"
     }
   ],
   "pinData": {},
@@ -709,7 +696,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "9b35a556-9d2a-4f43-b695-ab9168b2ab78",
+  "versionId": "cc297564-5f30-4183-8b99-d9f5b2b7a00d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"

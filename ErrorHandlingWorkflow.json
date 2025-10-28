@@ -2,12 +2,18 @@
   "name": "Error Handling & Validation",
   "nodes": [
     {
-      "parameters": {},
-      "id": "validation-trigger",
+      "parameters": {
+        "path": "validate-transaction",
+        "options": {}
+      },
+      "id": "709a6f01-57e8-452e-ad31-8e3aa4c7a179",
       "name": "Webhook - Validate Data",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [320, 240],
+      "position": [
+        -448,
+        272
+      ],
       "webhookId": "validate-transaction"
     },
     {
@@ -104,19 +110,23 @@
           "fallbackOutput": "single"
         }
       },
-      "id": "validation-switch",
+      "id": "5076e29d-f7d0-465b-9ef5-3b4cf8039810",
       "name": "Validation Rules",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [540, 240]
+      "position": [
+        -224,
+        272
+      ]
     },
     {
       "parameters": {
-        "operation": "read",
         "documentId": {
           "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
+          "value": "15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4",
+          "mode": "list",
+          "cachedResultName": "AIAccounter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
@@ -144,9 +154,18 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [760, 440],
-      "id": "check-duplicates",
-      "name": "Check for Duplicates"
+      "position": [
+        0,
+        464
+      ],
+      "id": "c61e0dd8-2cbb-4027-a0d0-0aecbc977ddb",
+      "name": "Check for Duplicates",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ma60ZJqcwNGcWkrr",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
@@ -166,12 +185,16 @@
               }
             }
           ]
-        }
+        },
+        "options": {}
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [980, 440],
-      "id": "is-duplicate",
+      "position": [
+        224,
+        464
+      ],
+      "id": "71efc2d6-4d65-4007-8996-effc2dea0bff",
       "name": "Is Duplicate?"
     },
     {
@@ -179,8 +202,10 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
+          "value": "15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4",
+          "mode": "list",
+          "cachedResultName": "AIAccounter",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
@@ -202,9 +227,18 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [980, 100],
-      "id": "log-error",
-      "name": "Log Error to Sheet"
+      "position": [
+        224,
+        128
+      ],
+      "id": "08fad8f1-1789-4afe-9956-67e4f2f949e4",
+      "name": "Log Error to Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ma60ZJqcwNGcWkrr",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
@@ -229,8 +263,11 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [760, 60],
-      "id": "set-error-invalid-amount",
+      "position": [
+        0,
+        80
+      ],
+      "id": "947a4559-32c5-4353-bebc-bba339fe446a",
       "name": "Set Error - Invalid Amount"
     },
     {
@@ -256,30 +293,41 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1200, 340],
-      "id": "set-error-duplicate",
+      "position": [
+        448,
+        368
+      ],
+      "id": "868bd0ef-c5a6-48f6-9dcc-599b9cc8f152",
       "name": "Set Error - Duplicate"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"success\": false, \"error\": $json.error_message, \"error_type\": $json.error_type } }}"
+        "responseBody": "={{ { \"success\": false, \"error\": $json.error_message, \"error_type\": $json.error_type } }}",
+        "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1200, 100],
-      "id": "respond-error",
+      "position": [
+        448,
+        128
+      ],
+      "id": "0be5904a-5a4b-421f-b1d3-987fe6baadeb",
       "name": "Respond with Error"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Данные прошли валидацию\", \"data\": $json } }}"
+        "responseBody": "={{ { \"success\": true, \"message\": \"Данные прошли валидацию\", \"data\": $json } }}",
+        "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1200, 540],
-      "id": "respond-success",
+      "position": [
+        448,
+        560
+      ],
+      "id": "968fe8fc-7acc-48a7-8a4f-04feacd5491c",
       "name": "Respond Success"
     },
     {
@@ -305,8 +353,11 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [760, 140],
-      "id": "set-error-invalid-date",
+      "position": [
+        0,
+        160
+      ],
+      "id": "90b3fde2-f100-47a3-bc60-650b6a7f4b50",
       "name": "Set Error - Invalid Date"
     },
     {
@@ -332,8 +383,11 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [760, 220],
-      "id": "set-error-missing-category",
+      "position": [
+        0,
+        240
+      ],
+      "id": "c40afde2-9097-48b7-8d6f-a8dcfda4cb67",
       "name": "Set Error - Missing Category"
     },
     {
@@ -359,8 +413,11 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [760, -20],
-      "id": "set-error-amount-too-large",
+      "position": [
+        0,
+        0
+      ],
+      "id": "a2ce28ba-66a2-4f44-a11b-e9e531e697be",
       "name": "Set Error - Amount Too Large"
     }
   ],
@@ -403,13 +460,6 @@
         [
           {
             "node": "Set Error - Missing Category",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Check for Duplicates",
             "type": "main",
             "index": 0
           }
@@ -516,8 +566,11 @@
   "settings": {
     "executionOrder": "v1"
   },
+  "versionId": "2eac6e3e-4cf6-4775-afca-977b379b0d87",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
   },
+  "id": "mtAIoAkY7WWxrQHU",
   "tags": []
 }

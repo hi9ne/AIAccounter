@@ -2,12 +2,18 @@
   "name": "Tax Calculator Kyrgyzstan",
   "nodes": [
     {
-      "parameters": {},
-      "id": "webhook-trigger",
+      "parameters": {
+        "path": "tax-calc-kg",
+        "options": {}
+      },
+      "id": "db94632b-c76d-480d-8b58-43ec0e4d7da4",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        -448,
+        128
+      ],
       "webhookId": "tax-calc-kg"
     },
     {
@@ -79,13 +85,17 @@
               "outputKey": "Patent"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "tax-type-router",
+      "id": "376cb6b4-fb32-4a37-981c-085a270120e2",
       "name": "Тип налога",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [460, 300]
+      "position": [
+        -224,
+        128
+      ]
     },
     {
       "parameters": {
@@ -93,8 +103,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 180],
-      "id": "calc-vat",
+      "position": [
+        0,
+        0
+      ],
+      "id": "10a86981-67c8-449b-8a42-7b0feddc6756",
       "name": "Расчёт НДС 12%"
     },
     {
@@ -103,8 +116,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300],
-      "id": "calc-income-tax",
+      "position": [
+        0,
+        128
+      ],
+      "id": "1dccc987-e782-41cb-aa8f-02b647cee61e",
       "name": "Расчёт подоходного"
     },
     {
@@ -113,8 +129,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 420],
-      "id": "calc-social",
+      "position": [
+        0,
+        240
+      ],
+      "id": "afc715ba-8f7e-4234-ba2d-6e26b3d4d32b",
       "name": "Расчёт Соцфонда"
     },
     {
@@ -123,22 +142,30 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 540],
-      "id": "calc-patent",
+      "position": [
+        0,
+        368
+      ],
+      "id": "1cbc91dc-c735-42ca-88c4-0ea22ef9bbe1",
       "name": "Расчёт патента"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $json }}"
+        "responseBody": "={{ $json }}",
+        "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [900, 360],
-      "id": "respond",
+      "position": [
+        224,
+        192
+      ],
+      "id": "1a7a1984-e245-4d88-a4d3-bb91a4b97712",
       "name": "Ответ"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Trigger": {
       "main": [
@@ -232,5 +259,10 @@
   "settings": {
     "executionOrder": "v1"
   },
+  "versionId": "fbb16228-3af3-4816-895a-fdc3c9491e3b",
+  "meta": {
+    "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
+  },
+  "id": "XCIH4ujdxPtHeP3w",
   "tags": []
 }

@@ -140,7 +140,9 @@
         96
       ],
       "id": "508698b4-4fc1-4819-8e44-63a8864d63c2",
-      "name": "Проверка данных"
+      "name": "If",
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -227,7 +229,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e0627499-afdb-449d-922a-4956da09d4b5",
+  "versionId": "d6d5b85a-9004-4228-92c4-fa8e7796eacd",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
