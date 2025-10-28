@@ -16,7 +16,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        64,
+        480,
         384
       ],
       "id": "f8e37618-2ff3-422c-94cb-cec0098950ec",
@@ -113,7 +113,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -448,
+        -256,
         240
       ]
     },
@@ -128,7 +128,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -336,
+        80,
         64
       ],
       "webhookId": "8fa0a59a-be53-4897-83bb-5b18ed71b529",
@@ -150,7 +150,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        -128,
+        288,
         64
       ],
       "credentials": {
@@ -178,8 +178,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -144,
-        272
+        256,
+        304
       ],
       "id": "69730705-012a-4259-a381-812ebb1c129f",
       "name": "Prepare Text Data"
@@ -192,8 +192,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        272,
-        272
+        688,
+        288
       ],
       "id": "ede32e23-cb3c-4655-a03d-53f93af7bbf9",
       "name": "Conversation Memory"
@@ -203,29 +203,18 @@
         "promptType": "define",
         "text": "={{ $json.text }}\n\n",
         "options": {
-          "systemMessage": "=\nТы — универсальный финансовый помощник для бизнеса и личных финансов в Кыргызстане.\nТвоя задача — понимать команды пользователя и вносить данные в Google Таблицу о расходах, доходах, или выполнять анализ по истории.\nВалюта по умолчанию: сом (KGS)\nСегодняшняя дата {{ new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' }) }}\n\n---\n💸 РАСХОДЫ: если пользователь говорит про трату/покупку\nВызывай инструмент AddCostGoogleTable и передавай параметры: \"date\", \"category\", \"amount\", \"description\", \"operation_type\", \"source\"\n- Параметр date: формат \"ДД.ММ.ГГГГ\"\n- Параметр category: одна из категорий расходов ниже\n- Параметр amount: сумма\n- Параметр description: опционально\n- Параметр operation_type: \"расход\"\n- Параметр source: \"telegram\"\n\n🏢 БИЗНЕС-КАТЕГОРИИ РАСХОДОВ (Кыргызстан):\nаренда офиса, аренда оборудования, зарплата сотрудников, налоги и сборы, патент ИП, социальный фонд, реклама и маркетинг, канцелярия и офис, связь и интернет, транспорт и логистика, обучение персонала, страхование, банковские услуги, консалтинг и аудит, лицензии и сертификаты, ремонт и обслуживание, коммунальные услуги, IT-услуги и софт, командировочные, представительские расходы, проценты по кредитам, закупка товаров, закупка сырья, упаковка и тара, доставка и логистика, складские услуги, таможенные пошлины, сертификация товаров, маркетинговые исследования, PR и реклама, веб-разработка, дизайн, фотография, видеосъемка, полиграфия, сувенирная продукция, корпоративные мероприятия\n\n🏠 ЛИЧНЫЕ КАТЕГОРИИ РАСХОДОВ (Кыргызстан):\nздоровье и красота, помощь родителям, автокредит, образование, развлечения, туризм, подарки, квартплата, коммуналка, интернет и связь, мебель, непредвиденное, одежда, цифровые покупки, домашние питомцы, игрушки, кафе, рестораны, базар, продукты питания, бытовые товары, машина, транспорт, такси, маршрутка, газ, электричество, вода, отопление\n\nПримеры:\n• \"Купил еды на 400 сом\" → category: продукты питания, source: telegram\n• \"Оплатил аренду офиса 35000\" → category: аренда офиса, source: telegram\n• \"Зарплата сотруднику 25000\" → category: зарплата сотрудников, source: telegram\n• \"Реклама в Instagram 8000\" → category: реклама и маркетинг, source: telegram\n• \"Патент ИП 7000\" → category: патент ИП, source: telegram\n\n---\n💰 ДОХОДЫ: если пользователь говорит про поступление денег\nВызывай метод AddRevenueGoogleTable и передавай json на вход: \"date\", \"category\", \"amount\", \"description\", \"operation_type\", \"source\"\n- Параметр date: формат \"ДД.ММ.ГГГГ\"\n- Параметр category: одна из категорий дохода ниже\n- Параметр amount: сумма\n- Параметр description: опционально\n- Параметр operation_type: \"доход\"\n- Параметр source: \"telegram\"\n\n🏢 БИЗНЕС-КАТЕГОРИИ ДОХОДОВ (Кыргызстан):\nпродажи товаров, продажи услуг, подписки и SaaS, лицензионные платежи, дивиденды от инвестиций, возврат налогов, гранты и субсидии, проценты по депозитам, арендная плата, франшиза, консалтинг, обучение клиентов, партнерские программы, аффилиатские доходы, продажа активов, роялти, комиссионные, бонусы от поставщиков, возврат переплат, страховые выплаты, компенсации\n\n🏠 ЛИЧНЫЕ КАТЕГОРИИ ДОХОДОВ (Кыргызстан):\nзарплата, подработка, дивиденды и купоны, депозиты, пенсия, социальные выплаты, подарки, продажа имущества, кэшбек, фриланс, репетиторство\n\nПример:\n• \"Доход 1000 сом с дивидендов\" → category: дивиденды от инвестиций, source: telegram\n• \"Зарплата 40000\" → category: зарплата, source: telegram\n• \"Продажи за месяц 250000\" → category: продажи товаров, source: telegram\n• \"Кэшбек 350 сом\" → category: кэшбек, source: telegram\n\n---\n📅 Формат даты:\n• Если дата не указана: используй текущую дату в формате ДД.ММ.ГГГГ\n• \"за вчера\" → вычисли дату = сегодня минус один день и формат даты ДД.ММ.ГГГГ\n• \"за 25 мая\" → добавь текущий год → 25.05.2025\n• \"за 25 мая 2023\" → используй как есть → 25.05.2023\n\n🧮 Формат суммы:\n• Число без валюты (сомы по умолчанию)\n• Если сказано \"300 сом 50 тыйынов\" → запиши как 300.50\n\n---\n📊 Анализ истории:\nЕсли пользователь спрашивает об анализе финансов, используй инструмент workspaceAnalize.\n\nОБЯЗАТЕЛЬНЫЕ параметры:\n- month: название месяца ТОЛЬКО на русском (январь, февраль, март, апрель, май, июнь, июль, август, сентябрь, октябрь, ноябрь, декабрь)\n- type: ТОЛЬКО \"доход\" или \"расход\"\n\nНЕОБЯЗАТЕЛЬНЫЙ параметр:\n- category: конкретная категория из списка выше (только если пользователь её указал)\n\nПРИМЕРЫ ПРАВИЛЬНЫХ ВЫЗОВОВ:\n\nЗапрос: \"Сколько потратил на рекламу в апреле?\"\n→ Вызови: workspaceAnalize\nПараметры:\n{\n  \"month\": \"апрель\",\n  \"type\": \"расход\",\n  \"category\": \"реклама и маркетинг\"\n}\n\nЗапрос: \"Доходы за май\"\n→ Вызови: workspaceAnalize\nПараметры:\n{\n  \"month\": \"май\",\n  \"type\": \"доход\"\n}\n\nЗапрос: \"Общие расходы в марте\"\n→ Вызови: workspaceAnalize\nПараметры:\n{\n  \"month\": \"март\",\n  \"type\": \"расход\"\n}\n\n---\n💼 БИЗНЕС-АНАЛИТИКА ДЛЯ КЫРГЫЗСТАНА:\nТы можешь отвечать на вопросы типа:\n• \"Почему прибыль упала в этом месяце?\"\n• \"Какие категории расходов самые большие?\"\n• \"Сравни доходы за последние 3 месяца\"\n• \"Сколько потратили на налоги в этом году?\"\n• \"Какая рентабельность по категориям?\"\n• \"Сколько нужно платить за патент?\"\n• \"Рассчитай НДС 12% от суммы\"\n• \"Какие расходы на соцфонд?\"\n\n---\n💡 УМНЫЕ ФУНКЦИИ:\n\n🔄 РАСПОЗНАВАНИЕ ПОДПИСОК:\nЕсли упоминаются регулярные платежи:\n- \"Оплатил Netflix 699 сом\" → \"💡 Это подписка? Хотите напоминание о следующем платеже?\"\n- Автоматически предлагай отслеживать подписки\n\n📊 АНАЛИЗ И РЕКОМЕНДАЦИИ:\nПосле значительной траты (>3000 сом):\n- Сравнивай с прошлым месяцем\n- Показывай процент от месячного бюджета\n- Предлагай альтернативы экономии\n\n⚠️ ПРЕДУПРЕЖДЕНИЯ О БЮДЖЕТЕ:\nПроверяй лимиты после каждой операции:\n- Если потрачено >80% лимита: \"⚠️ Использовано 85% лимита на продукты\"\n- Если превышен лимит: \"🚨 Превышен лимит на развлечения на 1,500 сом\"\n- Если близок месячный бюджет: \"⚠️ Осталось 15% от месячного бюджета\"\n\n💡 УМНЫЕ ВОПРОСЫ:\nЗадавай уточняющие вопросы:\n- \"Купил телефон за 35000\" → \"Это для бизнеса или личное?\"\n- \"Оплатил рекламу\" → \"В какой платформе? (Instagram, Google, Facebook, 2GIS)\"\n\n📈 ПРОАКТИВНАЯ АНАЛИТИКА:\nВ конце дня (если были транзакции):\n\"📊 За сегодня: Доходы +10,000 сом, Расходы -2,500 сом.\nПрибыль: +7,500 сом\nОсталось до конца месяца: 32,000 сом от бюджета (64%)\"\n\n🎯 ЦЕЛИ И ПЛАНИРОВАНИЕ:\n- \"Хочу накопить 300000 на машину\" → Рассчитай сколько откладывать\n- \"Нужно снизить расходы на 20%\" → Проанализируй где можно сэкономить\n\n🔍 АНОМАЛИИ:\nАвтоматически определяй необычные траты:\n- \"⚠️ Расход на такси сегодня в 3 раза выше среднего\"\n- \"💡 Странно, обычно вы не тратите больше 1500 сом на кафе\"\n\n💸 НАЛОГИ КЫРГЫЗСТАН:\nПри вопросах о налогах:\n- НДС 12%\n- Подоходный: до 300,000 сом = 10%, свыше = 15%\n- Соцфонд 12.5% от зарплаты\n- Патент ИП: от 5,000 до 10,000 сом/месяц\n\n---\nВАЖНО: Передавай параметры ТОЧНО в таком формате. НЕ добавляй лишние поля.\n\n✅ После успешного действия, верни ответ в Telegram:\n\"Операция успешно добавлена: [данные]\"\nили\n\"Анализ завершён: [результат]\"\n\nЕсли требуется сделать подсчеты - используй инструмент Calculator.\n\nТебе могут передавать одну операцию или несколько сразу:\n- \"Купил кефир за 50 сом и ряженку за 49 сом\" → Суммируй: категория \"продукты питания\", описание \"кефир и ряженка\", amount: 99\n- \"Оплатил аренду 35000 и зарплату 25000\" → 2 записи: аренда офиса 35000 и зарплата сотрудников 25000\n\nВажно! Если не знаешь какой инструмент использовать - верни ответ с комментариями для уточнения.\n\nДОПОЛНИТЕЛЬНО О КЫРГЫЗСТАНЕ:\n- Популярные банки: KICB, Optima Bank, Бакай Банк, Дос-Кредобанк\n- Популярные маркетплейсы: 2GIS, Instagram, Facebook\n- Транспорт: маршрутка (обычно 15-20 сом), такси (от 100 сом)\n- Базар - это рынок, где покупают продукты\n- Коммуналка = коммунальные услуги (газ, свет, вода, отопление)"
+          "systemMessage": "=\nТы — универсальный финансовый помощник для бизнеса и личных финансов в Кыргызстане.\nТвоя задача — понимать команды пользователя и вносить данные в базу данных о расходах, доходах, или выполнять анализ по истории.\nВалюта по умолчанию: сом (KGS)\nСегодняшняя дата {{ new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' }) }}\n\n---\n💸 РАСХОДЫ: если пользователь говорит про трату/покупку\nВызывай инструмент Add_expense и обязательно возвращай объект:\n{\n  \"date\": \"ДД.ММ.ГГГГ\",\n  \"category\": \"...\",\n  \"amount\": ... ,\n  \"description\": \"...\",\n  \"operation_type\": \"расход\",\n  \"source\": \"telegram\"\n}\n\n💰 ДОХОДЫ: если пользователь говорит про поступление денег\nВызывай инструмент Add_income и обязательно возвращай объект:\n{\n  \"date\": \"ДД.ММ.ГГГГ\",\n  \"category\": \"...\",\n  \"amount\": ... ,\n  \"description\": \"...\",\n  \"operation_type\": \"доход\",\n  \"source\": \"telegram\"\n}\n\n---\nВАЖНО: После каждого успешного действия всегда возвращай объект с этими параметрами для записи в базу. НЕ добавляй лишние поля.\n\n✅ После успешного действия, верни ответ в Telegram:\n\"Операция успешно добавлена: [данные]\"\nили\n\"Анализ завершён: [результат]\"\n\n...existing code..."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        352,
-        16
+        784,
+        -64
       ],
       "id": "aaa00d7e-6fa3-40ab-8eed-4f1aae4424ea",
       "name": "Financial Assistant",
       "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
-      "typeVersion": 1,
-      "position": [
-        1472,
-        -48
-      ],
-      "id": "8d93eeaa-840d-4786-a199-4eba78336814",
-      "name": "Calculator"
     },
     {
       "parameters": {
@@ -239,7 +228,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1408,
+        1824,
         -256
       ],
       "id": "78a5fef3-decd-4bc1-9906-255676655d7f",
@@ -254,109 +243,6 @@
     },
     {
       "parameters": {
-        "description": "Подготовка расхода",
-        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\nconst userId = $('Telegram Bot Trigger').first().json.message.from.id;\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || ''\n  }\n};"
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
-      "position": [
-        992,
-        240
-      ],
-      "id": "39be6e2b-f68a-44bf-bdb1-54fe5325351d",
-      "name": "Code Tool"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'расход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgresTool",
-      "typeVersion": 2.6,
-      "position": [
-        992,
-        384
-      ],
-      "id": "075b2356-2d19-45e8-b590-019fd85a8f1c",
-      "name": "Добавить расход",
-      "credentials": {
-        "postgres": {
-          "id": "3CGZzcUsaAWp8nrl",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "-- Проверка лимита по категории\nWITH expense_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total_spent\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND date >= DATE_TRUNC('month', CURRENT_DATE)\n),\ncategory_limit AS (\n  SELECT limit_amount\n  FROM limits\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND month = TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  LIMIT 1\n)\nSELECT \n  e.total_spent,\n  l.limit_amount,\n  CASE \n    WHEN l.limit_amount IS NULL THEN NULL\n    WHEN e.total_spent > l.limit_amount THEN 'exceeded'\n    WHEN e.total_spent > (l.limit_amount * 0.8) THEN 'warning'\n    ELSE 'ok'\n  END as limit_status,\n  CASE\n    WHEN l.limit_amount IS NOT NULL THEN ROUND((e.total_spent / l.limit_amount) * 100)\n    ELSE NULL\n  END as percent_used\nFROM expense_sum e\nLEFT JOIN category_limit l ON true;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgresTool",
-      "typeVersion": 2.6,
-      "position": [
-        992,
-        528
-      ],
-      "id": "cf475125-1e99-4380-a615-2d01a4bf3326",
-      "name": "Проверка лимитов",
-      "credentials": {
-        "postgres": {
-          "id": "3CGZzcUsaAWp8nrl",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\n\nconst userId = $('Telegram Bot Trigger').first().json.message.from.id;\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || '',\n    operation_type: 'доход',\n    source: 'telegram'\n  }\n};"
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
-      "position": [
-        192,
-        592
-      ],
-      "id": "29baab3b-8986-4c97-98b3-95108c4d6cd6",
-      "name": "Подготовка дохода"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'доход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgresTool",
-      "typeVersion": 2.6,
-      "position": [
-        320,
-        528
-      ],
-      "id": "3cf76964-b9a8-435e-995b-ab592df55bb5",
-      "name": "Добавить доход",
-      "credentials": {
-        "postgres": {
-          "id": "3CGZzcUsaAWp8nrl",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Преобразование месяца в номер\nconst monthNames = {\n  'январь': '01', 'февраль': '02', 'март': '03',\n  'апрель': '04', 'май': '05', 'июнь': '06',\n  'июль': '07', 'август': '08', 'сентябрь': '09',\n  'октябрь': '10', 'ноябрь': '11', 'декабрь': '12'\n};\n\nconst month = $fromAI('month').toLowerCase();\nconst monthNum = monthNames[month] || '10';\nconst year = new Date().getFullYear();\nconst yearMonth = `${year}-${monthNum}`;\n\nconst userId = $('Telegram Bot Trigger').first().json.message.from.id;\nconst type = $fromAI('type'); // \"доход\" или \"расход\"\nconst category = $fromAI('category') || null;\n\nreturn {\n  json: {\n    user_id: userId,\n    year_month: yearMonth,\n    type: type,\n    category: category,\n    month_name: month\n  }\n};"
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
-      "position": [
-        448,
-        720
-      ],
-      "id": "01451097-bc4f-473d-ab79-f32706fcbb50",
-      "name": "Парсинг месяца"
-    },
-    {
-      "parameters": {
         "operation": "executeQuery",
         "query": "WITH monthly_data AS (\n  SELECT \n    category,\n    COUNT(*) as transaction_count,\n    SUM(amount) as total_amount,\n    AVG(amount) as avg_amount\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND TO_CHAR(date, 'YYYY-MM') = '{{ $json.year_month }}'\n    {{ $json.category ? \"AND category = '\" + $json.category + \"'\" : \"\" }}\n  GROUP BY category\n  ORDER BY total_amount DESC\n)\nSELECT \n  *,\n  (SELECT SUM(total_amount) FROM monthly_data) as grand_total\nFROM monthly_data;",
         "options": {}
@@ -364,8 +250,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        784,
-        816
+        1088,
+        832
       ],
       "id": "7f51d030-328a-40b3-9abf-6042f126f09f",
       "name": "Анализ доходов",
@@ -404,8 +290,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        576,
-        464
+        736,
+        752
       ],
       "id": "894a5626-98ca-439e-943b-56cbabc84562",
       "name": "Проверка типа"
@@ -419,8 +305,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        832,
-        672
+        1088,
+        688
       ],
       "id": "3ff919d2-cbd5-4428-a7e3-9712217054e4",
       "name": "Анализ расходов",
@@ -440,8 +326,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -800,
-        240
+        -784,
+        256
       ],
       "id": "d3996e68-eade-4127-80c1-7e3a96babcd9",
       "name": "Регистрация/обновление пользователя",
@@ -452,6 +338,156 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6cb77ab8-f045-4576-b673-6ead0a3a5da6",
+              "name": "message",
+              "value": "={{ $node[\"Telegram Bot Trigger\"].json[\"message\"] || {} }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        240
+      ],
+      "id": "59ff761a-86d1-42b2-a318-370ebca3d854",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\n\nconst userId = $node[\"Telegram Bot Trigger\"].json[\"message\"][\"from\"][\"id\"];\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || '',\n    operation_type: 'доход',\n    source: 'telegram'\n  }\n};"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        544
+      ],
+      "id": "29baab3b-8986-4c97-98b3-95108c4d6cd6",
+      "name": "Income_preparation"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'доход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        400
+      ],
+      "id": "3cf76964-b9a8-435e-995b-ab592df55bb5",
+      "name": "Add_income",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Преобразование месяца в номер\nconst monthNames = {\n  'январь': '01', 'февраль': '02', 'март': '03',\n  'апрель': '04', 'май': '05', 'июнь': '06',\n  'июль': '07', 'август': '08', 'сентябрь': '09',\n  'октябрь': '10', 'ноябрь': '11', 'декабрь': '12'\n};\n\nconst month = $fromAI('month').toLowerCase();\nconst monthNum = monthNames[month] || '10';\nconst year = new Date().getFullYear();\nconst yearMonth = `${year}-${monthNum}`;\n\nconst userId = $node[\"Telegram Bot Trigger\"].json[\"message\"][\"from\"][\"id\"];\nconst type = $fromAI('type'); // \"доход\" или \"расход\"\nconst category = $fromAI('category') || null;\n\nreturn {\n  json: {\n    user_id: userId,\n    year_month: yearMonth,\n    type: type,\n    category: category,\n    month_name: month\n  }\n};"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        432
+      ],
+      "id": "01451097-bc4f-473d-ab79-f32706fcbb50",
+      "name": "Parsing_of_the_month"
+    },
+    {
+      "parameters": {
+        "description": "Подготовка расхода",
+        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\nconst userId = $node[\"Telegram Bot Trigger\"].json[\"message\"][\"from\"][\"id\"];\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || ''\n  }\n};"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        1424,
+        208
+      ],
+      "id": "39be6e2b-f68a-44bf-bdb1-54fe5325351d",
+      "name": "Adding_expenses"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'расход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1456,
+        384
+      ],
+      "id": "075b2356-2d19-45e8-b590-019fd85a8f1c",
+      "name": "Add_expense",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Проверка лимита по категории\nWITH expense_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total_spent\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND date >= DATE_TRUNC('month', CURRENT_DATE)\n),\ncategory_limit AS (\n  SELECT limit_amount\n  FROM limits\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND month = TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  LIMIT 1\n)\nSELECT \n  e.total_spent,\n  l.limit_amount,\n  CASE \n    WHEN l.limit_amount IS NULL THEN NULL\n    WHEN e.total_spent > l.limit_amount THEN 'exceeded'\n    WHEN e.total_spent > (l.limit_amount * 0.8) THEN 'warning'\n    ELSE 'ok'\n  END as limit_status,\n  CASE\n    WHEN l.limit_amount IS NOT NULL THEN ROUND((e.total_spent / l.limit_amount) * 100)\n    ELSE NULL\n  END as percent_used\nFROM expense_sum e\nLEFT JOIN category_limit l ON true;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1408,
+        528
+      ],
+      "id": "cf475125-1e99-4380-a615-2d01a4bf3326",
+      "name": "Checking_limits",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        128
+      ],
+      "id": "8d93eeaa-840d-4786-a199-4eba78336814",
+      "name": "Calc"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        496
+      ],
+      "id": "6780b7ce-8eb9-4caf-a197-78d77b58b8ce",
+      "name": "AI Agent"
     }
   ],
   "pinData": {},
@@ -551,83 +587,6 @@
         ]
       ]
     },
-    "Calculator": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code Tool": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Добавить расход": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Проверка лимитов": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Подготовка дохода": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Добавить доход": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Парсинг месяца": {
-      "ai_tool": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Проверка типа": {
       "main": [
         [
@@ -650,19 +609,107 @@
       "main": [
         [
           {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
             "node": "Message Type Switch",
             "type": "main",
             "index": 0
           }
         ]
       ]
+    },
+    "Income_preparation": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add_income": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsing_of_the_month": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adding_expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add_expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checking_limits": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calc": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "e7a871fb-7dae-43a7-87b5-076df9042ce6",
+  "versionId": "9b35a556-9d2a-4f43-b695-ab9168b2ab78",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
