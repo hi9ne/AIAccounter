@@ -203,7 +203,7 @@
         "promptType": "define",
         "text": "={{ $json.text }}\n\n",
         "options": {
-          "systemMessage": "=\nТы — универсальный финансовый помощник для бизнеса и личных финансов в Кыргызстане.\nТвоя задача — понимать команды пользователя и вносить данные в базу данных о расходах, доходах, или выполнять анализ по истории.\nВалюта по умолчанию: сом (KGS)\nСегодняшняя дата {{ new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' }) }}\n\n---\n💸 РАСХОДЫ: если пользователь говорит про трату/покупку\nВызывай инструмент Add_expense и обязательно возвращай объект:\n{\n  \"date\": \"ДД.ММ.ГГГГ\",\n  \"category\": \"...\",\n  \"amount\": ... ,\n  \"description\": \"...\",\n  \"operation_type\": \"расход\",\n  \"source\": \"telegram\"\n}\n\n💰 ДОХОДЫ: если пользователь говорит про поступление денег\nВызывай инструмент Add_income и обязательно возвращай объект:\n{\n  \"date\": \"ДД.ММ.ГГГГ\",\n  \"category\": \"...\",\n  \"amount\": ... ,\n  \"description\": \"...\",\n  \"operation_type\": \"доход\",\n  \"source\": \"telegram\"\n}\n\n---\nВАЖНО: После каждого успешного действия всегда возвращай объект с этими параметрами для записи в базу. НЕ добавляй лишние поля.\n\n✅ После успешного действия, верни ответ в Telegram:\n\"Операция успешно добавлена: [данные]\"\nили\n\"Анализ завершён: [результат]\"\n\n...existing code..."
+          "systemMessage": "=\nТы — финансовый помощник для бизнеса и личных финансов в Кыргызстане.\nВалюта: сом (KGS). Сегодня: {{ new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' }) }}\n\n---\n💸 РАСХОДЫ: используй инструмент Add_expense с параметрами:\n- category: продукты, транспорт, кафе/рестораны, аренда офиса, зарплата, налоги, маркетинг, канцтовары, интернет/связь, коммунальные услуги, обучение, подписки, прочее\n- amount: сумма (только число)\n- description: описание (опционально)\n- date: DD.MM.YYYY (опционально, по умолчанию сегодня)\n\n💰 ДОХОДЫ: используй инструмент Add_income с параметрами:\n- category: зарплата, продажи, инвестиции, подработка, кэшбек, прочее\n- amount, description, date (аналогично)\n\n📊 АНАЛИЗ: используй инструмент Parsing_of_the_month с параметрами:\n- month: название месяца (например 'октябрь')\n- type: 'расход' или 'доход'\n- category: опционально\n\n---\n✅ После успешной операции формируй читаемый ответ на основе результата из БД.\nНапример: \"✅ Расход добавлен: 15000 сом на 'аренда офиса' (29.10.2025)\""
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -364,21 +364,10 @@
     },
     {
       "parameters": {
-        "jsCode": "const dateStr = $fromAI('date');\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month}-${day}`;\n\nconst userId = $node[\"Telegram Bot Trigger\"].json[\"message\"][\"from\"][\"id\"];\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: $fromAI('category'),\n    amount: parseFloat($fromAI('amount')),\n    description: $fromAI('description') || '',\n    operation_type: 'доход',\n    source: 'telegram'\n  }\n};"
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
-      "position": [
-        -1680,
-        864
-      ],
-      "id": "fb6dd251-e07b-4cf3-8ef4-ec11378aeb28",
-      "name": "Income_preparation"
-    },
-    {
-      "parameters": {
+        "name": "Add_income",
+        "description": "=Добавляет доход в базу. Категории: зарплата, продажи, инвестиции, подработка, кэшбек, прочее. Вызывай с параметрами: category (обязательно), amount (обязательно), description (опционально), date (опционально, формат DD.MM.YYYY, по умолчанию сегодня)",
         "operation": "executeQuery",
-        "query": "INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'доход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
+        "query": "=INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  1109421300,\n  COALESCE(\n    TO_DATE('{{ $fromAI(\"date\", \"Дата операции в формате DD.MM.YYYY. Если не указана, используй сегодняшнюю дату: \" + new Date().toLocaleDateString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' })) }}', 'DD.MM.YYYY'),\n    CURRENT_DATE\n  ),\n  '{{ $fromAI(\"category\", \"Категория дохода. Возможные: зарплата, продажи, инвестиции, подработка, кэшбек, прочее\") }}',\n  {{ $fromAI(\"amount\", \"Сумма дохода в сомах (только число)\") }},\n  '{{ $fromAI(\"description\", \"Описание дохода (опционально)\", \"\") }}',\n  'доход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
@@ -398,39 +387,36 @@
     },
     {
       "parameters": {
-        "jsCode": "// Преобразование месяца в номер\nconst monthNames = {\n  'январь': '01', 'февраль': '02', 'март': '03',\n  'апрель': '04', 'май': '05', 'июнь': '06',\n  'июль': '07', 'август': '08', 'сентябрь': '09',\n  'октябрь': '10', 'ноябрь': '11', 'декабрь': '12'\n};\n\nconst month = $fromAI('month').toLowerCase();\nconst monthNum = monthNames[month] || '10';\nconst year = new Date().getFullYear();\nconst yearMonth = `${year}-${monthNum}`;\n\nconst userId = $node[\"Telegram Bot Trigger\"].json[\"message\"][\"from\"][\"id\"];\nconst type = $fromAI('type'); // \"доход\" или \"расход\"\nconst category = $fromAI('category') || null;\n\nreturn {\n  json: {\n    user_id: userId,\n    year_month: yearMonth,\n    type: type,\n    category: category,\n    month_name: month\n  }\n};"
+        "name": "Parsing_of_the_month",
+        "description": "=Анализирует расходы или доходы за указанный месяц. Вызывай с параметрами: month (название месяца на русском, например 'октябрь'), type ('расход' или 'доход'), category (опционально, фильтр по категории)",
+        "operation": "executeQuery",
+        "query": "=WITH month_mapping AS (\n  SELECT * FROM (VALUES\n    ('январь', 1), ('февраль', 2), ('март', 3), ('апрель', 4),\n    ('май', 5), ('июнь', 6), ('июль', 7), ('август', 8),\n    ('сентябрь', 9), ('октябрь', 10), ('ноябрь', 11), ('декабрь', 12)\n  ) AS m(month_name, month_num)\n)\nSELECT\n  TO_CHAR(t.date, 'DD.MM.YYYY') as date,\n  t.category,\n  t.amount,\n  t.description,\n  COUNT(*) OVER() as total_rows,\n  SUM(t.amount) OVER() as total_amount\nFROM {{ $fromAI(\"type\", \"Тип операции: 'расход' или 'доход'\") === 'расход' ? 'expenses' : 'income' }} t\nINNER JOIN month_mapping mm ON EXTRACT(MONTH FROM t.date) = mm.month_num\nWHERE t.user_id = 1109421300\n  AND EXTRACT(YEAR FROM t.date) = EXTRACT(YEAR FROM CURRENT_DATE)\n  AND LOWER(mm.month_name) = LOWER('{{ $fromAI(\"month\", \"Название месяца на русском языке (например: октябрь, ноябрь)\") }}')\n  {% if $fromAI(\"category\", \"Категория для фильтрации (опционально)\", \"\") %}\n  AND t.category = '{{ $fromAI(\"category\", \"Категория\", \"\") }}'\n  {% endif %}\nORDER BY t.date DESC;",
+        "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
       "position": [
         -1360,
         752
       ],
       "id": "f64b49d6-b13c-4b82-a116-1b228797a435",
-      "name": "Parsing_of_the_month"
+      "name": "Parsing_of_the_month",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
-        "name": "Add_expense_prepare",
-        "description": "Добавляет расход в базу данных. Вызывай этот инструмент когда пользователь сообщает о покупке или трате денег. ОБЯЗАТЕЛЬНО передай все параметры: date (дата в формате ДД.ММ.ГГГГ, например 29.10.2025), category (категория расхода, например 'аренда офиса'), amount (сумма в числовом формате, например 15000), description (описание операции, например 'Ежемесячная аренда').",
-        "jsCode": "// Получаем параметры от AI\nconst dateStr = $fromAI('date');\nconst category = $fromAI('category');\nconst amount = parseFloat($fromAI('amount'));\nconst description = $fromAI('description') || '';\n\n// Преобразуем дату из ДД.ММ.ГГГГ в YYYY-MM-DD\nconst [day, month, year] = dateStr.split('.');\nconst sqlDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;\n\n// Получаем user_id\nconst userId = $node[\"Telegram Bot Trigger\"].json[\"message\"][\"from\"][\"id\"];\n\nreturn {\n  json: {\n    user_id: userId,\n    date: sqlDate,\n    category: category,\n    amount: amount,\n    description: description,\n    operation_type: 'расход',\n    source: 'telegram'\n  }\n};"
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
-      "position": [
-        -1120,
-        704
-      ],
-      "id": "402f4361-911a-4098-9657-7ec790ebe9b7",
-      "name": "Add_expense_prepare"
-    },
-    {
-      "parameters": {
+        "name": "Add_expense",
+        "description": "=Добавляет расход в базу. Категории: продукты, транспорт, кафе/рестораны, аренда офиса, зарплата, налоги, маркетинг, канцтовары, интернет/связь, коммунальные услуги, обучение, подписки, прочее. Вызывай с параметрами: category (обязательно), amount (обязательно), description (опционально), date (опционально, формат DD.MM.YYYY, по умолчанию сегодня)",
         "operation": "executeQuery",
-        "query": "INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'расход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
+        "query": "=INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  1109421300,\n  COALESCE(\n    TO_DATE('{{ $fromAI(\"date\", \"Дата операции в формате DD.MM.YYYY. Если не указана, используй сегодняшнюю дату: \" + new Date().toLocaleDateString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' })) }}', 'DD.MM.YYYY'),\n    CURRENT_DATE\n  ),\n  '{{ $fromAI(\"category\", \"Категория расхода. Возможные: продукты, транспорт, кафе/рестораны, аренда офиса, зарплата, налоги, маркетинг, канцтовары, интернет/связь, коммунальные услуги, обучение, подписки, прочее\") }}',\n  {{ $fromAI(\"amount\", \"Сумма расхода в сомах (только число)\") }},\n  '{{ $fromAI(\"description\", \"Описание расхода (опционально)\", \"\") }}',\n  'расход',\n  'telegram'\n)\nRETURNING id, date, category, amount, description;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres",
+      "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
         -920,
@@ -648,16 +634,7 @@
         ]
       ]
     },
-    "Add_expense_prepare": {
-      "main": [
-        [
-          {
-            "node": "Add_expense",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ],
+    "Adding_expenses": {
       "ai_tool": [
         [
           {
@@ -669,11 +646,11 @@
       ]
     },
     "Add_expense": {
-      "main": [
+      "ai_tool": [
         [
           {
-            "node": "Checking_limits",
-            "type": "main",
+            "node": "Financial Assistant",
+            "type": "ai_tool",
             "index": 0
           }
         ]
