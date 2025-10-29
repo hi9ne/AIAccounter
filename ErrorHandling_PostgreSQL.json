@@ -1,5 +1,5 @@
 {
-  "name": "Error Handling & Validation",
+  "name": "Error Handling & Validation (PostgreSQL)",
   "nodes": [
     {
       "parameters": {
@@ -71,7 +71,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ !$json.date || !$json.date.match(/^\\d{2}\\.\\d{2}\\.\\d{4}$/) }}",
+                    "leftValue": "={{ !$json.date || !$json.date.match(/^\\d{4}-\\d{2}-\\d{2}$/) }}",
                     "rightValue": "true",
                     "operator": {
                       "type": "boolean",
@@ -121,39 +121,12 @@
     },
     {
       "parameters": {
-        "documentId": {
-          "__rl": true,
-          "value": "15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4",
-          "mode": "list",
-          "cachedResultName": "AIAccounter",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": 598940202,
-          "mode": "list",
-          "cachedResultName": "Расходы"
-        },
-        "filtersUI": {
-          "values": [
-            {
-              "lookupColumn": "Текущая дата",
-              "lookupValue": "={{ $json.date }}"
-            },
-            {
-              "lookupColumn": "Сумма",
-              "lookupValue": "={{ $json.amount }}"
-            },
-            {
-              "lookupColumn": "Категория",
-              "lookupValue": "={{ $json.category }}"
-            }
-          ]
-        },
+        "operation": "executeQuery",
+        "query": "SELECT * FROM expenses \nWHERE user_id = {{ $json.user_id }}\n  AND date = '{{ $json.date }}'\n  AND amount = {{ $json.amount }}\n  AND category = '{{ $json.category }}'\nLIMIT 1;",
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
         0,
         464
@@ -161,9 +134,9 @@
       "id": "c61e0dd8-2cbb-4027-a0d0-0aecbc977ddb",
       "name": "Check for Duplicates",
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "Ma60ZJqcwNGcWkrr",
-          "name": "Google Sheets account"
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase PostgreSQL"
         }
       }
     },
@@ -199,44 +172,22 @@
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4",
-          "mode": "list",
-          "cachedResultName": "AIAccounter",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/15r082AGL_ew0yRXY8qYQCn6FYEOUxri-equ6yR-tAc4/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=error_log",
-          "mode": "list",
-          "cachedResultName": "Логи ошибок"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Timestamp": "={{ new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Novosibirsk' }) }}",
-            "Error Type": "={{ $json.error_type }}",
-            "User ID": "={{ $json.user_id }}",
-            "Data": "={{ JSON.stringify($json) }}",
-            "Message": "={{ $json.error_message }}"
-          }
-        },
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_logs (error_type, user_id, data, message, severity)\nVALUES (\n  '{{ $json.error_type }}',\n  {{ $json.user_id || 'NULL' }},\n  '{{ JSON.stringify($json) }}',\n  '{{ $json.error_message }}',\n  'error'\n)\nRETURNING *;",
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
         224,
         128
       ],
       "id": "08fad8f1-1789-4afe-9956-67e4f2f949e4",
-      "name": "Log Error to Sheet",
+      "name": "Log Error to Database",
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "Ma60ZJqcwNGcWkrr",
-          "name": "Google Sheets account"
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase PostgreSQL"
         }
       }
     },
@@ -253,7 +204,7 @@
             {
               "id": "error_message",
               "name": "error_message",
-              "value": "=Сумма должна быть больше 0 и меньше 10 млн рублей",
+              "value": "=Сумма должна быть больше 0 и меньше 10 млн сомов",
               "type": "string"
             }
           ]
@@ -343,7 +294,7 @@
             {
               "id": "error_message",
               "name": "error_message",
-              "value": "=Неверный формат даты. Используйте ДД.ММ.ГГГГ",
+              "value": "=Неверный формат даты. Используйте YYYY-MM-DD",
               "type": "string"
             }
           ]
@@ -403,7 +354,7 @@
             {
               "id": "error_message",
               "name": "error_message",
-              "value": "=Сумма слишком большая. Максимум 10 млн рублей",
+              "value": "=Сумма слишком большая. Максимум 10 млн сомов",
               "type": "string"
             }
           ]
@@ -463,6 +414,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Check for Duplicates",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -499,7 +457,7 @@
       "main": [
         [
           {
-            "node": "Log Error to Sheet",
+            "node": "Log Error to Database",
             "type": "main",
             "index": 0
           }
@@ -510,7 +468,7 @@
       "main": [
         [
           {
-            "node": "Log Error to Sheet",
+            "node": "Log Error to Database",
             "type": "main",
             "index": 0
           }
@@ -521,7 +479,7 @@
       "main": [
         [
           {
-            "node": "Log Error to Sheet",
+            "node": "Log Error to Database",
             "type": "main",
             "index": 0
           }
@@ -532,7 +490,7 @@
       "main": [
         [
           {
-            "node": "Log Error to Sheet",
+            "node": "Log Error to Database",
             "type": "main",
             "index": 0
           }
@@ -543,14 +501,14 @@
       "main": [
         [
           {
-            "node": "Log Error to Sheet",
+            "node": "Log Error to Database",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Error to Sheet": {
+    "Log Error to Database": {
       "main": [
         [
           {
@@ -566,11 +524,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "2eac6e3e-4cf6-4775-afca-977b379b0d87",
+  "versionId": "postgresql-version-1",
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
   },
-  "id": "mtAIoAkY7WWxrQHU",
+  "id": "ErrorHandlingPostgreSQL",
   "tags": []
 }

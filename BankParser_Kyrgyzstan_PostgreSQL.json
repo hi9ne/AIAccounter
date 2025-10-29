@@ -1,5 +1,5 @@
 {
-  "name": "Bank SMS Parser - Kyrgyzstan",
+  "name": "Bank SMS Parser - Kyrgyzstan (PostgreSQL)",
   "nodes": [
     {
       "parameters": {
@@ -72,26 +72,7 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "={{ $('Рассчитать категорию').first().json.category_suggestion_url }}",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"merchant\": \"{{ $json.merchant }}\",\n  \"amount\": {{ $json.amount }},\n  \"bank\": \"{{ $json.bank }}\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -448,
-        112
-      ],
-      "id": "f24e4968-8c77-4f15-96bc-548d7cb93cb3",
-      "name": "AI категоризация",
-      "continueOnFail": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const parsed = $json;\nconst aiCategory = $('AI категоризация').first()?.json?.category || 'Прочее';\n\nlet category = aiCategory;\n\n// Простая логика категоризации на основе merchant\nconst merchant = (parsed.merchant || '').toLowerCase();\n\nif (merchant.includes('bazaar') || merchant.includes('базар')) category = 'базар';\nelse if (merchant.includes('taxi') || merchant.includes('такси')) category = 'такси';\nelse if (merchant.includes('cafe') || merchant.includes('кафе')) category = 'кафе';\nelse if (merchant.includes('market') || merchant.includes('магазин')) category = 'продукты питания';\nelse if (merchant.includes('gas') || merchant.includes('газ')) category = 'транспорт';\nelse if (merchant.includes('pharmacy') || merchant.includes('аптека')) category = 'здоровье и красота';\n\nreturn {\n  json: {\n    date: parsed.date,\n    category: category,\n    amount: parsed.amount,\n    description: `${parsed.bank}: ${parsed.merchant}`,\n    operation_type: parsed.type,\n    source: 'bank_parser',\n    bank: parsed.bank,\n    merchant: parsed.merchant\n  }\n};"
+        "jsCode": "const parsed = $json;\nconst aiCategory = $('AI категоризация').first()?.json?.category || 'Прочее';\n\nlet category = aiCategory;\n\n// Простая логика категоризации на основе merchant\nconst merchant = (parsed.merchant || '').toLowerCase();\n\nif (merchant.includes('bazaar') || merchant.includes('базар')) category = 'продукты питания';\nelse if (merchant.includes('taxi') || merchant.includes('такси')) category = 'транспорт';\nelse if (merchant.includes('cafe') || merchant.includes('кафе')) category = 'кафе и рестораны';\nelse if (merchant.includes('market') || merchant.includes('магазин')) category = 'продукты питания';\nelse if (merchant.includes('gas') || merchant.includes('газ')) category = 'транспорт';\nelse if (merchant.includes('pharmacy') || merchant.includes('аптека')) category = 'здоровье и красота';\n\n// Преобразование даты ДД.ММ.ГГГГ -> YYYY-MM-DD\nconst dateStr = parsed.date;\nlet sqlDate;\nif (dateStr.includes('.')) {\n  const [day, month, year] = dateStr.split('.');\n  sqlDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;\n} else {\n  sqlDate = new Date().toISOString().split('T')[0];\n}\n\nreturn {\n  json: {\n    date: sqlDate,\n    category: category,\n    amount: parsed.amount,\n    description: `${parsed.bank}: ${parsed.merchant}`,\n    operation_type: parsed.type,\n    source: 'bank_parser',\n    bank: parsed.bank,\n    merchant: parsed.merchant\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -104,73 +85,45 @@
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Расходы",
-          "mode": "name"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Текущая дата": "={{ $json.date }}",
-            "Категория": "={{ $json.category }}",
-            "Сумма": "={{ $json.amount }}",
-            "Описание": "={{ $json.description }}",
-            "Тип операции": "={{ $json.operation_type }}",
-            "Источник": "={{ $json.source }}"
-          }
-        },
+        "operation": "executeQuery",
+        "query": "INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  1,\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'расход',\n  'bank_parser'\n)\nRETURNING *;",
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
         0,
         0
       ],
       "id": "0673c084-9430-4e57-96ff-7b4ea81052c6",
-      "name": "Сохранить расход"
+      "name": "Сохранить расход",
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase PostgreSQL"
+        }
+      }
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "1Zl8_Q-t6s3hN8yr2Pn85_8cwk0iNV5qDOvAglVmVMdo",
-          "mode": "list"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Доходы",
-          "mode": "name"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "Текущая дата": "={{ $json.date }}",
-            "Категория": "={{ $json.category }}",
-            "Сумма": "={{ $json.amount }}",
-            "Описание": "={{ $json.description }}",
-            "Тип операции": "={{ $json.operation_type }}",
-            "Источник": "={{ $json.source }}"
-          }
-        },
+        "operation": "executeQuery",
+        "query": "INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  1,\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'доход',\n  'bank_parser'\n)\nRETURNING *;",
         "options": {}
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.5,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
         0,
         208
       ],
       "id": "7c307c90-7463-4bd9-ad5b-095fd29106f7",
-      "name": "Сохранить доход"
+      "name": "Сохранить доход",
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase PostgreSQL"
+        }
+      }
     },
     {
       "parameters": {
@@ -191,6 +144,33 @@
         -224,
         304
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Ты - помощник для категоризации банковских транзакций. Определи категорию на основе названия магазина/места. Категории: продукты питания, транспорт, кафе и рестораны, здоровье и красота, развлечения, одежда и обувь, коммунальные услуги, связь и интернет, образование, прочее. Верни только название категории.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Магазин: {{ $json.merchant }}, Сумма: {{ $json.amount }} сом, Банк: {{ $json.bank }}\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"max_tokens\": 50\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -448,
+        112
+      ],
+      "id": "f24e4968-8c77-4f15-96bc-548d7cb93cb3",
+      "name": "AI категоризация",
+      "continueOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -284,10 +264,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1ffff463-2bce-41b9-b450-0d5fe98aacec",
+  "versionId": "postgresql-version-1",
   "meta": {
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
   },
-  "id": "wqIEo2PjEWmwKwt6",
+  "id": "BankParserKyrgyzstanPostgreSQL",
   "tags": []
 }

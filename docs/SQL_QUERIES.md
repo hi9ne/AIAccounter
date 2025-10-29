@@ -1,6 +1,12 @@
-# SQL Запросы для интеграции в n8n workflows
+# 📊 SQL Запросы для n8n Workflows
+
+Справочник всех SQL запросов для копирования в узлы PostgreSQL в n8n.
+
+---
 
 ## 1. Регистрация/обновление пользователя
+
+**Где используется:** AnaliziFinance.json → узел после Telegram Trigger
 
 ```sql
 INSERT INTO users (user_id, username, first_name, last_name, telegram_chat_id)
@@ -18,16 +24,18 @@ DO UPDATE SET
 RETURNING *;
 ```
 
+---
+
 ## 2. Добавление расхода
 
-### JavaScript для преобразования данных:
+**Где используется:** AnaliziFinance.json → узел Add_expense (Postgres Tool)
+
+**JavaScript для подготовки данных:**
 ```javascript
-// Преобразование даты ДД.ММ.ГГГГ -> YYYY-MM-DD
 const dateStr = $fromAI('date');
 const [day, month, year] = dateStr.split('.');
 const sqlDate = `${year}-${month}-${day}`;
-
-const userId = $('Telegram Bot Trigger').first().json.message.from.id;
+const userId = $node["Telegram Bot Trigger"].json["message"]["from"]["id"];
 
 return {
   json: {
@@ -35,14 +43,12 @@ return {
     date: sqlDate,
     category: $fromAI('category'),
     amount: parseFloat($fromAI('amount')),
-    description: $fromAI('description') || '',
-    operation_type: 'расход',
-    source: 'telegram'
+    description: $fromAI('description') || ''
   }
 };
 ```
 
-### SQL для вставки:
+**SQL для вставки:**
 ```sql
 INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)
 VALUES (
@@ -57,9 +63,8 @@ VALUES (
 RETURNING id, date, category, amount, description;
 ```
 
-### SQL для проверки лимитов:
+**SQL для проверки лимитов:**
 ```sql
--- Проверка лимита по категории
 WITH expense_sum AS (
   SELECT COALESCE(SUM(amount), 0) as total_spent
   FROM expenses
@@ -92,15 +97,18 @@ FROM expense_sum e
 LEFT JOIN category_limit l ON true;
 ```
 
+---
+
 ## 3. Добавление дохода
 
-### JavaScript для преобразования данных:
+**Где используется:** AnaliziFinance.json → узел Add_income (Postgres Tool)
+
+**JavaScript для подготовки данных:**
 ```javascript
 const dateStr = $fromAI('date');
 const [day, month, year] = dateStr.split('.');
 const sqlDate = `${year}-${month}-${day}`;
-
-const userId = $('Telegram Bot Trigger').first().json.message.from.id;
+const userId = $node["Telegram Bot Trigger"].json["message"]["from"]["id"];
 
 return {
   json: {
@@ -115,7 +123,7 @@ return {
 };
 ```
 
-### SQL для вставки:
+**SQL для вставки:**
 ```sql
 INSERT INTO income (user_id, date, category, amount, description, operation_type, source)
 VALUES (
@@ -130,11 +138,14 @@ VALUES (
 RETURNING id, date, category, amount, description;
 ```
 
-## 4. Анализ финансов
+---
 
-### JavaScript для парсинга месяца:
+## 4. Анализ финансов (расходы)
+
+**Где используется:** AnaliziFinance.json → узел для анализа расходов
+
+**JavaScript для парсинга месяца:**
 ```javascript
-// Преобразование месяца в номер
 const monthNames = {
   'январь': '01', 'февраль': '02', 'март': '03',
   'апрель': '04', 'май': '05', 'июнь': '06',
@@ -146,8 +157,7 @@ const month = $fromAI('month').toLowerCase();
 const monthNum = monthNames[month] || '10';
 const year = new Date().getFullYear();
 const yearMonth = `${year}-${monthNum}`;
-
-const userId = $('Telegram Bot Trigger').first().json.message.from.id;
+const userId = $node["Telegram Bot Trigger"].json["message"]["from"]["id"];
 const type = $fromAI('type'); // "доход" или "расход"
 const category = $fromAI('category') || null;
 
@@ -162,7 +172,7 @@ return {
 };
 ```
 
-### SQL для анализа расходов:
+**SQL для анализа расходов:**
 ```sql
 WITH monthly_data AS (
   SELECT 
@@ -183,7 +193,7 @@ SELECT
 FROM monthly_data;
 ```
 
-### SQL для анализа доходов:
+**SQL для анализа доходов:**
 ```sql
 WITH monthly_data AS (
   SELECT 
@@ -204,9 +214,13 @@ SELECT
 FROM monthly_data;
 ```
 
+---
+
 ## 5. Установка бюджета
 
-### JavaScript для парсинга команды:
+**Где используется:** BudgetSystem.json
+
+**JavaScript для парсинга команды:**
 ```javascript
 const text = $json.message.text || '';
 const match = text.match(/\/budget\s+(\d+)/);
@@ -234,7 +248,7 @@ if (match) {
 }
 ```
 
-### SQL для UPSERT:
+**SQL для UPSERT:**
 ```sql
 INSERT INTO budgets (user_id, month, budget_amount)
 VALUES (
@@ -249,9 +263,13 @@ DO UPDATE SET
 RETURNING *;
 ```
 
+---
+
 ## 6. Установка лимита
 
-### JavaScript для парсинга команды:
+**Где используется:** BudgetSystem.json
+
+**JavaScript для парсинга команды:**
 ```javascript
 const text = $json.message.text || '';
 const match = text.match(/\/limit\s+([^\d]+)\s+(\d+)/);
@@ -281,7 +299,7 @@ if (match) {
 }
 ```
 
-### SQL для UPSERT:
+**SQL для UPSERT:**
 ```sql
 INSERT INTO limits (user_id, category, limit_amount, month)
 VALUES (
@@ -297,27 +315,13 @@ DO UPDATE SET
 RETURNING *;
 ```
 
+---
+
 ## 7. Еженедельный отчёт
 
-### ЗАМЕНА: "Читать доходы" + "Читать расходы" → Один Postgres узел
+**Где используется:** WeeklyReport.json
 
-**Что заменяем в WeeklyReport.json:**
-- ❌ Удалить узел "Читать доходы" (Google Sheets)
-- ❌ Удалить узел "Читать расходы" (Google Sheets)
-- ❌ Удалить узел "Рассчитать статистику" (больше не нужен)
-- ✅ Добавить один Postgres узел "Получить статистику пользователя"
-- ✅ Добавить Code узел "Форматировать отчёт"
-
-### Новая структура workflow:
-1. Schedule Trigger (воскресенье 20:00)
-2. Postgres: "Получить всех пользователей"
-3. Split In Batches (по 1 пользователю)
-4. **Postgres: "Получить статистику пользователя"** ← НОВЫЙ
-5. **Code: "Форматировать отчёт"** ← НОВЫЙ
-6. IF: Проверка что есть данные
-7. Telegram: Отправить отчёт
-
-### SQL для получения ВСЕХ пользователей:
+**SQL для получения всех активных пользователей:**
 ```sql
 SELECT user_id, username, first_name, telegram_chat_id
 FROM users
@@ -325,7 +329,7 @@ WHERE is_active = true
 ORDER BY user_id;
 ```
 
-### SQL для статистики одного пользователя (выполняется в цикле):
+**SQL для статистики одного пользователя (в цикле):**
 ```sql
 WITH week_range AS (
   SELECT 
@@ -384,13 +388,13 @@ SELECT
   )) FROM top_categories), '[]'::json) as top_categories;
 ```
 
-### JavaScript для форматирования отчёта:
+**JavaScript для форматирования отчёта:**
 ```javascript
 const data = $json;
 
 // Если нет транзакций - пропускаем пользователя
 if (data.total_transactions === 0) {
-  return null; // Не отправляем отчёт если нет данных
+  return null;
 }
 
 const topCategories = JSON.parse(data.top_categories || '[]');
@@ -423,52 +427,148 @@ return {
 };
 ```
 
-### Пошаговая инструкция для WeeklyReport.json:
-
-1. **Откройте workflow** в n8n
-2. **Удалите 3 узла:**
-   - "Читать доходы"
-   - "Читать расходы"  
-   - "Рассчитать статистику"
-3. **После "Split In Batches" добавьте:**
-   - Postgres узел "Получить статистику пользователя"
-   - Code узел "Форматировать отчёт"
-   - IF узел "Есть данные?" (проверка `{{ $json.total_transactions > 0 }}`)
-4. **Подключите к Telegram узлу**
-5. **Измените узел "Получить пользователей"** с Google Sheets на Postgres
+---
 
 ## 8. Логирование ошибок
 
-### SQL для записи ошибки:
+**Где используется:** ErrorHandling_PostgreSQL.json
+
 ```sql
 INSERT INTO error_logs (error_type, user_id, data, message, severity)
 VALUES (
   '{{ $json.error_type }}',
   {{ $json.user_id || 'NULL' }},
-  '{{ $json.data || "" }}',
-  '{{ $json.message }}',
-  '{{ $json.severity || "error" }}'
+  '{{ JSON.stringify($json) }}',
+  '{{ $json.error_message }}',
+  'error'
 )
 RETURNING *;
 ```
 
 ---
 
-## Примечания по использованию:
+## 9. Банковский парсер
 
-1. **Все SQL запросы используют параметры из контекста n8n** через синтаксис `{{ $json.field }}`
-2. **JavaScript узлы нужны для преобразования данных** перед SQL запросами
-3. **Замените Google Sheets Tool узлы** на:
-   - Code узел (для подготовки данных)
-   - Postgres узел (для выполнения SQL)
-4. **user_id автоматически берётся** из Telegram сообщения
-5. **RLS отключите** в Supabase временно для работы через n8n
+**Где используется:** BankParser_Kyrgyzstan_PostgreSQL.json
+
+**Добавление расхода из банка:**
+```sql
+INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)
+VALUES (
+  1,  -- Замените на user_id из настроек
+  '{{ $json.date }}',
+  '{{ $json.category }}',
+  {{ $json.amount }},
+  '{{ $json.description }}',
+  'расход',
+  'bank_parser'
+)
+RETURNING *;
+```
+
+**Добавление дохода из банка:**
+```sql
+INSERT INTO income (user_id, date, category, amount, description, operation_type, source)
+VALUES (
+  1,  -- Замените на user_id из настроек
+  '{{ $json.date }}',
+  '{{ $json.category }}',
+  {{ $json.amount }},
+  '{{ $json.description }}',
+  'доход',
+  'bank_parser'
+)
+RETURNING *;
+```
 
 ---
 
-## Быстрая замена в основном workflow:
+## 10. Проверка дубликатов
 
-1. Найдите узел "AddRevenueGoogleTable"
-2. Замените на: Code узел + Postgres узел с SQL выше
-3. Повторите для "AddCostGoogleTable"
-4. Добавьте узел "Регистрация пользователя" в начало workflow
+**Где используется:** ErrorHandling_PostgreSQL.json
+
+```sql
+SELECT * FROM expenses 
+WHERE user_id = {{ $json.user_id }}
+  AND date = '{{ $json.date }}'
+  AND amount = {{ $json.amount }}
+  AND category = '{{ $json.category }}'
+LIMIT 1;
+```
+
+---
+
+## Полезные SQL запросы для отладки
+
+### Просмотр всех транзакций пользователя:
+```sql
+SELECT * FROM expenses 
+WHERE user_id = 123456789 
+ORDER BY date DESC 
+LIMIT 50;
+```
+
+### Сумма по категориям за месяц:
+```sql
+SELECT 
+  category,
+  COUNT(*) as count,
+  SUM(amount) as total,
+  AVG(amount) as average
+FROM expenses
+WHERE user_id = 123456789
+  AND date >= '2025-10-01'
+  AND date < '2025-11-01'
+GROUP BY category
+ORDER BY total DESC;
+```
+
+### Статистика пользователя:
+```sql
+SELECT * FROM user_statistics
+WHERE user_id = 123456789;
+```
+
+### Последние ошибки:
+```sql
+SELECT * FROM error_logs
+ORDER BY timestamp DESC
+LIMIT 20;
+```
+
+### Все пользователи с активностью:
+```sql
+SELECT 
+  user_id,
+  username,
+  first_name,
+  last_activity,
+  (SELECT COUNT(*) FROM expenses WHERE expenses.user_id = users.user_id) as expense_count,
+  (SELECT COUNT(*) FROM income WHERE income.user_id = users.user_id) as income_count
+FROM users
+WHERE is_active = true
+ORDER BY last_activity DESC;
+```
+
+---
+
+## Примечания
+
+1. **{{ $json.field }}** - синтаксис n8n для доступа к данным из предыдущих узлов
+2. **$fromAI('field')** - функция для получения данных от AI-агента
+3. **$node["NodeName"]** - доступ к данным конкретного узла
+4. Все даты в формате **YYYY-MM-DD**
+5. Суммы в **сомах (KGS)** без дополнительных обозначений
+
+---
+
+## Копирование в n8n
+
+1. Откройте нужный workflow в n8n
+2. Найдите узел Postgres
+3. Скопируйте SQL запрос отсюда
+4. Вставьте в поле **Query**
+5. Убедитесь, что credentials настроены
+6. Сохраните и протестируйте
+
+**Готово!** 🚀
