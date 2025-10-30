@@ -263,16 +263,25 @@ async function loadStats() {
             })
         });
         
-        const result = await response.json();
+        console.log('Response status:', response.status);
+        const text = await response.text();
+        console.log('Response text:', text);
+        
+        if (!text) {
+            showNotification('API не настроен. Импортируйте MiniApp_API.json в n8n!', 'error');
+            return;
+        }
+        
+        const result = JSON.parse(text);
         
         if (result.success) {
             updateStats(result.data);
         } else {
-            showNotification('Ошибка загрузки статистики', 'error');
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
         }
     } catch (error) {
         console.error('Ошибка:', error);
-        showNotification('Ошибка соединения', 'error');
+        showNotification('Ошибка: ' + error.message, 'error');
     }
 }
 
