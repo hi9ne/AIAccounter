@@ -6,6 +6,9 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
+// Дефолтный User ID (ваш Telegram ID)
+const DEFAULT_USER_ID = 1109421300;
+
 // Валюты
 const currencies = {
     'KGS': { symbol: 'с', name: 'Сом' },
@@ -200,7 +203,7 @@ function startVoiceInput() {
 async function sendToBot(action, data) {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
     
-    const userId = tg.initDataUnsafe?.user?.id || 'unknown';
+    const userId = tg.initDataUnsafe?.user?.id || DEFAULT_USER_ID;
     
     const payload = {
         action: action,
@@ -249,7 +252,7 @@ async function sendToBot(action, data) {
 // === СТАТИСТИКА ===
 async function loadStats() {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
-    const userId = tg.initDataUnsafe?.user?.id || 'unknown';
+    const userId = tg.initDataUnsafe?.user?.id || DEFAULT_USER_ID;
     
     try {
         const response = await fetch(webhookUrl, {
@@ -308,7 +311,7 @@ function updateStats(stats) {
 // === ИСТОРИЯ ТРАНЗАКЦИЙ ===
 async function loadHistory() {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
-    const userId = tg.initDataUnsafe?.user?.id || 'unknown';
+    const userId = tg.initDataUnsafe?.user?.id || DEFAULT_USER_ID;
     const filter = document.getElementById('history-filter').value;
     const period = document.getElementById('history-period').value;
     
