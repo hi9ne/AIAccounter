@@ -370,8 +370,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Сумма (₽)</label>
-                    <input type="number" id="amount" placeholder="0" required step="0.01">
+                    <label>Сумма</label>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <input type="number" id="amount" placeholder="0" required step="0.01">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <select id="currency" required>
+                                <option value="KGS">🇰🇬 Сом</option>
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="RUB">🇷🇺 RUB</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -487,24 +499,41 @@
         tg.ready();
         tg.expand();
 
-        // Категории для доходов и расходов
+        // Валюты
+        const currencies = {
+            'KGS': { symbol: 'с', name: 'Сом' },
+            'USD': { symbol: '$', name: 'Доллар' },
+            'EUR': { symbol: '€', name: 'Евро' },
+            'RUB': { symbol: '₽', name: 'Рубль' }
+        };
+
+        // Категории для доходов и расходов (адаптировано для Кыргызстана)
         const categories = {
             income: [
                 'Зарплата', 'Продажи товаров', 'Продажи услуг', 'Подработка',
                 'Дивиденды от инвестиций', 'Возврат налогов', 'Кэшбек',
-                'Партнерские программы', 'Консалтинг', 'Обучение клиентов'
+                'Партнерские программы', 'Консалтинг', 'Обучение клиентов',
+                'Фриланс', 'Аренда имущества'
             ],
             expense: [
                 'Продукты питания', 'Транспорт', 'Аренда офиса', 'Зарплата сотрудников',
                 'Реклама и маркетинг', 'Налоги и сборы', 'Канцелярия и офис',
                 'Связь и интернет', 'Обучение персонала', 'Страхование',
                 'Банковские услуги', 'Консалтинг и аудит', 'Ремонт и обслуживание',
-                'Коммунальные услуги', 'IT-услуги и софт', 'Командировочные'
+                'Коммунальные услуги', 'IT-услуги и софт', 'Командировочные',
+                'Кафе и рестораны', 'Медицина', 'Одежда', 'Развлечения',
+                'Хозяйственные товары', 'Образование', 'Благотворительность'
             ]
         };
 
         let selectedCategory = '';
+        let selectedCurrency = 'KGS'; // По умолчанию сомы
         let isRecording = false;
+        
+        // Supabase configuration 
+        const SUPABASE_URL = 'postgresql://postgres.ggcmoikpztvbatstcnai:AIAccounter_2025@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnY21vaWtwenR2YmF0c3RjbmFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1NjU5NDksImV4cCI6MjA3NzE0MTk0OX0.xte2Z2m3uJNQZeSAzdasa8mgComZDpJb00k_1dE3EU4';
+        const USE_SUPABASE = true; 
 
         // Инициализация приложения
         document.addEventListener('DOMContentLoaded', function() {
@@ -517,6 +546,10 @@
         function setupEventListeners() {
             document.getElementById('transaction-form').addEventListener('submit', handleSubmit);
             document.getElementById('operation-type').addEventListener('change', loadCategories);
+            document.getElementById('currency').addEventListener('change', function() {
+                selectedCurrency = this.value;
+                updateCurrencyDisplay();
+            });
             document.getElementById('history-filter').addEventListener('change', loadHistory);
             document.getElementById('history-period').addEventListener('change', loadHistory);
         }
@@ -566,6 +599,11 @@
             // Выделить выбранную категорию
             element.classList.add('selected');
             selectedCategory = category;
+        }
+        
+        function updateCurrencyDisplay() {
+            const currency = currencies[selectedCurrency];
+            // Можно добавить обновление отображения в UI
         }
 
         function quickAdd(type) {
@@ -624,21 +662,65 @@
                 return;
             }
 
+            const amount = parseFloat(document.getElementById('amount').value);
+            const currency = document.getElementById('currency').value;
             const formData = {
                 type: document.getElementById('operation-type').value,
-                amount: parseFloat(document.getElementById('amount').value),
+                amount: amount,
+                currency: currency,
                 category: selectedCategory,
                 description: document.getElementById('description').value,
                 date: document.getElementById('date').value,
-                time: document.getElementById('time').value
+                time: document.getElementById('time').value,
+                telegram_user_id: tg.initDataUnsafe?.user?.id || 0
             };
 
-            // Отправка данных в Telegram бот
-            sendToBot(formData);
+            // Отправка данных
+            if (USE_SUPABASE) {
+                sendToSupabase(formData);
+            } else {
+                sendToBot(formData);
+            }
+        }
+        
+        async function sendToSupabase(data) {
+            try {
+                const table = data.type === 'income' ? 'income' : 'expenses';
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        amount: data.amount,
+                        currency: data.currency,
+                        category: data.category,
+                        description: data.description,
+                        date: `${data.date}T${data.time}:00`,
+                        telegram_user_id: data.telegram_user_id
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('Транзакция успешно добавлена!', 'success');
+                    resetForm();
+                    loadStats();
+                } else {
+                    const error = await response.json();
+                    showNotification('Ошибка: ' + error.message, 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                showNotification('Ошибка соединения с базой данных', 'error');
+            }
         }
 
         function sendToBot(data) {
-            const message = `${data.type === 'income' ? 'Доход' : 'Расход'} ${data.amount} руб, категория: ${data.category}${data.description ? ', описание: ' + data.description : ''}`;
+            const currencySymbol = currencies[data.currency].symbol;
+            const message = `${data.type === 'income' ? 'Доход' : 'Расход'} ${data.amount} ${data.currency}, категория: ${data.category}${data.description ? ', описание: ' + data.description : ''}`;
             
             // Отправка сообщения боту
             tg.sendData(JSON.stringify({
@@ -647,11 +729,16 @@
             }));
 
             // Показать уведомление
-            showNotification('Транзакция успешно добавлена!', 'success');
+            showNotification(`Транзакция ${data.amount} ${currencySymbol} успешно добавлена!`, 'success');
             
             // Очистить форму
+            resetForm();
+        }
+        
+        function resetForm() {
             document.getElementById('transaction-form').reset();
             selectedCategory = '';
+            selectedCurrency = 'KGS';
             document.querySelectorAll('.category-item').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -726,9 +813,12 @@
         });
 
         function updateStats(stats) {
-            document.getElementById('monthly-income').textContent = stats.income.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('monthly-expenses').textContent = stats.expenses.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('profit').textContent = stats.profit.toLocaleString('ru-RU') + ' ₽';
+            const currency = stats.currency || 'KGS';
+            const currencySymbol = currencies[currency].symbol;
+            
+            document.getElementById('monthly-income').textContent = stats.income.toLocaleString('ru-RU') + ' ' + currencySymbol;
+            document.getElementById('monthly-expenses').textContent = stats.expenses.toLocaleString('ru-RU') + ' ' + currencySymbol;
+            document.getElementById('profit').textContent = stats.profit.toLocaleString('ru-RU') + ' ' + currencySymbol;
             document.getElementById('transactions-count').textContent = stats.count;
             
             const profitElement = document.getElementById('profit');
@@ -739,16 +829,26 @@
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = '';
             
+            if (!history || history.length === 0) {
+                historyList.innerHTML = '<div class="loading">История пуста</div>';
+                return;
+            }
+            
             history.forEach(item => {
+                const currency = item.currency || 'KGS';
+                const currencySymbol = currencies[currency].symbol;
                 const historyItem = document.createElement('div');
                 historyItem.className = `history-item ${item.type}`;
                 
                 historyItem.innerHTML = `
                     <div class="history-header">
-                        <span class="history-amount">${item.amount.toLocaleString('ru-RU')} ₽</span>
+                        <span class="history-amount">${item.amount.toLocaleString('ru-RU')} ${currencySymbol}</span>
                         <span class="history-category">${item.category}</span>
                     </div>
                     <div class="history-description">${item.description || ''}</div>
+                    <div class="history-date" style="font-size: 12px; opacity: 0.6; margin-top: 5px;">
+                        ${new Date(item.date).toLocaleDateString('ru-RU')}
+                    </div>
                 `;
                 
                 historyList.appendChild(historyItem);
