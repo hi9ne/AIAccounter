@@ -361,13 +361,14 @@ function createHistoryItem(item) {
     const currencySymbol = currencies[currency].symbol;
     const historyItem = document.createElement('div');
     const isDeleted = item.deleted_at !== null;
+    const amount = parseFloat(item.amount) || 0;
     
     historyItem.className = `history-item ${item.type}${isDeleted ? ' deleted' : ''}`;
     
     historyItem.innerHTML = `
         <div class="history-header">
-            <span class="history-amount">${item.amount.toLocaleString('ru-RU')} ${currencySymbol}</span>
-            <span class="history-category">${item.category}</span>
+            <span class="history-amount">${amount.toLocaleString('ru-RU')} ${currencySymbol}</span>
+            <span class="history-category">${item.category || 'Без категории'}</span>
         </div>
         ${item.description ? `<div class="history-description">${item.description}</div>` : ''}
         <div class="history-date">

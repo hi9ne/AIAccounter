@@ -177,7 +177,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO {{ $json.type === 'income' ? 'income' : 'expenses' }} \n(amount, currency, category, description, date, user_id, created_at)\nVALUES ($1, $2, $3, $4, $5, $6, NOW())\nRETURNING id, amount, currency, category, description, date;",
+        "query": "=INSERT INTO {{ $json.type === 'income' ? 'income' : 'expenses' }} \n(amount, currency, category, description, date, user_id, created_at)\nVALUES (\n  {{ $json.amount }},\n  '{{ $json.currency }}',\n  '{{ $json.category }}',\n  '{{ $json.description }}',\n  '{{ $json.date }}',\n  {{ $json.userId }},\n  NOW()\n)\nRETURNING id, amount, currency, category, description, date;",
         "additionalFields": {}
       },
       "id": "insert-transaction",
