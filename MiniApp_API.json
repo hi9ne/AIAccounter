@@ -1,5 +1,5 @@
 {
-  "name": "MiniApp API",
+  "name": "MiniApp API v2.2.0",
   "nodes": [
     {
       "parameters": {
@@ -14,52 +14,182 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [0, 300],
+      "position": [0, 500],
       "webhookId": "miniapp-webhook"
     },
     {
       "parameters": {
-        "conditions": {
-          "string": [
+        "mode": "rules",
+        "rules": {
+          "values": [
             {
-              "value1": "={{ $json.body.action }}",
-              "operation": "equals",
-              "value2": "add_transaction"
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "add_transaction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "add_transaction"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "get_stats",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get_stats"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "get_history",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get_history"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "edit_transaction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edit_transaction"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "delete_transaction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete_transaction"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "restore_transaction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "restore_transaction"
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "check-action",
+      "id": "switch-action",
       "name": "Switch by Action",
       "type": "n8n-nodes-base.switch",
-      "typeVersion": 1,
-      "position": [200, 300]
+      "typeVersion": 3,
+      "position": [200, 500]
     },
     {
       "parameters": {
-        "functionCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  json: {\n    type: data.type,\n    amount: parseFloat(data.amount),\n    currency: data.currency || 'KGS',\n    category: data.category,\n    description: data.description || '',\n    date: data.date,\n    time: data.time || '00:00',\n    userId: userId\n  }\n};"
+        "jsCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  type: data.type,\n  amount: parseFloat(data.amount),\n  currency: data.currency || 'KGS',\n  category: data.category,\n  description: data.description || '',\n  date: data.date,\n  time: data.time || '00:00',\n  userId: userId\n};"
       },
-      "id": "prepare-data",
-      "name": "Prepare Data",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
+      "id": "prepare-add",
+      "name": "Prepare Add Transaction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [400, 200]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO {{ $json.type === 'income' ? 'income' : 'expenses' }} (amount, currency, category, description, date, time, telegram_user_id, created_at)\nVALUES ($1, $2, $3, $4, $5, $6, $7, NOW())\nRETURNING id, amount, currency, category;",
+        "query": "=INSERT INTO {{ $json.type === 'income' ? 'income' : 'expenses' }} \n(amount, currency, category, description, date, time, telegram_user_id, created_at)\nVALUES ($1, $2, $3, $4, $5, $6, $7, NOW())\nRETURNING id, amount, currency, category, description, date;",
         "additionalFields": {}
       },
       "id": "insert-transaction",
-      "name": "PostgreSQL Insert",
+      "name": "Insert Transaction",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [600, 200],
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
-          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
-          "name": "PostgreSQL"
+          "id": "fFymVphշփշքդձգղճճճշ",
+          "name": "PostgreSQL account"
         }
       }
     },
@@ -68,22 +198,235 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, message: 'Transaction added', data: $json } }}"
       },
-      "id": "response-success",
-      "name": "Respond Success",
+      "id": "response-add",
+      "name": "Response Add",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [800, 200]
     },
     {
       "parameters": {
+        "jsCode": "const userId = $input.item.json.body.userId || 'unknown';\n\nreturn { userId };"
+      },
+      "id": "prepare-stats",
+      "name": "Prepare Get Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) as income,\n  COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) as expenses,\n  COUNT(*) as count,\n  'KGS' as currency\nFROM (\n  SELECT amount, 'income' as type FROM income \n  WHERE telegram_user_id = '{{ $json.userId }}' \n  AND deleted_at IS NULL\n  AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)\n  AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n  UNION ALL\n  SELECT amount, 'expense' as type FROM expenses \n  WHERE telegram_user_id = '{{ $json.userId }}' \n  AND deleted_at IS NULL\n  AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)\n  AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n) t;",
+        "additionalFields": {}
+      },
+      "id": "get-stats",
+      "name": "Get Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [600, 400],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fFymVphշփշքդձգղճճճշ",
+          "name": "PostgreSQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $input.item.json;\nconst profit = (stats.income || 0) - (stats.expenses || 0);\n\nreturn {\n  success: true,\n  data: {\n    income: stats.income || 0,\n    expenses: stats.expenses || 0,\n    profit: profit,\n    count: stats.count || 0,\n    currency: stats.currency || 'KGS'\n  }\n};"
+      },
+      "id": "format-stats",
+      "name": "Format Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: false, error: 'Unknown action' } }}"
+        "responseBody": "={{ $json }}"
+      },
+      "id": "response-stats",
+      "name": "Response Stats",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1000, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const userId = $input.item.json.body.userId || 'unknown';\nconst filter = $input.item.json.body.data?.filter || 'all';\nconst period = $input.item.json.body.data?.period || 'month';\n\nreturn { userId, filter, period };"
+      },
+      "id": "prepare-history",
+      "name": "Prepare Get History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 600]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH combined AS (\n  SELECT \n    id,\n    amount,\n    currency,\n    category,\n    description,\n    date,\n    time,\n    'income' as type,\n    deleted_at,\n    created_at\n  FROM income\n  WHERE telegram_user_id = '{{ $json.userId }}'\n  {{ $json.filter === 'income' ? '' : (\n    $json.filter === 'expense' ? 'AND 1=0' : ''\n  ) }}\n  \n  UNION ALL\n  \n  SELECT \n    id,\n    amount,\n    currency,\n    category,\n    description,\n    date,\n    time,\n    'expense' as type,\n    deleted_at,\n    created_at\n  FROM expenses\n  WHERE telegram_user_id = '{{ $json.userId }}'\n  {{ $json.filter === 'expense' ? '' : (\n    $json.filter === 'income' ? 'AND 1=0' : ''\n  ) }}\n)\nSELECT * FROM combined\nWHERE \n  CASE \n    WHEN '{{ $json.period }}' = 'today' THEN date = CURRENT_DATE\n    WHEN '{{ $json.period }}' = 'week' THEN date >= CURRENT_DATE - INTERVAL '7 days'\n    WHEN '{{ $json.period }}' = 'month' THEN \n      EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)\n      AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    WHEN '{{ $json.period }}' = 'year' THEN \n      EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    ELSE TRUE\n  END\nORDER BY date DESC, created_at DESC\nLIMIT 100;",
+        "additionalFields": {}
+      },
+      "id": "get-history",
+      "name": "Get History",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [600, 600],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fFymVphշփշքդձգղճճճշ",
+          "name": "PostgreSQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, data: $input.all() } }}"
+      },
+      "id": "response-history",
+      "name": "Response History",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  transactionId: data.transaction_id,\n  transactionType: data.transaction_type,\n  field: data.field,\n  newValue: data.new_value,\n  userId: userId\n};"
+      },
+      "id": "prepare-edit",
+      "name": "Prepare Edit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 800]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE {{ $json.transactionType === 'income' ? 'income' : 'expenses' }}\nSET {{ $json.field }} = '{{ $json.newValue }}', updated_at = NOW()\nWHERE id = {{ $json.transactionId }}\nAND telegram_user_id = '{{ $json.userId }}'\nAND deleted_at IS NULL\nRETURNING *;",
+        "additionalFields": {}
+      },
+      "id": "update-transaction",
+      "name": "Update Transaction",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [600, 800],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fFymVphշփշքդձգղճճճշ",
+          "name": "PostgreSQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Transaction updated', data: $json } }}"
+      },
+      "id": "response-edit",
+      "name": "Response Edit",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  transactionId: data.transaction_id,\n  transactionType: data.transaction_type,\n  userId: userId\n};"
+      },
+      "id": "prepare-delete",
+      "name": "Prepare Delete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 1000]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE {{ $json.transactionType === 'income' ? 'income' : 'expenses' }}\nSET deleted_at = NOW()\nWHERE id = {{ $json.transactionId }}\nAND telegram_user_id = '{{ $json.userId }}'\nAND deleted_at IS NULL\nRETURNING *;",
+        "additionalFields": {}
+      },
+      "id": "delete-transaction",
+      "name": "Delete Transaction",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [600, 1000],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fFymVphշփշքդձգղճճճշ",
+          "name": "PostgreSQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Transaction deleted', data: $json } }}"
+      },
+      "id": "response-delete",
+      "name": "Response Delete",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 1000]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  transactionId: data.transaction_id,\n  transactionType: data.transaction_type,\n  userId: userId\n};"
+      },
+      "id": "prepare-restore",
+      "name": "Prepare Restore",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 1200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE {{ $json.transactionType === 'income' ? 'income' : 'expenses' }}\nSET deleted_at = NULL\nWHERE id = {{ $json.transactionId }}\nAND telegram_user_id = '{{ $json.userId }}'\nRETURNING *;",
+        "additionalFields": {}
+      },
+      "id": "restore-transaction",
+      "name": "Restore Transaction",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [600, 1200],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "fFymVphշփշքդձգղճճճշ",
+          "name": "PostgreSQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Transaction restored', data: $json } }}"
+      },
+      "id": "response-restore",
+      "name": "Response Restore",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 1200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
+        "options": {
+          "responseCode": 400
+        }
       },
       "id": "response-error",
-      "name": "Respond Error",
+      "name": "Response Error",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [800, 400]
+      "typeVersion": 1.1,
+      "position": [400, 1400]
     }
   ],
   "connections": {
@@ -102,36 +445,192 @@
       "main": [
         [
           {
-            "node": "Prepare Data",
+            "node": "Prepare Add Transaction",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Respond Error",
+            "node": "Prepare Get Stats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Get History",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Edit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Delete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Restore",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Data": {
+    "Prepare Add Transaction": {
       "main": [
         [
           {
-            "node": "PostgreSQL Insert",
+            "node": "Insert Transaction",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "PostgreSQL Insert": {
+    "Insert Transaction": {
       "main": [
         [
           {
-            "node": "Respond Success",
+            "node": "Response Add",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Get Stats": {
+      "main": [
+        [
+          {
+            "node": "Get Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stats": {
+      "main": [
+        [
+          {
+            "node": "Format Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Stats": {
+      "main": [
+        [
+          {
+            "node": "Response Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Get History": {
+      "main": [
+        [
+          {
+            "node": "Get History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get History": {
+      "main": [
+        [
+          {
+            "node": "Response History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Edit": {
+      "main": [
+        [
+          {
+            "node": "Update Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Transaction": {
+      "main": [
+        [
+          {
+            "node": "Response Edit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Delete": {
+      "main": [
+        [
+          {
+            "node": "Delete Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Transaction": {
+      "main": [
+        [
+          {
+            "node": "Response Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Restore": {
+      "main": [
+        [
+          {
+            "node": "Restore Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Transaction": {
+      "main": [
+        [
+          {
+            "node": "Response Restore",
             "type": "main",
             "index": 0
           }
@@ -141,5 +640,9 @@
   },
   "settings": {
     "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "your-instance-id"
   }
 }
