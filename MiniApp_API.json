@@ -153,6 +153,28 @@
               },
               "renameOutput": true,
               "outputKey": "restore_transaction"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "generate_report",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "generate_report"
             }
           ]
         },
@@ -417,6 +439,17 @@
     {
       "parameters": {
         "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'PDF generation not implemented yet', data: { status: 'pending', format: 'pdf' } } }}"
+      },
+      "id": "response-report",
+      "name": "Response Report",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [400, 1300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
         "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
         "options": {
           "responseCode": 400
@@ -481,6 +514,13 @@
         [
           {
             "node": "Prepare Restore",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Report",
             "type": "main",
             "index": 0
           }
