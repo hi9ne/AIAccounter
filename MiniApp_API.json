@@ -166,7 +166,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  type: data.type,\n  amount: parseFloat(data.amount),\n  currency: data.currency || 'KGS',\n  category: data.category,\n  description: data.description || '',\n  date: data.date,\n  time: data.time || '00:00',\n  userId: userId\n};"
+        "jsCode": "const data = $input.item.json.body.data;\nconst userId = $input.item.json.body.userId || 'unknown';\n\nreturn {\n  type: data.type,\n  amount: parseFloat(data.amount),\n  currency: data.currency || 'KGS',\n  category: data.category,\n  description: data.description || '',\n  date: data.date,\n  userId: userId\n};"
       },
       "id": "prepare-add",
       "name": "Prepare Add Transaction",
@@ -177,7 +177,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO {{ $json.type === 'income' ? 'income' : 'expenses' }} \n(amount, currency, category, description, date, time, user_id, created_at)\nVALUES ($1, $2, $3, $4, $5, $6, $7, NOW())\nRETURNING id, amount, currency, category, description, date;",
+        "query": "=INSERT INTO {{ $json.type === 'income' ? 'income' : 'expenses' }} \n(amount, currency, category, description, date, user_id, created_at)\nVALUES ($1, $2, $3, $4, $5, $6, NOW())\nRETURNING id, amount, currency, category, description, date;",
         "additionalFields": {}
       },
       "id": "insert-transaction",
@@ -267,7 +267,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=WITH combined AS (\n  SELECT \n    id,\n    amount,\n    currency,\n    category,\n    description,\n    date,\n    time,\n    'income' as type,\n    deleted_at,\n    created_at\n  FROM income\n  WHERE user_id = {{ $json.userId }}\n  {{ $json.filter === 'income' ? '' : (\n    $json.filter === 'expense' ? 'AND 1=0' : ''\n  ) }}\n  \n  UNION ALL\n  \n  SELECT \n    id,\n    amount,\n    currency,\n    category,\n    description,\n    date,\n    time,\n    'expense' as type,\n    deleted_at,\n    created_at\n  FROM expenses\n  WHERE user_id = {{ $json.userId }}\n  {{ $json.filter === 'expense' ? '' : (\n    $json.filter === 'income' ? 'AND 1=0' : ''\n  ) }}\n)\nSELECT * FROM combined\nWHERE \n  CASE \n    WHEN '{{ $json.period }}' = 'today' THEN date = CURRENT_DATE\n    WHEN '{{ $json.period }}' = 'week' THEN date >= CURRENT_DATE - INTERVAL '7 days'\n    WHEN '{{ $json.period }}' = 'month' THEN \n      EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)\n      AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    WHEN '{{ $json.period }}' = 'year' THEN \n      EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    ELSE TRUE\n  END\nORDER BY date DESC, created_at DESC\nLIMIT 100;",
+        "query": "=WITH combined AS (\n  SELECT \n    id,\n    amount,\n    currency,\n    category,\n    description,\n    date,\n    'income' as type,\n    deleted_at,\n    created_at\n  FROM income\n  WHERE user_id = {{ $json.userId }}\n  {{ $json.filter === 'income' ? '' : (\n    $json.filter === 'expense' ? 'AND 1=0' : ''\n  ) }}\n  \n  UNION ALL\n  \n  SELECT \n    id,\n    amount,\n    currency,\n    category,\n    description,\n    date,\n    'expense' as type,\n    deleted_at,\n    created_at\n  FROM expenses\n  WHERE user_id = {{ $json.userId }}\n  {{ $json.filter === 'expense' ? '' : (\n    $json.filter === 'income' ? 'AND 1=0' : ''\n  ) }}\n)\nSELECT * FROM combined\nWHERE \n  CASE \n    WHEN '{{ $json.period }}' = 'today' THEN date = CURRENT_DATE\n    WHEN '{{ $json.period }}' = 'week' THEN date >= CURRENT_DATE - INTERVAL '7 days'\n    WHEN '{{ $json.period }}' = 'month' THEN \n      EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)\n      AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    WHEN '{{ $json.period }}' = 'year' THEN \n      EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    ELSE TRUE\n  END\nORDER BY date DESC, created_at DESC\nLIMIT 100;",
         "additionalFields": {}
       },
       "id": "get-history",
