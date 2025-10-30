@@ -6,8 +6,14 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// Дефолтный User ID (ваш Telegram ID)
-const DEFAULT_USER_ID = 1109421300;
+// Функция для получения User ID
+function getUserId() {
+    const userId = tg.initDataUnsafe?.user?.id;
+    if (!userId) {
+        throw new Error('Не удалось получить Telegram ID. Откройте приложение через Telegram.');
+    }
+    return userId;
+}
 
 // Валюты
 const currencies = {
@@ -203,15 +209,15 @@ function startVoiceInput() {
 async function sendToBot(action, data) {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
     
-    const userId = tg.initDataUnsafe?.user?.id || DEFAULT_USER_ID;
-    
-    const payload = {
-        action: action,
-        data: data,
-        userId: userId
-    };
-    
     try {
+        const userId = getUserId();
+        
+        const payload = {
+            action: action,
+            data: data,
+            userId: userId
+        };
+        
         const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: {
@@ -252,9 +258,10 @@ async function sendToBot(action, data) {
 // === СТАТИСТИКА ===
 async function loadStats() {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
-    const userId = tg.initDataUnsafe?.user?.id || DEFAULT_USER_ID;
     
     try {
+        const userId = getUserId();
+        
         const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: {
@@ -311,11 +318,12 @@ function updateStats(stats) {
 // === ИСТОРИЯ ТРАНЗАКЦИЙ ===
 async function loadHistory() {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
-    const userId = tg.initDataUnsafe?.user?.id || DEFAULT_USER_ID;
     const filter = document.getElementById('history-filter').value;
     const period = document.getElementById('history-period').value;
     
     try {
+        const userId = getUserId();
+        
         const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: {
