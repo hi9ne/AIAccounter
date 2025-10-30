@@ -196,26 +196,84 @@ function startVoiceInput() {
     recognition.start();
 }
 
-// === ОТПРАВКА ДАННЫХ БОТУ ===
-function sendToBot(action, data) {
-    const message = {
+// === ОТПРАВКА ДАННЫХ НА WEBHOOK ===
+async function sendToBot(action, data) {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    const userId = tg.initDataUnsafe?.user?.id || 'unknown';
+    
+    const payload = {
         action: action,
-        data: data
+        data: data,
+        userId: userId
     };
     
-    tg.sendData(JSON.stringify(message));
-    
-    // Показать уведомление
-    if (action === 'add_transaction') {
-        const currencySymbol = currencies[data.currency].symbol;
-        showNotification(`Транзакция ${data.amount} ${currencySymbol} отправлена!`, 'success');
-        resetForm();
+    try {
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Успех
+            if (action === 'add_transaction') {
+                const currencySymbol = currencies[data.currency].symbol;
+                showNotification(`Транзакция ${data.amount} ${currencySymbol} добавлена!`, 'success');
+                resetForm();
+                loadStats(); // Обновить статистику
+                loadHistory(); // Обновить историю
+            } else if (action === 'edit_transaction') {
+                showNotification('Транзакция изменена!', 'success');
+                loadHistory();
+            } else if (action === 'delete_transaction') {
+                showNotification('Транзакция удалена!', 'success');
+                loadHistory();
+            } else if (action === 'restore_transaction') {
+                showNotification('Транзакция восстановлена!', 'success');
+                loadHistory();
+            }
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка отправки:', error);
+        showNotification('Ошибка соединения с сервером', 'error');
     }
 }
 
 // === СТАТИСТИКА ===
-function loadStats() {
-    sendToBot('get_stats', {});
+async function loadStats() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    const userId = tg.initDataUnsafe?.user?.id || 'unknown';
+    
+    try {
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_stats',
+                userId: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateStats(result.data);
+        } else {
+            showNotification('Ошибка загрузки статистики', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
 }
 
 function refreshStats() {
@@ -239,14 +297,39 @@ function updateStats(stats) {
 }
 
 // === ИСТОРИЯ ТРАНЗАКЦИЙ ===
-function loadHistory() {
+async function loadHistory() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    const userId = tg.initDataUnsafe?.user?.id || 'unknown';
     const filter = document.getElementById('history-filter').value;
     const period = document.getElementById('history-period').value;
     
-    sendToBot('get_history', {
-        filter: filter,
-        period: period
-    });
+    try {
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_history',
+                userId: userId,
+                data: {
+                    filter: filter,
+                    period: period
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateHistory(result.data);
+        } else {
+            showNotification('Ошибка загрузки истории', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
 }
 
 function updateHistory(history) {
