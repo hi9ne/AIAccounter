@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Accounter - Финансовый помощник</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 AI Accounter</h1>
+            <p>Ваш персональный финансовый помощник</p>
+            <p class="version">v2.2.0 - Transaction Management</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('add')">➕ Добавить</div>
+            <div class="tab" onclick="switchTab('stats')">📊 Статистика</div>
+            <div class="tab" onclick="switchTab('history')">📋 История</div>
+            <div class="tab" onclick="switchTab('reports')">📄 Отчёты</div>
+        </div>
+
+        <!-- Добавление транзакции -->
+        <div id="add-tab" class="tab-content active">
+            <div class="quick-actions">
+                <div class="quick-action" onclick="quickAdd('income')">
+                    <div class="icon">💰</div>
+                    <div class="text">Доход</div>
+                </div>
+                <div class="quick-action" onclick="quickAdd('expense')">
+                    <div class="icon">💸</div>
+                    <div class="text">Расход</div>
+                </div>
+            </div>
+
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label>Тип операции</label>
+                    <select id="operation-type" required>
+                        <option value="income">💰 Доход</option>
+                        <option value="expense">💸 Расход</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Сумма</label>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <input type="number" id="amount" placeholder="0" required step="0.01">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <select id="currency" required>
+                                <option value="KGS">🇰🇬 Сом</option>
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="RUB">🇷🇺 RUB</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Категория</label>
+                    <div class="category-grid" id="category-grid">
+                        <!-- Категории будут загружены динамически -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Описание</label>
+                    <div class="voice-input">
+                        <textarea id="description" placeholder="Опишите транзакцию..." rows="3"></textarea>
+                        <button type="button" class="voice-btn" onclick="startVoiceInput()">🎤</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Время</label>
+                        <input type="time" id="time" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success">💾 Сохранить</button>
+            </form>
+        </div>
+
+        <!-- Статистика -->
+        <div id="stats-tab" class="tab-content">
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Доходы за месяц</span>
+                    <span class="stat-value positive" id="monthly-income">0 с</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Расходы за месяц</span>
+                    <span class="stat-value negative" id="monthly-expenses">0 с</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Прибыль</span>
+                    <span class="stat-value" id="profit">0 с</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Транзакций</span>
+                    <span class="stat-value" id="transactions-count">0</span>
+                </div>
+            </div>
+
+            <button class="btn" onclick="refreshStats()">🔄 Обновить</button>
+        </div>
+
+        <!-- История -->
+        <div id="history-tab" class="tab-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <select id="history-filter">
+                        <option value="all">Все операции</option>
+                        <option value="income">Только доходы</option>
+                        <option value="expense">Только расходы</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select id="history-period">
+                        <option value="week">За неделю</option>
+                        <option value="month">За месяц</option>
+                        <option value="year">За год</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="history-list">
+                <!-- История будет загружена динамически -->
+            </div>
+
+            <button class="btn" onclick="loadHistory()">📋 Загрузить историю</button>
+        </div>
+
+        <!-- Отчёты -->
+        <div id="reports-tab" class="tab-content">
+            <div class="quick-actions">
+                <div class="quick-action" onclick="generateReport('pdf')">
+                    <div class="icon">📄</div>
+                    <div class="text">PDF отчёт</div>
+                </div>
+                <div class="quick-action" onclick="generateReport('excel')">
+                    <div class="icon">📊</div>
+                    <div class="text">Excel отчёт</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Период отчёта</label>
+                <select id="report-period">
+                    <option value="month">Текущий месяц</option>
+                    <option value="quarter">Текущий квартал</option>
+                    <option value="year">Текущий год</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="generateReport('pdf')">📄 Создать PDF</button>
+            <button class="btn btn-secondary" onclick="generateReport('excel')">📊 Создать Excel</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

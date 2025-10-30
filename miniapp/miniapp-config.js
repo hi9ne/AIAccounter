@@ -22,10 +22,10 @@ const MINIAPP_CONFIG = {
     language: 'ru',
     
     // Режим работы
-    mode: 'supabase', // 'bot' или 'supabase'
+    mode: 'bot', // 'bot' - безопасный режим через Telegram Bot (РЕКОМЕНДУЕТСЯ)
     
-    // Webhook для n8n (опционально)
-    n8nWebhook: 'https://your-n8n-instance.com/webhook/miniapp'
+    // n8n webhook для прямых API запросов (если нужно)
+    n8nWebhook: null // Оставить null если используете режим 'bot'
 };
 
 // Экспорт для использования в приложении
