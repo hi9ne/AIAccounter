@@ -1126,46 +1126,113 @@ let balanceTrendChart = null;
 
 async function loadAnalytics() {
     const period = document.getElementById('analytics-period').value;
-    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/analytics-api';
+    const analyticsUrl = 'https://hi9neee.app.n8n.cloud/webhook/analytics-api';
+    
+    // Определяем даты на основе периода
+    let startDate, endDate;
+    const today = new Date();
+    endDate = today.toISOString().split('T')[0];
+    
+    switch(period) {
+        case 'week':
+            const weekAgo = new Date(today);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            startDate = weekAgo.toISOString().split('T')[0];
+            break;
+        case 'month':
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            startDate = monthAgo.toISOString().split('T')[0];
+            break;
+        case 'quarter':
+            const quarterAgo = new Date(today);
+            quarterAgo.setMonth(quarterAgo.getMonth() - 3);
+            startDate = quarterAgo.toISOString().split('T')[0];
+            break;
+        case 'year':
+            const yearAgo = new Date(today);
+            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+            startDate = yearAgo.toISOString().split('T')[0];
+            break;
+        default:
+            const defaultAgo = new Date(today);
+            defaultAgo.setMonth(defaultAgo.getMonth() - 1);
+            startDate = defaultAgo.toISOString().split('T')[0];
+    }
     
     try {
-        const userId = getUserId();
+        const workspaceId = getCurrentWorkspaceId();
         
-        // Получаем статистику
-        const statsResponse = await fetch(webhookUrl, {
+        // 1. Загружаем статистику доходов/расходов
+        const statsResponse = await fetch(analyticsUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                action: 'get_stats',
-                userId: userId,
-                period: period
+                action: 'get_income_expense_stats',
+                workspace_id: workspaceId,
+                start_date: startDate,
+                end_date: endDate
             })
         });
+        const statsResult = await statsResponse.json();
         
-        const stats = await statsResponse.json();
-        
-        if (stats.success) {
-            updateMetrics(stats.data);
+        if (statsResult.success && statsResult.data.length > 0) {
+            updateMetrics(statsResult.data[0]);
         }
         
-        // Получаем данные для графиков
-        const chartsResponse = await fetch(webhookUrl, {
+        // 2. Загружаем данные для графика доходов/расходов
+        const interval = period === 'week' ? 'day' : (period === 'year' ? 'month' : 'day');
+        const chartResponse = await fetch(analyticsUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'get_chart_data',
-                userId: userId,
-                period: period
+                workspace_id: workspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                interval: interval
             })
         });
+        const chartResult = await chartResponse.json();
         
-        const charts = await chartsResponse.json();
+        if (chartResult.success) {
+            renderIncomeExpenseChart(chartResult.data);
+        }
         
-        if (charts.success) {
-            renderIncomeExpenseChart(charts.data.incomeExpense);
-            renderCategoryPieChart(charts.data.categories);
-            renderBalanceTrendChart(charts.data.balance);
-            renderTopCategories(charts.data.topCategories);
+        // 3. Загружаем топ категорий для pie chart
+        const categoriesResponse = await fetch(analyticsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_top_categories',
+                workspace_id: workspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                limit: 10
+            })
+        });
+        const categoriesResult = await categoriesResponse.json();
+        
+        if (categoriesResult.success) {
+            renderCategoryPieChart(categoriesResult.data);
+            renderTopCategories(categoriesResult.data);
+        }
+        
+        // 4. Загружаем тренд баланса
+        const trendResponse = await fetch(analyticsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_balance_trend',
+                workspace_id: workspaceId,
+                start_date: startDate,
+                end_date: endDate
+            })
+        });
+        const trendResult = await trendResponse.json();
+        
+        if (trendResult.success) {
+            renderBalanceTrendChart(trendResult.data);
         }
         
     } catch (error) {
@@ -1175,36 +1242,47 @@ async function loadAnalytics() {
 }
 
 function updateMetrics(data) {
-    document.getElementById('total-income').textContent = formatAmount(data.income || 0);
-    document.getElementById('total-expenses').textContent = formatAmount(data.expenses || 0);
-    document.getElementById('net-balance').textContent = formatAmount(data.balance || 0);
+    document.getElementById('total-income').textContent = formatAmount(data.total_income || 0);
+    document.getElementById('total-expenses').textContent = formatAmount(data.total_expenses || 0);
     
-    const savingsRate = data.income > 0 ? ((data.balance / data.income) * 100).toFixed(1) : 0;
+    const balance = (data.total_income || 0) - (data.total_expenses || 0);
+    document.getElementById('net-balance').textContent = formatAmount(balance);
+    
+    const savingsRate = data.total_income > 0 ? ((balance / data.total_income) * 100).toFixed(1) : 0;
     document.getElementById('savings-rate').textContent = savingsRate + '%';
 }
 
 function renderIncomeExpenseChart(data) {
     const ctx = document.getElementById('incomeExpenseChart');
     
+    if (!data || data.length === 0) {
+        return;
+    }
+    
     if (incomeExpenseChart) {
         incomeExpenseChart.destroy();
     }
     
+    // Формируем labels и datasets из данных
+    const labels = data.map(item => item.date || item.month);
+    const incomeData = data.map(item => item.income_amount || 0);
+    const expenseData = data.map(item => item.expense_amount || 0);
+    
     incomeExpenseChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.labels || [],
+            labels: labels,
             datasets: [
                 {
                     label: 'Доходы',
-                    data: data.income || [],
+                    data: incomeData,
                     borderColor: 'rgb(34, 197, 94)',
                     backgroundColor: 'rgba(34, 197, 94, 0.1)',
                     tension: 0.4
                 },
                 {
                     label: 'Расходы',
-                    data: data.expenses || [],
+                    data: expenseData,
                     borderColor: 'rgb(239, 68, 68)',
                     backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     tension: 0.4
@@ -1231,16 +1309,24 @@ function renderIncomeExpenseChart(data) {
 function renderCategoryPieChart(data) {
     const ctx = document.getElementById('categoryPieChart');
     
+    if (!data || data.length === 0) {
+        return;
+    }
+    
     if (categoryPieChart) {
         categoryPieChart.destroy();
     }
     
+    // Формируем labels и values из данных get_top_categories
+    const labels = data.map(item => item.category || 'Без категории');
+    const values = data.map(item => parseFloat(item.total_amount) || 0);
+    
     categoryPieChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: data.labels || [],
+            labels: labels,
             datasets: [{
-                data: data.values || [],
+                data: values,
                 backgroundColor: [
                     'rgb(239, 68, 68)',
                     'rgb(34, 197, 94)',
@@ -1270,17 +1356,25 @@ function renderCategoryPieChart(data) {
 function renderBalanceTrendChart(data) {
     const ctx = document.getElementById('balanceTrendChart');
     
+    if (!data || data.length === 0) {
+        return;
+    }
+    
     if (balanceTrendChart) {
         balanceTrendChart.destroy();
     }
     
+    // Формируем labels и values из данных get_balance_trend
+    const labels = data.map(item => item.date);
+    const values = data.map(item => parseFloat(item.cumulative_balance) || 0);
+    
     balanceTrendChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.labels || [],
+            labels: labels,
             datasets: [{
                 label: 'Баланс',
-                data: data.values || [],
+                data: values,
                 borderColor: 'rgb(102, 126, 234)',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 fill: true,
@@ -1312,15 +1406,23 @@ function renderTopCategories(categories) {
         return;
     }
     
-    container.innerHTML = categories.map((cat, index) => `
-        <div class="category-item">
-            <span class="category-name">${index + 1}. ${cat.name}</span>
-            <span>
-                <span class="category-amount">${formatAmount(cat.amount)}</span>
-                <span class="category-percent">(${cat.percent}%)</span>
-            </span>
-        </div>
-    `).join('');
+    // Рассчитываем общую сумму для процентов
+    const totalAmount = categories.reduce((sum, cat) => sum + parseFloat(cat.total_amount || 0), 0);
+    
+    container.innerHTML = categories.map((cat, index) => {
+        const amount = parseFloat(cat.total_amount || 0);
+        const percent = totalAmount > 0 ? ((amount / totalAmount) * 100).toFixed(1) : 0;
+        
+        return `
+            <div class="category-item">
+                <span class="category-name">${index + 1}. ${cat.category}</span>
+                <span>
+                    <span class="category-amount">${formatAmount(amount)}</span>
+                    <span class="category-percent">(${percent}%)</span>
+                </span>
+            </div>
+        `;
+    }).join('');
 }
 
 // ============================================
@@ -1328,6 +1430,10 @@ function renderTopCategories(categories) {
 // ============================================
 
 let currentWorkspaceId = null;
+
+function getCurrentWorkspaceId() {
+    return currentWorkspaceId || 1; // По умолчанию workspace_id = 1
+}
 
 async function loadWorkspaces() {
     const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
@@ -1752,6 +1858,152 @@ async function savePreferences() {
     }
 }
 
+// ============================================
+// v2.4.0 - Reports Generation
+// ============================================
+
+async function generateReport() {
+    const reportsUrl = 'https://hi9neee.app.n8n.cloud/webhook/reports-api';
+    const reportType = document.getElementById('report-type').value;
+    const reportFormat = document.getElementById('report-format').value;
+    const startDate = document.getElementById('report-start-date').value;
+    const endDate = document.getElementById('report-end-date').value;
+    
+    if (!startDate || !endDate) {
+        showNotification('⚠️ Укажите период для отчёта', 'warning');
+        return;
+    }
+    
+    const generateBtn = document.querySelector('#reports button');
+    const originalText = generateBtn.textContent;
+    generateBtn.textContent = '⏳ Генерация...';
+    generateBtn.disabled = true;
+    
+    try {
+        const workspaceId = getCurrentWorkspaceId();
+        
+        let action;
+        if (reportFormat === 'pdf') {
+            action = 'generate_pdf';
+        } else if (reportFormat === 'excel') {
+            action = 'generate_excel';
+        } else {
+            action = 'generate_csv';
+        }
+        
+        const response = await fetch(reportsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: action,
+                workspace_id: workspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                report_type: reportType
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification(`✅ Отчёт сгенерирован! Формат: ${reportFormat.toUpperCase()}`, 'success');
+            
+            // Если CSV, скачиваем сразу
+            if (reportFormat === 'csv' && result.csv_data) {
+                downloadCSV(result.csv_data, `report_${Date.now()}.csv`);
+            } else {
+                showNotification(`📄 Отчёт доступен по ссылке: ${result.file_url}`, 'info');
+            }
+            
+            // Обновляем список отчётов
+            loadReportsList();
+        } else {
+            showNotification('Ошибка генерации отчёта', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    } finally {
+        generateBtn.textContent = originalText;
+        generateBtn.disabled = false;
+    }
+}
+
+function downloadCSV(csvData, fileName) {
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+async function loadReportsList() {
+    const reportsUrl = 'https://hi9neee.app.n8n.cloud/webhook/reports-api';
+    
+    try {
+        const workspaceId = getCurrentWorkspaceId();
+        
+        const response = await fetch(reportsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_reports_list',
+                workspace_id: workspaceId,
+                limit: 10
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            renderReportsList(result.data);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки отчётов:', error);
+    }
+}
+
+function renderReportsList(reports) {
+    const container = document.getElementById('reports-list');
+    
+    if (!reports || reports.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Нет сгенерированных отчётов</p>';
+        return;
+    }
+    
+    container.innerHTML = reports.map(report => `
+        <div class="report-item">
+            <div class="report-info">
+                <div class="report-title">
+                    ${report.report_type === 'financial' ? '💰 Финансовый отчёт' : '📊 Транзакции'}
+                </div>
+                <div class="report-meta">
+                    ${formatDate(report.generated_at)} • ${report.format.toUpperCase()}
+                </div>
+                <div class="report-period">
+                    ${report.start_date} - ${report.end_date}
+                </div>
+            </div>
+            <div class="report-actions">
+                <button onclick="window.open('${report.file_url}', '_blank')" class="btn-icon">📥</button>
+                <button onclick="deleteReport(${report.id})" class="btn-icon">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function deleteReport(reportId) {
+    if (!confirm('Удалить отчёт?')) return;
+    
+    // TODO: Добавить DELETE endpoint в Reports_API
+    showNotification('⚠️ Функция в разработке', 'warning');
+}
+
 // Инициализация v2.4.0 компонентов
 document.addEventListener('DOMContentLoaded', () => {
     loadPreferences();
@@ -1763,3 +2015,4 @@ document.addEventListener('DOMContentLoaded', () => {
         switchTab(tab);
     }
 });
+

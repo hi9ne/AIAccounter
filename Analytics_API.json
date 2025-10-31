@@ -1,0 +1,890 @@
+{
+  "name": "Analytics API v2.4.0",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analytics-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-analytics",
+      "name": "Webhook Analytics API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "analytics-api-v2.4.0"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_income_expense_stats"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-income-expense-stats",
+      "name": "Get Income Expense Stats",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_chart_data"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-chart-data",
+      "name": "Get Chart Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 350]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_top_categories"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-top-categories",
+      "name": "Get Top Categories",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_category_analytics"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-category-analytics",
+      "name": "Get Category Analytics",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 650]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_spending_patterns"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-spending-patterns",
+      "name": "Get Spending Patterns",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_balance_trend"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-balance-trend",
+      "name": "Get Balance Trend",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 950]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "update_analytics_cache"
+            }
+          ]
+        }
+      },
+      "id": "switch-update-cache",
+      "name": "Update Analytics Cache",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_cached_analytics"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-cached",
+      "name": "Get Cached Analytics",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1250]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "save_chart_config"
+            }
+          ]
+        }
+      },
+      "id": "switch-save-chart-config",
+      "name": "Save Chart Config",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.action}}",
+              "operation": "equals",
+              "value2": "get_chart_configs"
+            }
+          ]
+        }
+      },
+      "id": "switch-get-chart-configs",
+      "name": "Get Chart Configs",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1550]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE\n);",
+        "options": {}
+      },
+      "id": "postgres-income-expense-stats",
+      "name": "PostgreSQL Get Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 200],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_income_expense_chart_data(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE,\n  '{{$json.body.interval}}'::TEXT\n);",
+        "options": {}
+      },
+      "id": "postgres-chart-data",
+      "name": "PostgreSQL Chart Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 350],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_top_expense_categories(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE,\n  {{$json.body.limit || 10}}::INTEGER\n);",
+        "options": {}
+      },
+      "id": "postgres-top-categories",
+      "name": "PostgreSQL Top Categories",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 500],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM category_analytics\nWHERE workspace_id = {{$json.body.workspace_id}}\n  AND month >= '{{$json.body.start_date}}'::DATE\n  AND month <= '{{$json.body.end_date}}'::DATE\nORDER BY month DESC, total_amount DESC;",
+        "options": {}
+      },
+      "id": "postgres-category-analytics",
+      "name": "PostgreSQL Category Analytics",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 650],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM spending_patterns\nWHERE workspace_id = {{$json.body.workspace_id}}\n  AND detected_at >= '{{$json.body.start_date}}'::TIMESTAMP\n  AND detected_at <= '{{$json.body.end_date}}'::TIMESTAMP\nORDER BY confidence_score DESC, detected_at DESC\nLIMIT {{$json.body.limit || 20}};",
+        "options": {}
+      },
+      "id": "postgres-spending-patterns",
+      "name": "PostgreSQL Spending Patterns",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 800],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH daily_balance AS (\n  SELECT \n    date,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as daily_income,\n    SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as daily_expense,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as daily_net\n  FROM (\n    SELECT date, amount, 'income' as type FROM income WHERE workspace_id = {{$json.body.workspace_id}}\n    UNION ALL\n    SELECT date, amount, 'expense' as type FROM expenses WHERE workspace_id = {{$json.body.workspace_id}}\n  ) t\n  WHERE date >= '{{$json.body.start_date}}'::DATE\n    AND date <= '{{$json.body.end_date}}'::DATE\n  GROUP BY date\n)\nSELECT \n  date,\n  daily_income,\n  daily_expense,\n  daily_net,\n  SUM(daily_net) OVER (ORDER BY date) as cumulative_balance\nFROM daily_balance\nORDER BY date;",
+        "options": {}
+      },
+      "id": "postgres-balance-trend",
+      "name": "PostgreSQL Balance Trend",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 950],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT update_analytics_cache(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.cache_key}}'::TEXT,\n  '{{JSON.stringify($json.body.data)}}'::JSONB\n) as success;",
+        "options": {}
+      },
+      "id": "postgres-update-cache",
+      "name": "PostgreSQL Update Cache",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 1100],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_cached_analytics(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.cache_key}}'::TEXT,\n  {{$json.body.max_age_minutes || 60}}::INTEGER\n);",
+        "options": {}
+      },
+      "id": "postgres-get-cached",
+      "name": "PostgreSQL Get Cached",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 1250],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO chart_configs (\n  workspace_id,\n  chart_type,\n  title,\n  config_json,\n  is_default\n) VALUES (\n  {{$json.body.workspace_id}},\n  '{{$json.body.chart_type}}',\n  '{{$json.body.title}}',\n  '{{JSON.stringify($json.body.config)}}'::JSONB,\n  {{$json.body.is_default || false}}\n)\nON CONFLICT (workspace_id, chart_type, title) \nDO UPDATE SET\n  config_json = EXCLUDED.config_json,\n  is_default = EXCLUDED.is_default,\n  updated_at = NOW()\nRETURNING *;",
+        "options": {}
+      },
+      "id": "postgres-save-chart-config",
+      "name": "PostgreSQL Save Chart Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 1400],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM chart_configs\nWHERE workspace_id = {{$json.body.workspace_id}}\n  {{$json.body.chart_type ? \"AND chart_type = '\" + $json.body.chart_type + \"'\" : \"\"}}\nORDER BY is_default DESC, created_at DESC;",
+        "options": {}
+      },
+      "id": "postgres-get-chart-configs",
+      "name": "PostgreSQL Get Chart Configs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [650, 1550],
+      "credentials": {
+        "postgres": {
+          "id": "supabase",
+          "name": "Supabase PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_income_expense_stats', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-income-expense-stats",
+      "name": "Response Stats",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_chart_data', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-chart-data",
+      "name": "Response Chart Data",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_top_categories', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-top-categories",
+      "name": "Response Top Categories",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_category_analytics', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-category-analytics",
+      "name": "Response Category Analytics",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 650]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_spending_patterns', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-spending-patterns",
+      "name": "Response Spending Patterns",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 800]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_balance_trend', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-balance-trend",
+      "name": "Response Balance Trend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 950]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'update_analytics_cache', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-update-cache",
+      "name": "Response Update Cache",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 1100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_cached_analytics', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-get-cached",
+      "name": "Response Get Cached",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 1250]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'save_chart_config', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-save-chart-config",
+      "name": "Response Save Chart Config",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 1400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, action: 'get_chart_configs', data: $json } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-get-chart-configs",
+      "name": "Response Get Chart Configs",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 1550]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "response-error",
+      "name": "Response Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 1700]
+    }
+  ],
+  "connections": {
+    "Webhook Analytics API": {
+      "main": [
+        [
+          {
+            "node": "Get Income Expense Stats",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Chart Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Top Categories",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Category Analytics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Spending Patterns",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Balance Trend",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Analytics Cache",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Cached Analytics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Chart Config",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Chart Configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Income Expense Stats": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Get Stats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Chart Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chart Data": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Chart Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Top Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Top Categories": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Top Categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Category Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Category Analytics": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Category Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Spending Patterns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Spending Patterns": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Spending Patterns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Balance Trend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Balance Trend": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Balance Trend",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Analytics Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Analytics Cache": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Update Cache",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Cached Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Cached Analytics": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Get Cached",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Chart Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Chart Config": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Save Chart Config",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Chart Configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chart Configs": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Get Chart Configs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Get Stats": {
+      "main": [
+        [
+          {
+            "node": "Response Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Chart Data": {
+      "main": [
+        [
+          {
+            "node": "Response Chart Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Top Categories": {
+      "main": [
+        [
+          {
+            "node": "Response Top Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Category Analytics": {
+      "main": [
+        [
+          {
+            "node": "Response Category Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Spending Patterns": {
+      "main": [
+        [
+          {
+            "node": "Response Spending Patterns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Balance Trend": {
+      "main": [
+        [
+          {
+            "node": "Response Balance Trend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Update Cache": {
+      "main": [
+        [
+          {
+            "node": "Response Update Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Get Cached": {
+      "main": [
+        [
+          {
+            "node": "Response Get Cached",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Save Chart Config": {
+      "main": [
+        [
+          {
+            "node": "Response Save Chart Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Get Chart Configs": {
+      "main": [
+        [
+          {
+            "node": "Response Get Chart Configs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-10-31T00:00:00.000Z",
+  "versionId": "v2.4.0"
+}

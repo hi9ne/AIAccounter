@@ -22,10 +22,14 @@ const MINIAPP_CONFIG = {
     language: 'ru',
     
     // Режим работы
-    mode: 'bot', // 'bot' - безопасный режим через Telegram Bot (РЕКОМЕНДУЕТСЯ)
+    mode: 'n8n', // 'bot' - через Telegram Bot | 'n8n' - прямые API запросы
     
-    // n8n webhook для прямых API запросов (если нужно)
-    n8nWebhook: null // Оставить null если используете режим 'bot'
+    // n8n webhook URLs для API v2.4.0
+    n8nWebhooks: {
+        workspace: 'https://hi9neee.app.n8n.cloud/webhook/workspace-api',
+        analytics: 'https://hi9neee.app.n8n.cloud/webhook/analytics-api',
+        reports: 'https://hi9neee.app.n8n.cloud/webhook/reports-api'
+    }
 };
 
 // Экспорт для использования в приложении

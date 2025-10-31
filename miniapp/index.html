@@ -320,28 +320,39 @@
 
         <!-- Отчёты -->
         <div id="reports-tab" class="tab-content">
-            <div class="quick-actions">
-                <div class="quick-action" onclick="generateReport('pdf')">
-                    <div class="icon">📄</div>
-                    <div class="text">PDF отчёт</div>
-                </div>
-                <div class="quick-action" onclick="generateReport('excel')">
-                    <div class="icon">📊</div>
-                    <div class="text">Excel отчёт</div>
-                </div>
-            </div>
-
+            <h2>📄 Генерация отчётов</h2>
+            
             <div class="form-group">
-                <label>Период отчёта</label>
-                <select id="report-period">
-                    <option value="month">Текущий месяц</option>
-                    <option value="quarter">Текущий квартал</option>
-                    <option value="year">Текущий год</option>
+                <label>Тип отчёта</label>
+                <select id="report-type">
+                    <option value="financial">� Финансовый отчёт</option>
+                    <option value="transactions">📊 Список транзакций</option>
                 </select>
             </div>
 
-            <button class="btn" onclick="generateReport('pdf')">📄 Создать PDF</button>
-            <button class="btn btn-secondary" onclick="generateReport('excel')">📊 Создать Excel</button>
+            <div class="form-group">
+                <label>Формат</label>
+                <select id="report-format">
+                    <option value="pdf">📄 PDF</option>
+                    <option value="excel">📊 Excel (XLSX)</option>
+                    <option value="csv">📋 CSV</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Начало периода</label>
+                <input type="date" id="report-start-date" class="input">
+            </div>
+
+            <div class="form-group">
+                <label>Конец периода</label>
+                <input type="date" id="report-end-date" class="input">
+            </div>
+
+            <button class="btn" onclick="generateReport()">� Сгенерировать отчёт</button>
+
+            <h3 style="margin-top: 30px;">📋 Сгенерированные отчёты</h3>
+            <div id="reports-list"></div>
         </div>
 
         <!-- Аналитика с графиками -->
