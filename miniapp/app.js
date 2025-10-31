@@ -1,4 +1,4 @@
-// AI Accounter Mini App v2.2.0 - Main Application
+// AI Accounter Mini App v2.3.0 - Notifications & Recurring Payments
 // Работает через Telegram Bot (без прямого доступа к БД)
 
 // Инициализация Telegram Web App
@@ -85,6 +85,12 @@ function switchTab(tabName) {
         loadStats();
     } else if (tabName === 'history') {
         loadHistory();
+    } else if (tabName === 'subscriptions') {
+        loadSubscriptions();
+    } else if (tabName === 'notifications') {
+        loadNotifications();
+    } else if (tabName === 'budget') {
+        loadBudgetForecast();
     }
 }
 
@@ -560,3 +566,553 @@ window.editTransaction = editTransaction;
 window.deleteTransaction = deleteTransaction;
 window.restoreTransaction = restoreTransaction;
 window.showTransactionHistory = showTransactionHistory;
+
+// === v2.3.0: ПОДПИСКИ ===
+window.loadSubscriptions = loadSubscriptions;
+window.showAddSubscription = showAddSubscription;
+window.hideAddSubscription = hideAddSubscription;
+window.cancelSubscription = cancelSubscription;
+
+// === v2.3.0: УВЕДОМЛЕНИЯ ===
+window.loadNotifications = loadNotifications;
+window.filterNotifications = filterNotifications;
+window.markNotificationRead = markNotificationRead;
+window.markAllAsRead = markAllAsRead;
+
+// === v2.3.0: БЮДЖЕТ И ПРОГНОЗ ===
+window.loadBudgetForecast = loadBudgetForecast;
+window.refreshBudget = refreshBudget;
+window.saveAlertSettings = saveAlertSettings;
+
+// ============================================= 
+// v2.3.0: ПОДПИСКИ И RECURRING PAYMENTS
+// ============================================= 
+
+let currentFilter = 'all';
+
+async function loadSubscriptions() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_subscriptions',
+                userId: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateSubscriptionsList(result.data);
+        } else {
+            showNotification('Ошибка загрузки подписок', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+function updateSubscriptionsList(subscriptions) {
+    const subscriptionsList = document.getElementById('subscriptions-list');
+    
+    if (!subscriptions || subscriptions.length === 0) {
+        subscriptionsList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <p>У вас пока нет подписок</p>
+                <button class="btn" onclick="showAddSubscription()">➕ Добавить подписку</button>
+            </div>
+        `;
+        document.getElementById('subscriptions-total-amount').textContent = '0 с';
+        return;
+    }
+    
+    subscriptionsList.innerHTML = '';
+    let totalMonthly = 0;
+    let mainCurrency = 'KGS';
+    
+    subscriptions.forEach(sub => {
+        const currency = sub.currency || 'KGS';
+        const currencySymbol = currencies[currency].symbol;
+        const isActive = !sub.is_active || sub.is_active === true;
+        const amount = parseFloat(sub.amount) || 0;
+        
+        if (sub.frequency === 'monthly') {
+            totalMonthly += amount;
+            mainCurrency = currency;
+        }
+        
+        const subCard = document.createElement('div');
+        subCard.className = `subscription-card ${!isActive ? 'inactive' : ''}`;
+        
+        const frequencyNames = {
+            'daily': 'ежедневно',
+            'weekly': 'еженедельно',
+            'monthly': 'ежемесячно',
+            'yearly': 'ежегодно'
+        };
+        
+        const nextPayment = sub.next_payment_date 
+            ? new Date(sub.next_payment_date).toLocaleDateString('ru-RU')
+            : 'Не определено';
+        
+        subCard.innerHTML = `
+            <div class="subscription-header">
+                <span class="subscription-title">${sub.title}</span>
+                <span class="subscription-amount">${amount.toLocaleString('ru-RU')} ${currencySymbol}</span>
+            </div>
+            <div class="subscription-details">
+                <span>📅 ${frequencyNames[sub.frequency] || sub.frequency}</span>
+                <span>📆 ${nextPayment}</span>
+                <span>📋 ${sub.category || 'Прочее'}</span>
+            </div>
+            ${!isActive ? '<div style="color: #6c757d; font-size: 12px;">❌ Отменена</div>' : ''}
+            <div class="subscription-actions">
+                ${isActive ? `
+                    <button class="btn btn-danger btn-small" onclick="cancelSubscription(${sub.id})">
+                        ❌ Отменить
+                    </button>
+                ` : ''}
+            </div>
+        `;
+        
+        subscriptionsList.appendChild(subCard);
+    });
+    
+    const totalCurrencySymbol = currencies[mainCurrency]?.symbol || 'с';
+    document.getElementById('subscriptions-total-amount').textContent = 
+        totalMonthly.toLocaleString('ru-RU') + ' ' + totalCurrencySymbol;
+}
+
+function showAddSubscription() {
+    const form = document.getElementById('add-subscription-form');
+    form.style.display = 'flex';
+    
+    // Инициализация формы
+    document.getElementById('subscription-form').onsubmit = handleSubscriptionSubmit;
+}
+
+function hideAddSubscription() {
+    const form = document.getElementById('add-subscription-form');
+    form.style.display = 'none';
+    document.getElementById('subscription-form').reset();
+}
+
+async function handleSubscriptionSubmit(event) {
+    event.preventDefault();
+    
+    const formData = {
+        title: document.getElementById('sub-title').value,
+        amount: parseFloat(document.getElementById('sub-amount').value),
+        currency: document.getElementById('sub-currency').value,
+        category: document.getElementById('sub-category').value,
+        frequency: document.getElementById('sub-frequency').value,
+        remind_days: parseInt(document.getElementById('sub-remind').value) || 3,
+        auto_create: document.getElementById('sub-auto-create').checked
+    };
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'create_subscription',
+                userId: userId,
+                data: formData
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('✅ Подписка создана!', 'success');
+            hideAddSubscription();
+            loadSubscriptions();
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+async function cancelSubscription(subscriptionId) {
+    if (!confirm('Отменить эту подписку?')) return;
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'cancel_subscription',
+                userId: userId,
+                data: {
+                    subscription_id: subscriptionId
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('✅ Подписка отменена!', 'success');
+            loadSubscriptions();
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+// ============================================= 
+// v2.3.0: УВЕДОМЛЕНИЯ
+// ============================================= 
+
+async function loadNotifications(filter = 'all') {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_notifications',
+                userId: userId,
+                data: {
+                    filter: filter
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateNotificationsList(result.data, filter);
+        } else {
+            showNotification('Ошибка загрузки уведомлений', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+function updateNotificationsList(notifications, filter) {
+    const notificationsList = document.getElementById('notifications-list');
+    
+    // Фильтрация на клиенте
+    let filtered = notifications;
+    if (filter === 'unread') {
+        filtered = notifications.filter(n => !n.is_read);
+    } else if (filter === 'urgent') {
+        filtered = notifications.filter(n => n.priority === 'urgent' || n.priority === 'high');
+    }
+    
+    if (!filtered || filtered.length === 0) {
+        notificationsList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🔕</div>
+                <p>Уведомлений нет</p>
+            </div>
+        `;
+        return;
+    }
+    
+    notificationsList.innerHTML = '';
+    
+    filtered.forEach(notif => {
+        const notifCard = document.createElement('div');
+        const priority = notif.priority || 'normal';
+        const isRead = notif.is_read;
+        
+        notifCard.className = `notification-card ${priority} ${isRead ? 'read' : 'unread'}`;
+        
+        const typeIcons = {
+            'budget_warning': '⚠️',
+            'budget_exceeded': '🚨',
+            'recurring_reminder': '📅',
+            'unusual_spending': '📊',
+            'category_limit': '🏷️',
+            'recurring_created': '✅'
+        };
+        
+        const icon = typeIcons[notif.notification_type] || '🔔';
+        
+        notifCard.innerHTML = `
+            <div class="notification-header">
+                <span class="notification-icon">${icon}</span>
+                <span class="notification-title">${notif.title || 'Уведомление'}</span>
+                <span class="notification-priority ${priority}">${priority}</span>
+            </div>
+            <div class="notification-body">
+                ${notif.message}
+            </div>
+            <div class="notification-footer">
+                <span class="notification-date">
+                    ${new Date(notif.created_at).toLocaleString('ru-RU')}
+                </span>
+                ${!isRead ? `
+                    <button class="notification-action" onclick="markNotificationRead(${notif.id})">
+                        ✔️ Прочитано
+                    </button>
+                ` : ''}
+            </div>
+        `;
+        
+        notificationsList.appendChild(notifCard);
+    });
+}
+
+function filterNotifications(filter) {
+    currentFilter = filter;
+    
+    // Обновить активную кнопку фильтра
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    loadNotifications(filter);
+}
+
+async function markNotificationRead(notificationId) {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'mark_notification_read',
+                userId: userId,
+                data: {
+                    notification_id: notificationId
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            loadNotifications(currentFilter);
+        } else {
+            showNotification('Ошибка', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
+
+async function markAllAsRead() {
+    if (!confirm('Отметить все уведомления как прочитанные?')) return;
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'mark_all_read',
+                userId: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('✅ Все уведомления прочитаны', 'success');
+            loadNotifications(currentFilter);
+        } else {
+            showNotification('Ошибка', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+// ============================================= 
+// v2.3.0: БЮДЖЕТ И ПРОГНОЗ
+// ============================================= 
+
+async function loadBudgetForecast() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_budget_forecast',
+                userId: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            updateBudgetDisplay(result.data);
+        } else {
+            showNotification('Ошибка загрузки бюджета', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+function updateBudgetDisplay(budget) {
+    if (!budget) {
+        showNotification('Нет данных о бюджете', 'info');
+        return;
+    }
+    
+    const currency = budget.currency || 'KGS';
+    const currencySymbol = currencies[currency].symbol;
+    
+    // Статус бюджета
+    const statusElement = document.getElementById('budget-status');
+    const percentage = budget.percentage || 0;
+    
+    if (percentage < 80) {
+        statusElement.textContent = '✅ В рамках';
+        statusElement.className = 'budget-status ok';
+    } else if (percentage < 100) {
+        statusElement.textContent = '⚠️ Предупреждение';
+        statusElement.className = 'budget-status warning';
+    } else {
+        statusElement.textContent = '🚨 Превышение';
+        statusElement.className = 'budget-status critical';
+    }
+    
+    // Прогресс бар
+    const progressFill = document.getElementById('budget-progress');
+    progressFill.style.width = Math.min(percentage, 100) + '%';
+    
+    if (percentage < 80) {
+        progressFill.className = 'progress-fill';
+    } else if (percentage < 100) {
+        progressFill.className = 'progress-fill warning';
+    } else {
+        progressFill.className = 'progress-fill critical';
+    }
+    
+    // Суммы
+    document.getElementById('budget-spent').textContent = 
+        (budget.spent || 0).toLocaleString('ru-RU') + ' ' + currencySymbol;
+    document.getElementById('budget-total').textContent = 
+        '/ ' + (budget.total || 0).toLocaleString('ru-RU') + ' ' + currencySymbol;
+    document.getElementById('budget-percentage').textContent = percentage.toFixed(1) + '%';
+    
+    // Статистика
+    document.getElementById('budget-days-left').textContent = budget.days_left || 0;
+    document.getElementById('budget-remaining').textContent = 
+        (budget.remaining || 0).toLocaleString('ru-RU') + ' ' + currencySymbol;
+    document.getElementById('budget-forecast').textContent = 
+        (budget.forecast || 0).toLocaleString('ru-RU') + ' ' + currencySymbol;
+    
+    // Рекомендации
+    const dailyAvg = budget.daily_average || 0;
+    const dailyLimit = budget.recommended_daily || 0;
+    
+    document.getElementById('daily-avg').textContent = 
+        dailyAvg.toLocaleString('ru-RU') + ' ' + currencySymbol;
+    document.getElementById('daily-limit').textContent = 
+        dailyLimit.toLocaleString('ru-RU') + ' ' + currencySymbol;
+    
+    const adviceElement = document.getElementById('budget-advice');
+    adviceElement.textContent = budget.recommendation || 'Продолжайте контролировать расходы';
+    
+    // Настройки алертов (если есть)
+    if (budget.alert_settings) {
+        document.getElementById('alert-warning').value = budget.alert_settings.warning_threshold || 80;
+        document.getElementById('alert-critical').value = budget.alert_settings.critical_threshold || 100;
+    }
+}
+
+function refreshBudget() {
+    loadBudgetForecast();
+}
+
+async function saveAlertSettings() {
+    const warningThreshold = parseInt(document.getElementById('alert-warning').value);
+    const criticalThreshold = parseInt(document.getElementById('alert-critical').value);
+    
+    if (warningThreshold >= criticalThreshold) {
+        showNotification('Предупреждение должно быть меньше критического порога', 'error');
+        return;
+    }
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/miniapp';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'save_alert_settings',
+                userId: userId,
+                data: {
+                    warning_threshold: warningThreshold,
+                    critical_threshold: criticalThreshold
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('✅ Настройки сохранены!', 'success');
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+

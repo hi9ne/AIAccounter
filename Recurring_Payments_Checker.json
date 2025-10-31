@@ -1,0 +1,296 @@
+{
+  "name": "Recurring Payments Checker v2.3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule: Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_pending_reminders();",
+        "options": {}
+      },
+      "name": "Get Pending Reminders",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "name": "Есть напоминания?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// Форматирование сообщения\nconst daysUntil = item.days_until_payment;\nconst amount = parseFloat(item.amount).toLocaleString('ru-RU');\nconst currency = item.currency;\n\n// Иконки валют\nconst currencySymbols = {\n  'KGS': 'с',\n  'USD': '$',\n  'EUR': '€',\n  'RUB': '₽'\n};\n\nconst symbol = currencySymbols[currency] || currency;\n\n// Формирование текста в зависимости от дней\nlet dateText;\nlet urgencyIcon;\nif (daysUntil === 0) {\n  dateText = 'СЕГОДНЯ';\n  urgencyIcon = '🚨';\n} else if (daysUntil === 1) {\n  dateText = 'ЗАВТРА';\n  urgencyIcon = '⚠️';\n} else {\n  dateText = `через ${daysUntil} дн.`;\n  urgencyIcon = '🔔';\n}\n\nconst message = `${urgencyIcon} Напоминание о платеже\\n\\n` +\n  `💰 ${item.title}\\n` +\n  `💵 Сумма: ${amount} ${symbol}\\n` +\n  `📂 Категория: ${item.category}\\n` +\n  `📅 Оплатить: ${dateText}\\n\\n` +\n  (item.auto_create ? '⚡ Автоплатеж включен\\n\\n' : '') +\n  `ID подписки: #${item.recurring_id}`;\n\nreturn {\n  json: {\n    user_id: item.user_id,\n    recurring_id: item.recurring_id,\n    message: message,\n    days_until: daysUntil\n  }\n};"
+      },
+      "name": "Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.user_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        1340,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "2",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT mark_reminder_sent({{ $json.recurring_id }});",
+        "options": {}
+      },
+      "name": "Mark Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1560,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "No Data",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        900,
+        400
+      ],
+      "notes": "Нет напоминаний на сегодня"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Статистика выполнения\nconst items = $input.all();\nconst totalSent = items.length;\n\nconst summary = `✅ Проверка recurring payments завершена\\n\\n` +\n  `📊 Отправлено напоминаний: ${totalSent}\\n` +\n  `⏰ Время: ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek' })}`;\n\nreturn {\n  json: {\n    total_sent: totalSent,\n    timestamp: new Date().toISOString(),\n    summary: summary\n  }\n};"
+      },
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notifications (user_id, notification_type, title, message, priority, is_sent, sent_at)\\nVALUES (\\n  1109421300, -- admin user_id\\n  'custom',\\n  '🔔 Recurring Payments Check',\\n  '{{ $json.summary }}',\\n  'low',\\n  TRUE,\\n  NOW()\\n);",
+        "options": {}
+      },
+      "name": "Log to DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2000,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      },
+      "notes": "Логирование для мониторинга"
+    }
+  ],
+  "connections": {
+    "Schedule: Daily 09:00": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Reminders": {
+      "main": [
+        [
+          {
+            "node": "Есть напоминания?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть напоминания?": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram": {
+      "main": [
+        [
+          {
+            "node": "Mark Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Sent": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Data": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary": {
+      "main": [
+        [
+          {
+            "node": "Log to DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "v2.3.0",
+      "id": "recurring-payments"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-31T00:00:00.000Z",
+  "versionId": "1"
+}

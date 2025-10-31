@@ -1,0 +1,453 @@
+{
+  "name": "Budget Alert Checker v2.3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 * * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule: Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT user_id FROM budgets WHERE month = TO_CHAR(CURRENT_DATE, 'YYYY-MM');",
+        "options": {}
+      },
+      "name": "Get Active Users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Loop Users",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM check_budget_alerts({{ $json.user_id }}, 0);",
+        "options": {}
+      },
+      "name": "Check Budget",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.alert_type }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Есть алерт?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// Определяем иконку и цвет по типу алерта\nconst alertConfig = {\n  'budget_warning': {\n    icon: '⚠️',\n    emoji: '📊'\n  },\n  'budget_exceeded': {\n    icon: '🚨',\n    emoji: '💸'\n  },\n  'limit_warning': {\n    icon: '⚠️',\n    emoji: '📂'\n  },\n  'limit_exceeded': {\n    icon: '🚨',\n    emoji: '📂'\n  }\n};\n\nconst config = alertConfig[item.alert_type] || { icon: '🔔', emoji: '💰' };\n\n// Форматирование суммы\nconst currentSpent = parseFloat(item.current_spent).toLocaleString('ru-RU');\nconst budgetAmount = parseFloat(item.budget_amount).toLocaleString('ru-RU');\nconst percentage = Math.round(item.percentage);\n\n// Формируем сообщение\nlet message = `${config.icon} БЮДЖЕТНЫЙ АЛЕРТ\\n\\n`;\nmessage += `${config.emoji} ${item.message}\\n\\n`;\nmessage += `📊 Детали:\\n`;\nmessage += `   • Потрачено: ${currentSpent} сом\\n`;\nmessage += `   • Бюджет: ${budgetAmount} сом\\n`;\nmessage += `   • Использовано: ${percentage}%\\n\\n`;\n\nif (item.alert_type.includes('exceeded')) {\n  const overspend = currentSpent - budgetAmount;\n  message += `⚠️ Превышение: ${overspend.toLocaleString('ru-RU')} сом\\n\\n`;\n} else {\n  const remaining = budgetAmount - currentSpent;\n  message += `💵 Остаток: ${remaining.toLocaleString('ru-RU')} сом\\n\\n`;\n}\n\nmessage += `💡 Рекомендуем пересмотреть расходы`;\n\nreturn {\n  json: {\n    user_id: $('Loop Users').item.json.user_id,\n    message: message,\n    alert_type: item.alert_type,\n    priority: item.priority,\n    percentage: percentage\n  }\n};"
+      },
+      "name": "Format Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.user_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "name": "Send Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        1560,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "2",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notifications (\\n  user_id, \\n  notification_type, \\n  title, \\n  message, \\n  priority, \\n  is_sent, \\n  sent_at,\\n  metadata\\n) VALUES (\\n  {{ $json.user_id }},\\n  '{{ $json.alert_type }}',\\n  'Бюджетное уведомление',\\n  '{{ $json.message }}',\\n  '{{ $json.priority }}',\\n  TRUE,\\n  NOW(),\\n  json_build_object('percentage', {{ $json.percentage }})::JSONB\\n);",
+        "options": {}
+      },
+      "name": "Save Notification",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1780,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "No Alert",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Проверка лимитов по категориям\\nWITH user_categories AS (\\n  SELECT DISTINCT category\\n  FROM expenses\\n  WHERE user_id = {{ $('Loop Users').item.json.user_id }}\\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)\\n    AND deleted_at IS NULL\\n)\\nSELECT \\n  uc.category,\\n  cla.*\\nFROM user_categories uc\\nCROSS JOIN LATERAL check_category_limit_alert(\\n  {{ $('Loop Users').item.json.user_id }}, \\n  uc.category, \\n  0\\n) cla\\nWHERE cla.alert_type IS NOT NULL\\nLIMIT 1;",
+        "options": {}
+      },
+      "name": "Check Category Limits",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.alert_type }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "name": "Есть лимит алерт?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst icon = item.alert_type === 'limit_exceeded' ? '🚨' : '⚠️';\nconst currentSpent = parseFloat(item.current_spent).toLocaleString('ru-RU');\nconst limitAmount = parseFloat(item.limit_amount).toLocaleString('ru-RU');\nconst percentage = Math.round(item.percentage);\n\nconst message = `${icon} ЛИМИТ КАТЕГОРИИ\\n\\n` +\n  `📂 Категория: ${item.category}\\n` +\n  `${item.message}\\n\\n` +\n  `📊 Детали:\\n` +\n  `   • Потрачено: ${currentSpent} сом\\n` +\n  `   • Лимит: ${limitAmount} сом\\n` +\n  `   • Использовано: ${percentage}%\\n\\n` +\n  `💡 Рекомендуем сократить расходы в этой категории`;\n\nreturn {\n  json: {\n    user_id: $('Loop Users').item.json.user_id,\n    message: message,\n    alert_type: item.alert_type,\n    priority: item.priority,\n    category: item.category\n  }\n};"
+      },
+      "name": "Format Category Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.user_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "name": "Send Category Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        1780,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "2",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notifications (\\n  user_id, \\n  notification_type, \\n  title, \\n  message, \\n  related_category,\\n  priority, \\n  is_sent, \\n  sent_at\\n) VALUES (\\n  {{ $json.user_id }},\\n  '{{ $json.alert_type }}',\\n  'Лимит категории',\\n  '{{ $json.message }}',\\n  '{{ $json.category }}',\\n  '{{ $json.priority }}',\\n  TRUE,\\n  NOW()\\n);",
+        "options": {}
+      },
+      "name": "Save Category Alert",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2000,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Continue Loop",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule: Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Loop Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Users": {
+      "main": [
+        [
+          {
+            "node": "Check Budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Budget": {
+      "main": [
+        [
+          {
+            "node": "Есть алерт?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть алерт?": {
+      "main": [
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Alert": {
+      "main": [
+        [
+          {
+            "node": "Save Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Notification": {
+      "main": [
+        [
+          {
+            "node": "Check Category Limits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Alert": {
+      "main": [
+        [
+          {
+            "node": "Check Category Limits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Category Limits": {
+      "main": [
+        [
+          {
+            "node": "Есть лимит алерт?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть лимит алерт?": {
+      "main": [
+        [
+          {
+            "node": "Format Category Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Continue Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Category Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Category Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Category Alert": {
+      "main": [
+        [
+          {
+            "node": "Save Category Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Category Alert": {
+      "main": [
+        [
+          {
+            "node": "Continue Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue Loop": {
+      "main": [
+        [
+          {
+            "node": "Loop Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "v2.3.0",
+      "id": "budget-alerts"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-31T00:00:00.000Z",
+  "versionId": "1"
+}

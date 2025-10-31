@@ -1,0 +1,438 @@
+{
+  "name": "Spending Pattern Analyzer v2.3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "Schedule: Monday 02:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ],
+      "notes": "Еженедельный запуск ML-анализа"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT user_id \\nFROM expenses \\nWHERE date >= CURRENT_DATE - INTERVAL '90 days'\\n  AND deleted_at IS NULL\\nUNION\\nSELECT DISTINCT user_id\\nFROM budgets\\nWHERE month = TO_CHAR(CURRENT_DATE, 'YYYY-MM');",
+        "options": {}
+      },
+      "name": "Get Active Users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        460,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Loop Users",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT update_spending_patterns({{ $json.user_id }}) as updated_count;",
+        "options": {}
+      },
+      "name": "Update Patterns",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        900,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const userId = $('Loop Users').item.json.user_id;\nconst updatedCount = $input.first().json.updated_count || 0;\n\nreturn {\n  json: {\n    user_id: userId,\n    patterns_updated: updatedCount,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Найти необычные траты за последние 7 дней\\nWITH recent_expenses AS (\\n  SELECT \\n    e.id,\\n    e.user_id,\\n    e.category,\\n    e.amount,\\n    e.date,\\n    sp.unusual_threshold,\\n    sp.avg_monthly_amount\\n  FROM expenses e\\n  LEFT JOIN spending_patterns sp ON sp.user_id = e.user_id AND sp.category = e.category\\n  WHERE e.user_id = {{ $json.user_id }}\\n    AND e.date >= CURRENT_DATE - INTERVAL '7 days'\\n    AND e.deleted_at IS NULL\\n    AND sp.unusual_threshold IS NOT NULL\\n    AND e.amount > sp.unusual_threshold\\n)\\nSELECT * FROM recent_expenses\\nLIMIT 5;",
+        "options": {}
+      },
+      "name": "Detect Unusual",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1340,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.length }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "name": "Есть аномалии?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst userId = items[0].json.user_id;\n\nif (!items || items.length === 0) {\n  return {\n    json: {\n      user_id: userId,\n      has_anomalies: false\n    }\n  };\n}\n\n// Группировка по категориям\nconst byCategory = {};\nitems.forEach(item => {\n  const cat = item.json.category;\n  if (!byCategory[cat]) {\n    byCategory[cat] = [];\n  }\n  byCategory[cat].push(item.json);\n});\n\n// Формирование сообщения\nlet message = '🔍 АНАЛИЗ ТРАТ: Обнаружены необычные расходы\\n\\n';\n\nfor (const [category, expenses] of Object.entries(byCategory)) {\n  const totalUnusual = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);\n  const avgNormal = expenses[0].avg_monthly_amount;\n  const multiplier = (totalUnusual / avgNormal).toFixed(1);\n  \n  message += `📂 ${category}\\n`;\n  message += `   💰 Необычных трат: ${totalUnusual.toLocaleString('ru-RU')} сом\\n`;\n  message += `   📊 Обычно: ${avgNormal.toLocaleString('ru-RU')} сом/мес\\n`;\n  message += `   ⚠️ Превышение в ${multiplier}x раз\\n\\n`;\n}\n\nmessage += '💡 Рекомендация: Проверьте эти траты';\n\nreturn {\n  json: {\n    user_id: userId,\n    message: message,\n    anomalies_count: items.length,\n    has_anomalies: true\n  }\n};"
+      },
+      "name": "Format Anomaly Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.user_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "2",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notifications (\\n  user_id,\\n  notification_type,\\n  title,\\n  message,\\n  priority,\\n  is_sent,\\n  sent_at,\\n  metadata\\n) VALUES (\\n  {{ $json.user_id }},\\n  'unusual_spending',\\n  'Необычные траты обнаружены',\\n  '{{ $json.message }}',\\n  'high',\\n  TRUE,\\n  NOW(),\\n  json_build_object('anomalies_count', {{ $json.anomalies_count }})::JSONB\\n);",
+        "options": {}
+      },
+      "name": "Save Alert",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2220,
+        200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "No Anomalies",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Continue",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Финальная статистика\\nconst allItems = $input.all();\n\nconst totalUsers = allItems.length;\nconst usersWithAnomalies = allItems.filter(i => i.json.has_anomalies).length;\nconst totalPatterns = allItems.reduce((sum, i) => sum + (i.json.patterns_updated || 0), 0);\n\nconst summary = `✅ ML-анализ трат завершен\\n\\n` +\n  `👥 Проанализировано пользователей: ${totalUsers}\\n` +\n  `📊 Обновлено паттернов: ${totalPatterns}\\n` +\n  `⚠️ Обнаружено аномалий у: ${usersWithAnomalies} польз.\\n` +\n  `⏰ ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek' })}`;\n\nreturn {\n  json: {\n    total_users: totalUsers,\n    patterns_updated: totalPatterns,\n    anomalies_found: usersWithAnomalies,\n    summary: summary,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "name": "Final Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notifications (\\n  user_id,\\n  notification_type,\\n  title,\\n  message,\\n  priority,\\n  is_sent,\\n  sent_at,\\n  metadata\\n) VALUES (\\n  1109421300, -- admin\\n  'custom',\\n  '🔍 ML Analysis Complete',\\n  '{{ $json.summary }}',\\n  'low',\\n  TRUE,\\n  NOW(),\\n  json_build_object(\\n    'total_users', {{ $json.total_users }},\\n    'patterns_updated', {{ $json.patterns_updated }},\\n    'anomalies_found', {{ $json.anomalies_found }}\\n  )::JSONB\\n);",
+        "options": {}
+      },
+      "name": "Log Summary",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2880,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1109421300",
+        "text": "={{ $json.summary }}",
+        "additionalFields": {}
+      },
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        3100,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "2",
+          "name": "AIAccounter"
+        }
+      },
+      "notes": "Уведомление администратору о завершении анализа"
+    }
+  ],
+  "connections": {
+    "Schedule: Monday 02:00": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Loop Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Users": {
+      "main": [
+        [
+          {
+            "node": "Update Patterns",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Final Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Patterns": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Result": {
+      "main": [
+        [
+          {
+            "node": "Detect Unusual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Unusual": {
+      "main": [
+        [
+          {
+            "node": "Есть аномалии?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть аномалии?": {
+      "main": [
+        [
+          {
+            "node": "Format Anomaly Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Anomalies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Anomaly Report": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Alert": {
+      "main": [
+        [
+          {
+            "node": "Save Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Alert": {
+      "main": [
+        [
+          {
+            "node": "Continue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Anomalies": {
+      "main": [
+        [
+          {
+            "node": "Continue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue": {
+      "main": [
+        [
+          {
+            "node": "Loop Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Stats": {
+      "main": [
+        [
+          {
+            "node": "Log Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Summary": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "v2.3.0",
+      "id": "ml-patterns"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-31T00:00:00.000Z",
+  "versionId": "1"
+}
