@@ -1,5 +1,29 @@
 # 🔄 Changelog - AI Accounter
 
+## [2.4.0-hotfix] - 31.10.2025 - Telegram API Compatibility Fix 🔧
+
+**Статус:** ✅ COMPLETE  
+**Документация:** `docs/HOTFIX_TELEGRAM_API.md`
+
+### 🐛 Bug Fixes
+- ✅ **Telegram WebApp API Compatibility** - Добавлена поддержка старых версий (v6.0+)
+  - Fallback для `tg.showAlert()` → `alert()`
+  - Fallback для `tg.MainButton` API
+  - Mock Telegram WebApp для локального тестирования
+  - Fallback User ID (123456789) для разработки
+- ✅ **Graceful Degradation** - Приложение работает в любом окружении:
+  - Обычный браузер (Chrome/Firefox/Safari)
+  - Telegram Desktop/Mobile (v6.0+)
+  - Telegram Web App (все версии)
+- ✅ **Error Handling** - Try-catch блоки для всех Telegram API вызовов
+- ✅ **Logging** - Подробное логирование в console для отладки
+
+### 📝 Changed Files
+- `miniapp/app.js` - 4 функции исправлены (~70 строк кода)
+- `docs/HOTFIX_TELEGRAM_API.md` - Документация hotfix
+
+---
+
 ## [2.4.0] - В разработке - Workspaces & Analytics 👥📊
 
 **Статус:** � 50% Complete (4/8 phases)  

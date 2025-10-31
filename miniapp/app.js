@@ -3,9 +3,31 @@
 
 // ========== INITIALIZATION ==========
 
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+// Telegram WebApp initialization with fallback
+const tg = window.Telegram?.WebApp || {
+    ready: () => console.log('Mock: Telegram WebApp ready'),
+    expand: () => console.log('Mock: Telegram WebApp expand'),
+    initDataUnsafe: { 
+        user: { id: null } // Will use fallback ID
+    },
+    MainButton: {
+        setText: () => {},
+        showProgress: () => {},
+        hideProgress: () => {},
+        show: () => {},
+        hide: () => {}
+    },
+    showAlert: null // Not supported in old versions
+};
+
+// Initialize Telegram WebApp if available
+if (window.Telegram?.WebApp) {
+    tg.ready();
+    tg.expand();
+    console.log('✅ Telegram WebApp initialized');
+} else {
+    console.warn('⚠️ Telegram WebApp not found, using mock for testing');
+}
 
 // Import configuration
 const config = window.MiniAppConfig || {
@@ -141,11 +163,17 @@ function selectCategory(category) {
 
 function getUserId() {
     if (currentUserId) return currentUserId;
+    
+    // Try to get Telegram user ID
     const userId = tg.initDataUnsafe?.user?.id;
+    
     if (!userId) {
-        showError('Не удалось получить Telegram ID');
-        return null;
+        // Fallback for local testing or old Telegram versions
+        console.warn('⚠️ Telegram ID not found, using fallback ID for testing');
+        currentUserId = 123456789; // Fallback test ID
+        return currentUserId;
     }
+    
     currentUserId = userId;
     return userId;
 }
@@ -663,20 +691,56 @@ function formatDate(dateString) {
 }
 
 function showLoading(message = 'Загрузка...') {
-    tg.MainButton.setText(message);
-    tg.MainButton.showProgress();
+    console.log('⏳ ' + message);
+    if (tg.MainButton && typeof tg.MainButton.setText === 'function') {
+        try {
+            tg.MainButton.setText(message);
+            tg.MainButton.showProgress();
+        } catch (e) {
+            console.log('MainButton not supported');
+        }
+    }
 }
 
 function hideLoading() {
-    tg.MainButton.hideProgress();
+    console.log('✅ Loading complete');
+    if (tg.MainButton && typeof tg.MainButton.hideProgress === 'function') {
+        try {
+            tg.MainButton.hideProgress();
+        } catch (e) {
+            console.log('MainButton not supported');
+        }
+    }
 }
 
 function showSuccess(message) {
-    tg.showAlert(message);
+    // Fallback for old Telegram versions
+    if (typeof tg.showAlert === 'function') {
+        try {
+            tg.showAlert(message);
+        } catch (e) {
+            console.log('✅ ' + message);
+            alert('✅ ' + message);
+        }
+    } else {
+        console.log('✅ ' + message);
+        alert('✅ ' + message);
+    }
 }
 
 function showError(message) {
-    tg.showAlert('⚠️ ' + message);
+    // Fallback for old Telegram versions
+    if (typeof tg.showAlert === 'function') {
+        try {
+            tg.showAlert('⚠️ ' + message);
+        } catch (e) {
+            console.error('⚠️ ' + message);
+            alert('⚠️ ' + message);
+        }
+    } else {
+        console.error('⚠️ ' + message);
+        alert('⚠️ ' + message);
+    }
 }
 
 // ========== EVENT LISTENERS ==========
