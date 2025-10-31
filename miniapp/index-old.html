@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Accounter - Финансовый помощник</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 AI Accounter</h1>
+            <p>Ваш персональный финансовый помощник</p>
+            <p class="version">v2.4.0 - Workspaces & Analytics</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('add')">➕ Добавить</div>
+            <div class="tab" onclick="switchTab('stats')">📊 Статистика</div>
+            <div class="tab" onclick="switchTab('analytics')">📈 Аналитика</div>
+            <div class="tab" onclick="switchTab('team')">👥 Команда</div>
+            <div class="tab" onclick="switchTab('subscriptions')">🔔 Подписки</div>
+            <div class="tab" onclick="switchTab('notifications')">🔔 Уведомления</div>
+            <div class="tab" onclick="switchTab('budget')">💰 Бюджет</div>
+            <div class="tab" onclick="switchTab('reports')">📄 Отчёты</div>
+            <div class="tab" onclick="switchTab('settings')">⚙️ Настройки</div>
+            <div class="tab" onclick="switchTab('history')">📜 История</div>
+        </div>
+
+        <!-- Добавление транзакции -->
+        <div id="add-tab" class="tab-content active">
+            <div class="quick-actions">
+                <div class="quick-action" onclick="quickAdd('income')">
+                    <div class="icon">💰</div>
+                    <div class="text">Доход</div>
+                </div>
+                <div class="quick-action" onclick="quickAdd('expense')">
+                    <div class="icon">💸</div>
+                    <div class="text">Расход</div>
+                </div>
+            </div>
+
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label>Тип операции</label>
+                    <select id="operation-type" required>
+                        <option value="income">💰 Доход</option>
+                        <option value="expense">💸 Расход</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Сумма</label>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <input type="number" id="amount" placeholder="0" required step="0.01">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <select id="currency" required>
+                                <option value="KGS">🇰🇬 Сом</option>
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="RUB">🇷🇺 RUB</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Категория</label>
+                    <div class="category-grid" id="category-grid">
+                        <!-- Категории будут загружены динамически -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Описание</label>
+                    <div class="voice-input">
+                        <textarea id="description" placeholder="Опишите транзакцию..." rows="3"></textarea>
+                        <button type="button" class="voice-btn" onclick="startVoiceInput()">🎤</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Дата</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Время</label>
+                        <input type="time" id="time" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success">💾 Сохранить</button>
+            </form>
+        </div>
+
+        <!-- Статистика -->
+        <div id="stats-tab" class="tab-content">
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Доходы за месяц</span>
+                    <span class="stat-value positive" id="monthly-income">0 с</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Расходы за месяц</span>
+                    <span class="stat-value negative" id="monthly-expenses">0 с</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Прибыль</span>
+                    <span class="stat-value" id="profit">0 с</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Транзакций</span>
+                    <span class="stat-value" id="transactions-count">0</span>
+                </div>
+            </div>
+
+            <button class="btn" onclick="refreshStats()">🔄 Обновить</button>
+        </div>
+
+        <!-- Подписки -->
+        <div id="subscriptions-tab" class="tab-content">
+            <div class="section-header">
+                <h2>🔔 Ваши подписки</h2>
+                <button class="btn-icon" onclick="showAddSubscription()">➕</button>
+            </div>
+
+            <div id="subscriptions-list" class="subscriptions-list">
+                <!-- Список подписок загрузится динамически -->
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>У вас пока нет подписок</p>
+                    <button class="btn" onclick="showAddSubscription()">➕ Добавить подписку</button>
+                </div>
+            </div>
+
+            <div class="subscriptions-total">
+                <span>💰 Итого в месяц:</span>
+                <span id="subscriptions-total-amount">0 с</span>
+            </div>
+
+            <!-- Форма добавления подписки (скрыта по умолчанию) -->
+            <div id="add-subscription-form" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>➕ Новая подписка</h3>
+                        <button class="btn-close" onclick="hideAddSubscription()">✖</button>
+                    </div>
+                    <form id="subscription-form">
+                        <div class="form-group">
+                            <label>Название</label>
+                            <input type="text" id="sub-title" placeholder="Netflix, Spotify..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Сумма</label>
+                            <div class="form-row">
+                                <input type="number" id="sub-amount" placeholder="0" required step="0.01" style="flex: 2;">
+                                <select id="sub-currency" required style="flex: 1;">
+                                    <option value="KGS">🇰🇬 Сом</option>
+                                    <option value="USD">🇺🇸 USD</option>
+                                    <option value="EUR">🇪🇺 EUR</option>
+                                    <option value="RUB">🇷🇺 RUB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Категория</label>
+                            <select id="sub-category" required>
+                                <option value="подписки">📱 Подписки</option>
+                                <option value="аренда офиса">🏢 Аренда офиса</option>
+                                <option value="налоги">📋 Налоги</option>
+                                <option value="зарплата">💼 Зарплата</option>
+                                <option value="прочее">📦 Прочее</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Периодичность</label>
+                            <select id="sub-frequency" required>
+                                <option value="monthly">📅 Ежемесячно</option>
+                                <option value="weekly">📆 Еженедельно</option>
+                                <option value="yearly">🗓️ Ежегодно</option>
+                                <option value="daily">📋 Ежедневно</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Напомнить за (дней)</label>
+                            <input type="number" id="sub-remind" value="3" min="0" max="30">
+                        </div>
+                        <div class="form-group checkbox">
+                            <label>
+                                <input type="checkbox" id="sub-auto-create">
+                                Создавать транзакцию автоматически
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-success">💾 Создать подписку</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомления -->
+        <div id="notifications-tab" class="tab-content">
+            <div class="section-header">
+                <h2>🔔 Уведомления</h2>
+                <button class="btn-icon" onclick="markAllAsRead()">✔️ Всё прочитано</button>
+            </div>
+
+            <div class="notifications-filter">
+                <button class="filter-btn active" onclick="filterNotifications('all')">Все</button>
+                <button class="filter-btn" onclick="filterNotifications('unread')">Непрочитанные</button>
+                <button class="filter-btn" onclick="filterNotifications('urgent')">Срочные</button>
+            </div>
+
+            <div id="notifications-list" class="notifications-list">
+                <!-- Уведомления загрузятся динамически -->
+                <div class="empty-state">
+                    <div class="empty-icon">🔕</div>
+                    <p>Уведомлений нет</p>
+                </div>
+            </div>
+
+            <button class="btn" onclick="loadNotifications()">🔄 Обновить</button>
+        </div>
+
+        <!-- Бюджет и прогноз -->
+        <div id="budget-tab" class="tab-content">
+            <div class="section-header">
+                <h2>💰 Прогноз бюджета</h2>
+                <button class="btn-icon" onclick="refreshBudget()">🔄</button>
+            </div>
+
+            <div class="budget-card">
+                <div class="budget-header">
+                    <h3>Октябрь 2025</h3>
+                    <span class="budget-status" id="budget-status">✅ В рамках</span>
+                </div>
+
+                <div class="budget-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="budget-progress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-labels">
+                        <span id="budget-spent">0 с</span>
+                        <span id="budget-total">/ 0 с</span>
+                    </div>
+                </div>
+
+                <div class="budget-stats">
+                    <div class="stat-row">
+                        <span>📊 Использовано:</span>
+                        <span id="budget-percentage">0%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>📅 Осталось дней:</span>
+                        <span id="budget-days-left">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>💵 Остаток:</span>
+                        <span id="budget-remaining">0 с</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>📈 Прогноз на конец месяца:</span>
+                        <span id="budget-forecast">0 с</span>
+                    </div>
+                </div>
+
+                <div class="budget-recommendations">
+                    <h4>💡 Рекомендации:</h4>
+                    <ul id="budget-tips">
+                        <li>Средний расход в день: <strong id="daily-avg">0 с</strong></li>
+                        <li>Рекомендуемый лимит: <strong id="daily-limit">0 с</strong>/день</li>
+                        <li id="budget-advice">Загрузите данные для получения советов</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert-settings">
+                <h3>⚙️ Настройки алертов</h3>
+                <div class="form-group">
+                    <label>Предупреждать при (%)</label>
+                    <input type="number" id="alert-warning" value="80" min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Критический порог (%)</label>
+                    <input type="number" id="alert-critical" value="100" min="0" max="150">
+                </div>
+                <button class="btn" onclick="saveAlertSettings()">💾 Сохранить настройки</button>
+            </div>
+        </div>
+
+        <!-- История -->
+        <div id="history-tab" class="tab-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <select id="history-filter">
+                        <option value="all">Все операции</option>
+                        <option value="income">Только доходы</option>
+                        <option value="expense">Только расходы</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select id="history-period">
+                        <option value="week">За неделю</option>
+                        <option value="month">За месяц</option>
+                        <option value="year">За год</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="history-list">
+                <!-- История будет загружена динамически -->
+            </div>
+
+            <button class="btn" onclick="loadHistory()">📋 Загрузить историю</button>
+        </div>
+
+        <!-- Отчёты -->
+        <div id="reports-tab" class="tab-content">
+            <h2>📄 Генерация отчётов</h2>
+            
+            <div class="form-group">
+                <label>Тип отчёта</label>
+                <select id="report-type">
+                    <option value="financial">� Финансовый отчёт</option>
+                    <option value="transactions">📊 Список транзакций</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Формат</label>
+                <select id="report-format">
+                    <option value="pdf">📄 PDF</option>
+                    <option value="excel">📊 Excel (XLSX)</option>
+                    <option value="csv">📋 CSV</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Начало периода</label>
+                <input type="date" id="report-start-date" class="input">
+            </div>
+
+            <div class="form-group">
+                <label>Конец периода</label>
+                <input type="date" id="report-end-date" class="input">
+            </div>
+
+            <button class="btn" onclick="generateReport()">� Сгенерировать отчёт</button>
+
+            <h3 style="margin-top: 30px;">📋 Сгенерированные отчёты</h3>
+            <div id="reports-list"></div>
+        </div>
+
+        <!-- Аналитика с графиками -->
+        <div id="analytics-tab" class="tab-content">
+            <h2>📈 Аналитика и графики</h2>
+            
+            <!-- Период для графиков -->
+            <div class="form-group">
+                <label>Период анализа</label>
+                <select id="analytics-period" onchange="loadAnalytics()">
+                    <option value="week">За неделю</option>
+                    <option value="month" selected>За месяц</option>
+                    <option value="quarter">За квартал</option>
+                    <option value="year">За год</option>
+                </select>
+            </div>
+
+            <!-- Метрики -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-value" id="total-income">0 с</div>
+                    <div class="metric-label">Доходы</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">💸</div>
+                    <div class="metric-value" id="total-expenses">0 с</div>
+                    <div class="metric-label">Расходы</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">💵</div>
+                    <div class="metric-value" id="net-balance">0 с</div>
+                    <div class="metric-label">Баланс</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-value" id="savings-rate">0%</div>
+                    <div class="metric-label">Накопления</div>
+                </div>
+            </div>
+
+            <!-- График доходы vs расходы -->
+            <div class="chart-container">
+                <h3>📈 Доходы vs Расходы</h3>
+                <canvas id="incomeExpenseChart"></canvas>
+            </div>
+
+            <!-- График по категориям -->
+            <div class="chart-container">
+                <h3>🥧 Расходы по категориям</h3>
+                <canvas id="categoryPieChart"></canvas>
+            </div>
+
+            <!-- Тренд баланса -->
+            <div class="chart-container">
+                <h3>💰 Динамика баланса</h3>
+                <canvas id="balanceTrendChart"></canvas>
+            </div>
+
+            <!-- Топ категорий -->
+            <div class="top-categories">
+                <h3>🔥 Топ категорий расходов</h3>
+                <div id="top-categories-list">
+                    <!-- Загружается динамически -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Команда (Workspace Management) -->
+        <div id="team-tab" class="tab-content">
+            <h2>👥 Команда</h2>
+            
+            <!-- Текущий workspace -->
+            <div class="workspace-selector">
+                <label>Текущее пространство</label>
+                <select id="workspace-select" onchange="switchWorkspace()">
+                    <!-- Загружается динамически -->
+                </select>
+                <button class="btn btn-small" onclick="showCreateWorkspaceModal()">➕ Создать</button>
+            </div>
+
+            <!-- Участники -->
+            <div class="members-section">
+                <h3>Участники (<span id="member-count">0</span>)</h3>
+                <div id="members-list">
+                    <!-- Загружается динамически -->
+                </div>
+            </div>
+
+            <!-- Приглашения -->
+            <div class="invites-section">
+                <h3>Пригласительные ссылки</h3>
+                <div class="form-group">
+                    <label>Роль нового участника</label>
+                    <select id="invite-role">
+                        <option value="viewer">👁️ Viewer - только просмотр</option>
+                        <option value="editor">✏️ Editor - редактирование</option>
+                        <option value="admin">🛠️ Admin - управление</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="createInvite()">🔗 Создать приглашение</button>
+                
+                <div id="invite-link-result" class="invite-result hidden">
+                    <p>Пригласительная ссылка создана:</p>
+                    <div class="invite-link">
+                        <input type="text" id="invite-link-input" readonly>
+                        <button onclick="copyInviteLink()">📋 Копировать</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Log -->
+            <div class="audit-section">
+                <h3>📋 История действий</h3>
+                <div id="audit-log-list">
+                    <!-- Загружается динамически -->
+                </div>
+                <button class="btn btn-secondary" onclick="loadAuditLogs()">📜 Загрузить ещё</button>
+            </div>
+        </div>
+
+        <!-- Настройки -->
+        <div id="settings-tab" class="tab-content">
+            <h2>⚙️ Настройки</h2>
+            
+            <!-- Тема -->
+            <div class="settings-section">
+                <h3>🎨 Внешний вид</h3>
+                <div class="form-group">
+                    <label>Тема оформления</label>
+                    <select id="theme-select" onchange="changeTheme()">
+                        <option value="light">☀️ Светлая</option>
+                        <option value="dark">🌙 Тёмная</option>
+                        <option value="auto">🔄 Авто (по системе)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Язык -->
+            <div class="settings-section">
+                <h3>🌍 Язык</h3>
+                <div class="form-group">
+                    <label>Язык интерфейса</label>
+                    <select id="language-select" onchange="changeLanguage()">
+                        <option value="ru" selected>🇷🇺 Русский</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="ky">🇰🇬 Кыргызча</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Валюта -->
+            <div class="settings-section">
+                <h3>💱 Валюта по умолчанию</h3>
+                <div class="form-group">
+                    <label>Валюта</label>
+                    <select id="default-currency-select" onchange="changeDefaultCurrency()">
+                        <option value="KGS" selected>🇰🇬 KGS - Сом</option>
+                        <option value="USD">🇺🇸 USD - Доллар</option>
+                        <option value="EUR">🇪🇺 EUR - Евро</option>
+                        <option value="RUB">🇷🇺 RUB - Рубль</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Часовой пояс -->
+            <div class="settings-section">
+                <h3>🕐 Часовой пояс</h3>
+                <div class="form-group">
+                    <label>Timezone</label>
+                    <select id="timezone-select" onchange="changeTimezone()">
+                        <option value="Asia/Bishkek" selected>🇰🇬 Бишкек (GMT+6)</option>
+                        <option value="Asia/Almaty">🇰🇿 Алматы (GMT+6)</option>
+                        <option value="Europe/Moscow">🇷🇺 Москва (GMT+3)</option>
+                        <option value="Europe/Istanbul">🇹🇷 Стамбул (GMT+3)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Уведомления -->
+            <div class="settings-section">
+                <h3>🔔 Уведомления</h3>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="notify-telegram" checked> 
+                        Telegram уведомления
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-push" checked> 
+                        Push-уведомления
+                    </label>
+                    <label>
+                        <input type="checkbox" id="notify-email"> 
+                        Email уведомления
+                    </label>
+                </div>
+            </div>
+
+            <!-- Сохранить настройки -->
+            <button class="btn" onclick="savePreferences()">💾 Сохранить настройки</button>
+
+            <!-- О приложении -->
+            <div class="settings-section">
+                <h3>ℹ️ О приложении</h3>
+                <p><strong>Версия:</strong> v2.4.0 - Workspaces & Analytics</p>
+                <p><strong>Разработчик:</strong> @hi9ne</p>
+                <p><strong>Лицензия:</strong> MIT License</p>
+                <p><strong>GitHub:</strong> <a href="https://github.com/hi9ne/AIAccounter" target="_blank">AIAccounter</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
