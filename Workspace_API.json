@@ -1,0 +1,967 @@
+{
+  "name": "Workspace_API v2.4.0",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "workspace-api",
+        "options": {}
+      },
+      "id": "webhook_trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "workspace-api-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "create_workspace"
+            }
+          ]
+        }
+      },
+      "id": "route_create_workspace",
+      "name": "Route: create_workspace",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "get_workspaces"
+            }
+          ]
+        }
+      },
+      "id": "route_get_workspaces",
+      "name": "Route: get_workspaces",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 350]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "update_workspace"
+            }
+          ]
+        }
+      },
+      "id": "route_update_workspace",
+      "name": "Route: update_workspace",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "delete_workspace"
+            }
+          ]
+        }
+      },
+      "id": "route_delete_workspace",
+      "name": "Route: delete_workspace",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 650]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "get_members"
+            }
+          ]
+        }
+      },
+      "id": "route_get_members",
+      "name": "Route: get_members",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 800]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "create_invite"
+            }
+          ]
+        }
+      },
+      "id": "route_create_invite",
+      "name": "Route: create_invite",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 950]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "accept_invite"
+            }
+          ]
+        }
+      },
+      "id": "route_accept_invite",
+      "name": "Route: accept_invite",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "remove_member"
+            }
+          ]
+        }
+      },
+      "id": "route_remove_member",
+      "name": "Route: remove_member",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1250]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "update_member_role"
+            }
+          ]
+        }
+      },
+      "id": "route_update_role",
+      "name": "Route: update_member_role",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "check_permission"
+            }
+          ]
+        }
+      },
+      "id": "route_check_permission",
+      "name": "Route: check_permission",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1550]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "get_audit_logs"
+            }
+          ]
+        }
+      },
+      "id": "route_audit_logs",
+      "name": "Route: get_audit_logs",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1700]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "switch_workspace"
+            }
+          ]
+        }
+      },
+      "id": "route_switch_workspace",
+      "name": "Route: switch_workspace",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 1850]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "get_user_preferences"
+            }
+          ]
+        }
+      },
+      "id": "route_get_preferences",
+      "name": "Route: get_user_preferences",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 2000]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "operation": "equals",
+              "value2": "update_preferences"
+            }
+          ]
+        }
+      },
+      "id": "route_update_preferences",
+      "name": "Route: update_preferences",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 2150]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT create_workspace_with_owner('={{$json[\"body\"][\"name\"]}}', {{$json[\"body\"][\"user_id\"]}}, '={{$json[\"body\"][\"description\"]}}', '={{$json[\"body\"][\"currency\"]}}') as workspace_id",
+        "additionalFields": {}
+      },
+      "id": "db_create_workspace",
+      "name": "DB: Create Workspace",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 200],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_user_workspaces({{$json[\"body\"][\"user_id\"]}})",
+        "additionalFields": {}
+      },
+      "id": "db_get_workspaces",
+      "name": "DB: Get Workspaces",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 350],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE workspaces SET name = '={{$json[\"body\"][\"name\"]}}', description = '={{$json[\"body\"][\"description\"]}}', currency = '={{$json[\"body\"][\"currency\"]}}', updated_at = CURRENT_TIMESTAMP WHERE id = {{$json[\"body\"][\"workspace_id\"]}} AND owner_id = {{$json[\"body\"][\"user_id\"]}} RETURNING *",
+        "additionalFields": {}
+      },
+      "id": "db_update_workspace",
+      "name": "DB: Update Workspace",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 500],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE workspaces SET is_active = false WHERE id = {{$json[\"body\"][\"workspace_id\"]}} AND owner_id = {{$json[\"body\"][\"user_id\"]}}; DELETE FROM workspace_members WHERE workspace_id = {{$json[\"body\"][\"workspace_id\"]}}",
+        "additionalFields": {}
+      },
+      "id": "db_delete_workspace",
+      "name": "DB: Delete Workspace",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 650],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT wm.*, w.name as workspace_name FROM workspace_members wm JOIN workspaces w ON wm.workspace_id = w.id WHERE wm.workspace_id = {{$json[\"body\"][\"workspace_id\"]}} AND wm.is_active = true ORDER BY wm.role, wm.joined_at",
+        "additionalFields": {}
+      },
+      "id": "db_get_members",
+      "name": "DB: Get Members",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 800],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const crypto = require('crypto');\nconst inviteCode = crypto.randomBytes(8).toString('hex').toUpperCase();\nreturn [{ json: { invite_code: inviteCode, ...items[0].json } }];"
+      },
+      "id": "code_generate_invite",
+      "name": "Code: Generate Invite Code",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 950]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workspace_invites (workspace_id, invite_code, role, created_by, expires_at, max_uses) VALUES ({{$json[\"body\"][\"workspace_id\"]}}, '={{$json[\"invite_code\"]}}', '={{$json[\"body\"][\"role\"]}}', {{$json[\"body\"][\"user_id\"]}}, CURRENT_TIMESTAMP + INTERVAL '7 days', {{$json[\"body\"][\"max_uses\"] || 1}}) RETURNING *",
+        "additionalFields": {}
+      },
+      "id": "db_create_invite",
+      "name": "DB: Create Invite",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [850, 950],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT accept_workspace_invite('={{$json[\"body\"][\"invite_code\"]}}', {{$json[\"body\"][\"user_id\"]}}) as result",
+        "additionalFields": {}
+      },
+      "id": "db_accept_invite",
+      "name": "DB: Accept Invite",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 1100],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT remove_workspace_member({{$json[\"body\"][\"workspace_id\"]}}, {{$json[\"body\"][\"member_id\"]}}, {{$json[\"body\"][\"user_id\"]}}) as result",
+        "additionalFields": {}
+      },
+      "id": "db_remove_member",
+      "name": "DB: Remove Member",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 1250],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE workspace_members SET role = '={{$json[\"body\"][\"role\"]}}' WHERE workspace_id = {{$json[\"body\"][\"workspace_id\"]}} AND user_id = {{$json[\"body\"][\"member_id\"]}} RETURNING *",
+        "additionalFields": {}
+      },
+      "id": "db_update_role",
+      "name": "DB: Update Member Role",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 1400],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT check_workspace_permission({{$json[\"body\"][\"workspace_id\"]}}, {{$json[\"body\"][\"user_id\"]}}, '={{$json[\"body\"][\"permission\"]}}') as has_permission",
+        "additionalFields": {}
+      },
+      "id": "db_check_permission",
+      "name": "DB: Check Permission",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 1550],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM v_workspace_activity WHERE workspace_id = {{$json[\"body\"][\"workspace_id\"]}} ORDER BY created_at DESC LIMIT {{$json[\"body\"][\"limit\"] || 50}}",
+        "additionalFields": {}
+      },
+      "id": "db_get_audit_logs",
+      "name": "DB: Get Audit Logs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 1700],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE user_preferences SET default_workspace_id = {{$json[\"body\"][\"workspace_id\"]}}, updated_at = CURRENT_TIMESTAMP WHERE user_id = {{$json[\"body\"][\"user_id\"]}} RETURNING *",
+        "additionalFields": {}
+      },
+      "id": "db_switch_workspace",
+      "name": "DB: Switch Workspace",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 1850],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM user_preferences WHERE user_id = {{$json[\"body\"][\"user_id\"]}}",
+        "additionalFields": {}
+      },
+      "id": "db_get_preferences",
+      "name": "DB: Get Preferences",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 2000],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO user_preferences (user_id, theme, language, timezone, notification_settings) VALUES ({{$json[\"body\"][\"user_id\"]}}, '={{$json[\"body\"][\"theme\"]}}', '={{$json[\"body\"][\"language\"]}}', '={{$json[\"body\"][\"timezone\"]}}', '{{$json[\"body\"][\"notification_settings\"]}}') ON CONFLICT (user_id) DO UPDATE SET theme = EXCLUDED.theme, language = EXCLUDED.language, timezone = EXCLUDED.timezone, notification_settings = EXCLUDED.notification_settings, updated_at = CURRENT_TIMESTAMP RETURNING *",
+        "additionalFields": {}
+      },
+      "id": "db_update_preferences",
+      "name": "DB: Update Preferences",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [650, 2150],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL/Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, data: $json } }}"
+      },
+      "id": "response_success",
+      "name": "Response: Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 1075]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 400,
+        "responseBody": "={{ { success: false, error: 'Invalid action' } }}"
+      },
+      "id": "response_error",
+      "name": "Response: Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 2300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Route: create_workspace",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: get_workspaces",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: update_workspace",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: delete_workspace",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: get_members",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: create_invite",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: accept_invite",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: remove_member",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: update_member_role",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: check_permission",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: get_audit_logs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: switch_workspace",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: get_user_preferences",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Route: update_preferences",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: create_workspace": {
+      "main": [
+        [
+          {
+            "node": "DB: Create Workspace",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response: Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: get_workspaces": {
+      "main": [
+        [
+          {
+            "node": "DB: Get Workspaces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: update_workspace": {
+      "main": [
+        [
+          {
+            "node": "DB: Update Workspace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: delete_workspace": {
+      "main": [
+        [
+          {
+            "node": "DB: Delete Workspace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: get_members": {
+      "main": [
+        [
+          {
+            "node": "DB: Get Members",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: create_invite": {
+      "main": [
+        [
+          {
+            "node": "Code: Generate Invite Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: accept_invite": {
+      "main": [
+        [
+          {
+            "node": "DB: Accept Invite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: remove_member": {
+      "main": [
+        [
+          {
+            "node": "DB: Remove Member",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: update_member_role": {
+      "main": [
+        [
+          {
+            "node": "DB: Update Member Role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: check_permission": {
+      "main": [
+        [
+          {
+            "node": "DB: Check Permission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: get_audit_logs": {
+      "main": [
+        [
+          {
+            "node": "DB: Get Audit Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: switch_workspace": {
+      "main": [
+        [
+          {
+            "node": "DB: Switch Workspace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: get_user_preferences": {
+      "main": [
+        [
+          {
+            "node": "DB: Get Preferences",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route: update_preferences": {
+      "main": [
+        [
+          {
+            "node": "DB: Update Preferences",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Create Workspace": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Get Workspaces": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Update Workspace": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Delete Workspace": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Get Members": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Generate Invite Code": {
+      "main": [
+        [
+          {
+            "node": "DB: Create Invite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Create Invite": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Accept Invite": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Remove Member": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Update Member Role": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Check Permission": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Get Audit Logs": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Switch Workspace": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Get Preferences": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DB: Update Preferences": {
+      "main": [
+        [
+          {
+            "node": "Response: Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-10-31T00:00:00.000Z",
+  "versionId": "v2.4.0"
+}

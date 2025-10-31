@@ -1,4 +1,4 @@
-// AI Accounter Mini App v2.3.0 - Notifications & Recurring Payments
+// AI Accounter Mini App v2.4.0 - Workspaces & Analytics
 // Работает через Telegram Bot (без прямого доступа к БД)
 
 // Инициализация Telegram Web App
@@ -1116,3 +1116,650 @@ async function saveAlertSettings() {
     }
 }
 
+// ============================================
+// v2.4.0 - Analytics with Chart.js
+// ============================================
+
+let incomeExpenseChart = null;
+let categoryPieChart = null;
+let balanceTrendChart = null;
+
+async function loadAnalytics() {
+    const period = document.getElementById('analytics-period').value;
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/analytics-api';
+    
+    try {
+        const userId = getUserId();
+        
+        // Получаем статистику
+        const statsResponse = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_stats',
+                userId: userId,
+                period: period
+            })
+        });
+        
+        const stats = await statsResponse.json();
+        
+        if (stats.success) {
+            updateMetrics(stats.data);
+        }
+        
+        // Получаем данные для графиков
+        const chartsResponse = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_chart_data',
+                userId: userId,
+                period: period
+            })
+        });
+        
+        const charts = await chartsResponse.json();
+        
+        if (charts.success) {
+            renderIncomeExpenseChart(charts.data.incomeExpense);
+            renderCategoryPieChart(charts.data.categories);
+            renderBalanceTrendChart(charts.data.balance);
+            renderTopCategories(charts.data.topCategories);
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки аналитики:', error);
+        showNotification('Ошибка загрузки аналитики', 'error');
+    }
+}
+
+function updateMetrics(data) {
+    document.getElementById('total-income').textContent = formatAmount(data.income || 0);
+    document.getElementById('total-expenses').textContent = formatAmount(data.expenses || 0);
+    document.getElementById('net-balance').textContent = formatAmount(data.balance || 0);
+    
+    const savingsRate = data.income > 0 ? ((data.balance / data.income) * 100).toFixed(1) : 0;
+    document.getElementById('savings-rate').textContent = savingsRate + '%';
+}
+
+function renderIncomeExpenseChart(data) {
+    const ctx = document.getElementById('incomeExpenseChart');
+    
+    if (incomeExpenseChart) {
+        incomeExpenseChart.destroy();
+    }
+    
+    incomeExpenseChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels || [],
+            datasets: [
+                {
+                    label: 'Доходы',
+                    data: data.income || [],
+                    borderColor: 'rgb(34, 197, 94)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Расходы',
+                    data: data.expenses || [],
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function renderCategoryPieChart(data) {
+    const ctx = document.getElementById('categoryPieChart');
+    
+    if (categoryPieChart) {
+        categoryPieChart.destroy();
+    }
+    
+    categoryPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: data.labels || [],
+            datasets: [{
+                data: data.values || [],
+                backgroundColor: [
+                    'rgb(239, 68, 68)',
+                    'rgb(34, 197, 94)',
+                    'rgb(59, 130, 246)',
+                    'rgb(234, 179, 8)',
+                    'rgb(168, 85, 247)',
+                    'rgb(236, 72, 153)',
+                    'rgb(20, 184, 166)',
+                    'rgb(249, 115, 22)',
+                    'rgb(156, 163, 175)',
+                    'rgb(14, 165, 233)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function renderBalanceTrendChart(data) {
+    const ctx = document.getElementById('balanceTrendChart');
+    
+    if (balanceTrendChart) {
+        balanceTrendChart.destroy();
+    }
+    
+    balanceTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels || [],
+            datasets: [{
+                label: 'Баланс',
+                data: data.values || [],
+                borderColor: 'rgb(102, 126, 234)',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+
+function renderTopCategories(categories) {
+    const container = document.getElementById('top-categories-list');
+    
+    if (!categories || categories.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Нет данных</p>';
+        return;
+    }
+    
+    container.innerHTML = categories.map((cat, index) => `
+        <div class="category-item">
+            <span class="category-name">${index + 1}. ${cat.name}</span>
+            <span>
+                <span class="category-amount">${formatAmount(cat.amount)}</span>
+                <span class="category-percent">(${cat.percent}%)</span>
+            </span>
+        </div>
+    `).join('');
+}
+
+// ============================================
+// v2.4.0 - Workspace Management
+// ============================================
+
+let currentWorkspaceId = null;
+
+async function loadWorkspaces() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_workspaces',
+                user_id: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const select = document.getElementById('workspace-select');
+            select.innerHTML = result.data.map(ws => 
+                `<option value="${ws.workspace_id}" ${ws.is_owner ? '👑' : ''}>${ws.workspace_name}</option>`
+            ).join('');
+            
+            if (result.data.length > 0) {
+                currentWorkspaceId = result.data[0].workspace_id;
+                loadMembers();
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки workspace:', error);
+    }
+}
+
+async function switchWorkspace() {
+    const select = document.getElementById('workspace-select');
+    currentWorkspaceId = parseInt(select.value);
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'switch_workspace',
+                user_id: userId,
+                workspace_id: currentWorkspaceId
+            })
+        });
+        
+        loadMembers();
+        showNotification('✅ Workspace переключён!', 'success');
+    } catch (error) {
+        console.error('Ошибка переключения workspace:', error);
+    }
+}
+
+function showCreateWorkspaceModal() {
+    const name = prompt('Название workspace:');
+    if (!name) return;
+    
+    const description = prompt('Описание (необязательно):');
+    
+    createWorkspace(name, description);
+}
+
+async function createWorkspace(name, description) {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create_workspace',
+                user_id: userId,
+                name: name,
+                description: description || '',
+                currency: 'KGS'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('✅ Workspace создан!', 'success');
+            loadWorkspaces();
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка создания workspace:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+async function loadMembers() {
+    if (!currentWorkspaceId) return;
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_members',
+                user_id: userId,
+                workspace_id: currentWorkspaceId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            renderMembers(result.data);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки участников:', error);
+    }
+}
+
+function renderMembers(members) {
+    const container = document.getElementById('members-list');
+    const countElem = document.getElementById('member-count');
+    
+    countElem.textContent = members.length;
+    
+    if (members.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Нет участников</p>';
+        return;
+    }
+    
+    container.innerHTML = members.map(member => `
+        <div class="member-card">
+            <div class="member-info">
+                <div class="member-name">👤 User ${member.user_id}</div>
+                <div class="member-role">
+                    <span class="role-badge role-${member.role}">${getRoleEmoji(member.role)} ${member.role}</span>
+                </div>
+            </div>
+            <div class="member-actions">
+                ${member.role !== 'owner' ? '<button class="btn-icon" onclick="removeMember(' + member.user_id + ')">🗑️</button>' : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getRoleEmoji(role) {
+    const emojis = {
+        owner: '👑',
+        admin: '🛠️',
+        editor: '✏️',
+        viewer: '👁️'
+    };
+    return emojis[role] || '👤';
+}
+
+async function createInvite() {
+    const role = document.getElementById('invite-role').value;
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create_invite',
+                user_id: userId,
+                workspace_id: currentWorkspaceId,
+                role: role,
+                max_uses: 1
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const inviteCode = result.data.invite_code;
+            const inviteLink = `https://t.me/YOUR_BOT?start=invite_${inviteCode}`;
+            
+            document.getElementById('invite-link-input').value = inviteLink;
+            document.getElementById('invite-link-result').classList.remove('hidden');
+            
+            showNotification('✅ Приглашение создано!', 'success');
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка создания приглашения:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+function copyInviteLink() {
+    const input = document.getElementById('invite-link-input');
+    input.select();
+    document.execCommand('copy');
+    showNotification('✅ Ссылка скопирована!', 'success');
+}
+
+async function removeMember(memberId) {
+    if (!confirm('Удалить участника?')) return;
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'remove_member',
+                user_id: userId,
+                workspace_id: currentWorkspaceId,
+                member_id: memberId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('✅ Участник удалён!', 'success');
+            loadMembers();
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка удаления участника:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+async function loadAuditLogs() {
+    if (!currentWorkspaceId) return;
+    
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_audit_logs',
+                user_id: userId,
+                workspace_id: currentWorkspaceId,
+                limit: 20
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            renderAuditLogs(result.data);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки audit logs:', error);
+    }
+}
+
+function renderAuditLogs(logs) {
+    const container = document.getElementById('audit-log-list');
+    
+    if (!logs || logs.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#999;">Нет действий</p>';
+        return;
+    }
+    
+    container.innerHTML = logs.map(log => `
+        <div class="audit-item">
+            <div class="audit-time">${formatDate(log.created_at)}</div>
+            <div class="audit-action">
+                <span class="audit-user">User ${log.user_id}</span> 
+                ${log.action_type} ${log.entity_type || ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// ============================================
+// v2.4.0 - Settings
+// ============================================
+
+let userPreferences = {
+    theme: 'light',
+    language: 'ru',
+    timezone: 'Asia/Bishkek',
+    defaultCurrency: 'KGS',
+    notifications: {
+        telegram: true,
+        push: true,
+        email: false
+    }
+};
+
+async function loadPreferences() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_user_preferences',
+                user_id: userId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            userPreferences = result.data;
+            applyPreferences();
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+    }
+}
+
+function applyPreferences() {
+    // Применить тему
+    document.getElementById('theme-select').value = userPreferences.theme || 'light';
+    changeTheme();
+    
+    // Применить язык
+    document.getElementById('language-select').value = userPreferences.language || 'ru';
+    
+    // Применить валюту
+    document.getElementById('default-currency-select').value = userPreferences.defaultCurrency || 'KGS';
+    
+    // Применить timezone
+    document.getElementById('timezone-select').value = userPreferences.timezone || 'Asia/Bishkek';
+    
+    // Применить уведомления
+    if (userPreferences.notifications) {
+        document.getElementById('notify-telegram').checked = userPreferences.notifications.telegram !== false;
+        document.getElementById('notify-push').checked = userPreferences.notifications.push !== false;
+        document.getElementById('notify-email').checked = userPreferences.notifications.email === true;
+    }
+}
+
+function changeTheme() {
+    const theme = document.getElementById('theme-select').value;
+    
+    if (theme === 'auto') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    } else {
+        document.body.setAttribute('data-theme', theme);
+    }
+}
+
+function changeLanguage() {
+    const language = document.getElementById('language-select').value;
+    showNotification('Смена языка будет доступна в следующем релизе', 'info');
+}
+
+function changeDefaultCurrency() {
+    const currency = document.getElementById('default-currency-select').value;
+    selectedCurrency = currency;
+    showNotification('Валюта по умолчанию изменена на ' + currency, 'success');
+}
+
+function changeTimezone() {
+    const timezone = document.getElementById('timezone-select').value;
+    showNotification('Часовой пояс изменён на ' + timezone, 'success');
+}
+
+async function savePreferences() {
+    const webhookUrl = 'https://hi9neee.app.n8n.cloud/webhook/workspace-api';
+    
+    const preferences = {
+        theme: document.getElementById('theme-select').value,
+        language: document.getElementById('language-select').value,
+        timezone: document.getElementById('timezone-select').value,
+        notification_settings: {
+            telegram: document.getElementById('notify-telegram').checked,
+            push: document.getElementById('notify-push').checked,
+            email: document.getElementById('notify-email').checked
+        }
+    };
+    
+    try {
+        const userId = getUserId();
+        
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_preferences',
+                user_id: userId,
+                ...preferences
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            userPreferences = preferences;
+            applyPreferences();
+            showNotification('✅ Настройки сохранены!', 'success');
+        } else {
+            showNotification('Ошибка: ' + (result.error || 'Unknown'), 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения настроек:', error);
+        showNotification('Ошибка соединения', 'error');
+    }
+}
+
+// Инициализация v2.4.0 компонентов
+document.addEventListener('DOMContentLoaded', () => {
+    loadPreferences();
+    
+    // Автоматически переключаем на вкладку Analytics при открытии
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab) {
+        switchTab(tab);
+    }
+});
