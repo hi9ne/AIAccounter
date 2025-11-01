@@ -6,7 +6,9 @@
         "httpMethod": "POST",
         "path": "analytics-api",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedMethods": "GET,POST,OPTIONS"
+        }
       },
       "id": "webhook-analytics",
       "name": "Webhook Analytics API",
@@ -452,7 +454,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -489,7 +491,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -526,7 +528,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -563,7 +565,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -600,7 +602,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -637,7 +639,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -674,7 +676,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -711,7 +713,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -748,7 +750,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -785,7 +787,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
@@ -822,7 +824,7 @@
               },
               {
                 "name": "Access-Control-Allow-Methods",
-                "value": "POST, GET, OPTIONS"
+                "value": "GET, POST, OPTIONS"
               },
               {
                 "name": "Access-Control-Allow-Headers",
