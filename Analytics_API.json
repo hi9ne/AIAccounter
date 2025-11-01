@@ -867,6 +867,17 @@
       "main": [
         [
           {
+            "node": "Extract Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Body": {
+      "main": [
+        [
+          {
             "node": "Get Income Expense Stats",
             "type": "main",
             "index": 0

@@ -747,6 +747,17 @@
       "main": [
         [
           {
+            "node": "Extract Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Body": {
+      "main": [
+        [
+          {
             "node": "Route: create_workspace",
             "type": "main",
             "index": 0
