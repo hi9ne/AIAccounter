@@ -37,3 +37,8 @@ const MINIAPP_CONFIG = {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = MINIAPP_CONFIG;
 }
+
+// Для браузера
+if (typeof window !== 'undefined') {
+    window.MiniAppConfig = MINIAPP_CONFIG;
+}

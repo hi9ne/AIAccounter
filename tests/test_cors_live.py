@@ -39,9 +39,9 @@ def test_cors(url, name):
 
 # Test all endpoints
 endpoints = [
-    ('https://hi9neee.app.n8n.cloud/webhook/workspace', 'Workspace API'),
-    ('https://hi9neee.app.n8n.cloud/webhook/analytics', 'Analytics API'),
-    ('https://hi9neee.app.n8n.cloud/webhook/reports', 'Reports API'),
+    ('https://hi9neee.app.n8n.cloud/webhook/workspace-api', 'Workspace API'),
+    ('https://hi9neee.app.n8n.cloud/webhook/analytics-api', 'Analytics API'),
+    ('https://hi9neee.app.n8n.cloud/webhook/reports-api', 'Reports API'),
     ('https://hi9neee.app.n8n.cloud/webhook/miniapp', 'MiniApp API'),
 ]
 
