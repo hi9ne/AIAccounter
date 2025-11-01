@@ -60,9 +60,9 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "value1": "={{$json[\"action\"]}}",
               "operation": "equals",
-              "value2": "get_workspaces"
+              "value2": "get_user_workspaces"
             }
           ]
         }
@@ -352,7 +352,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_user_workspaces({{$json[\"body\"][\"user_id\"]}})",
+        "query": "SELECT * FROM get_user_workspaces({{$json.userId}})",
         "additionalFields": {}
       },
       "id": "db_get_workspaces",
