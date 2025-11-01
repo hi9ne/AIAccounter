@@ -14,7 +14,10 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [0, 500],
+      "position": [
+        0,
+        500
+      ],
       "webhookId": "miniapp-webhook"
     },
     {
@@ -360,7 +363,10 @@
       "name": "Switch by Action",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [200, 500]
+      "position": [
+        200,
+        500
+      ]
     },
     {
       "parameters": {
@@ -370,7 +376,10 @@
       "name": "Prepare Add Transaction",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 200]
+      "position": [
+        400,
+        200
+      ]
     },
     {
       "parameters": {
@@ -382,7 +391,10 @@
       "name": "Insert Transaction",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 200],
+      "position": [
+        600,
+        200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -394,13 +406,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Transaction added', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Transaction added', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-add",
       "name": "Response Add",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 200]
+      "position": [
+        800,
+        200
+      ]
     },
     {
       "parameters": {
@@ -410,7 +447,10 @@
       "name": "Prepare Get Stats",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 400]
+      "position": [
+        400,
+        400
+      ]
     },
     {
       "parameters": {
@@ -422,7 +462,10 @@
       "name": "Get Stats",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 400],
+      "position": [
+        600,
+        400
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -439,18 +482,46 @@
       "name": "Format Stats",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [800, 400]
+      "position": [
+        800,
+        400
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $json }}"
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-stats",
       "name": "Response Stats",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1000, 400]
+      "position": [
+        1000,
+        400
+      ]
     },
     {
       "parameters": {
@@ -460,7 +531,10 @@
       "name": "Prepare Get History",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 600]
+      "position": [
+        400,
+        600
+      ]
     },
     {
       "parameters": {
@@ -472,7 +546,10 @@
       "name": "Get History",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 600],
+      "position": [
+        600,
+        600
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -484,13 +561,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, data: $input.all() } }}"
+        "responseBody": "={{ { success: true, data: $input.all() } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-history",
       "name": "Response History",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 600]
+      "position": [
+        800,
+        600
+      ]
     },
     {
       "parameters": {
@@ -500,7 +602,10 @@
       "name": "Prepare Edit",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 800]
+      "position": [
+        400,
+        800
+      ]
     },
     {
       "parameters": {
@@ -512,7 +617,10 @@
       "name": "Update Transaction",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 800],
+      "position": [
+        600,
+        800
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -524,13 +632,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Transaction updated', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Transaction updated', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-edit",
       "name": "Response Edit",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 800]
+      "position": [
+        800,
+        800
+      ]
     },
     {
       "parameters": {
@@ -540,7 +673,10 @@
       "name": "Prepare Delete",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 1000]
+      "position": [
+        400,
+        1000
+      ]
     },
     {
       "parameters": {
@@ -552,7 +688,10 @@
       "name": "Delete Transaction",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 1000],
+      "position": [
+        600,
+        1000
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -564,13 +703,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Transaction deleted', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Transaction deleted', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-delete",
       "name": "Response Delete",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 1000]
+      "position": [
+        800,
+        1000
+      ]
     },
     {
       "parameters": {
@@ -580,7 +744,10 @@
       "name": "Prepare Restore",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 1200]
+      "position": [
+        400,
+        1200
+      ]
     },
     {
       "parameters": {
@@ -592,7 +759,10 @@
       "name": "Restore Transaction",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 1200],
+      "position": [
+        600,
+        1200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -604,38 +774,111 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Transaction restored', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Transaction restored', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-restore",
       "name": "Response Restore",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 1200]
+      "position": [
+        800,
+        1200
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'PDF generation not implemented yet', data: { status: 'pending', format: 'pdf' } } }}"
+        "responseBody": "={{ { success: true, message: 'PDF generation not implemented yet', data: { status: 'pending', format: 'pdf' } } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-report",
       "name": "Response Report",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [400, 1300]
+      "position": [
+        400,
+        1300
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
         "options": {
-          "responseCode": 400
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-error",
       "name": "Response Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [400, 1400]
+      "position": [
+        400,
+        1400
+      ]
     },
     {
       "parameters": {
@@ -645,7 +888,10 @@
       "name": "Prepare Get Subscriptions",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 1600]
+      "position": [
+        400,
+        1600
+      ]
     },
     {
       "parameters": {
@@ -657,7 +903,10 @@
       "name": "Get Subscriptions",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 1600],
+      "position": [
+        600,
+        1600
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -669,13 +918,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, data: $input.all() } }}"
+        "responseBody": "={{ { success: true, data: $input.all() } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-subscriptions",
       "name": "Response Subscriptions",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 1600]
+      "position": [
+        800,
+        1600
+      ]
     },
     {
       "parameters": {
@@ -685,7 +959,10 @@
       "name": "Prepare Create Subscription",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 1800]
+      "position": [
+        400,
+        1800
+      ]
     },
     {
       "parameters": {
@@ -697,7 +974,10 @@
       "name": "Create Subscription",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 1800],
+      "position": [
+        600,
+        1800
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -709,13 +989,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Subscription created', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Subscription created', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-create-sub",
       "name": "Response Create Sub",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 1800]
+      "position": [
+        800,
+        1800
+      ]
     },
     {
       "parameters": {
@@ -725,7 +1030,10 @@
       "name": "Prepare Cancel Subscription",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 2000]
+      "position": [
+        400,
+        2000
+      ]
     },
     {
       "parameters": {
@@ -737,7 +1045,10 @@
       "name": "Cancel Subscription",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 2000],
+      "position": [
+        600,
+        2000
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -749,13 +1060,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Subscription cancelled', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Subscription cancelled', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-cancel-sub",
       "name": "Response Cancel Sub",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 2000]
+      "position": [
+        800,
+        2000
+      ]
     },
     {
       "parameters": {
@@ -765,7 +1101,10 @@
       "name": "Prepare Get Notifications",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 2200]
+      "position": [
+        400,
+        2200
+      ]
     },
     {
       "parameters": {
@@ -777,7 +1116,10 @@
       "name": "Get Notifications",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 2200],
+      "position": [
+        600,
+        2200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -789,13 +1131,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, data: $input.all() } }}"
+        "responseBody": "={{ { success: true, data: $input.all() } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-notifications",
       "name": "Response Notifications",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 2200]
+      "position": [
+        800,
+        2200
+      ]
     },
     {
       "parameters": {
@@ -805,7 +1172,10 @@
       "name": "Prepare Mark Read",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 2400]
+      "position": [
+        400,
+        2400
+      ]
     },
     {
       "parameters": {
@@ -817,7 +1187,10 @@
       "name": "Mark Notification Read",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 2400],
+      "position": [
+        600,
+        2400
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -829,13 +1202,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Notification marked as read' } }}"
+        "responseBody": "={{ { success: true, message: 'Notification marked as read' } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-mark-read",
       "name": "Response Mark Read",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 2400]
+      "position": [
+        800,
+        2400
+      ]
     },
     {
       "parameters": {
@@ -845,7 +1243,10 @@
       "name": "Prepare Mark All Read",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 2600]
+      "position": [
+        400,
+        2600
+      ]
     },
     {
       "parameters": {
@@ -857,7 +1258,10 @@
       "name": "Mark All Read",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 2600],
+      "position": [
+        600,
+        2600
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -869,13 +1273,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'All notifications marked as read' } }}"
+        "responseBody": "={{ { success: true, message: 'All notifications marked as read' } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-mark-all",
       "name": "Response Mark All",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 2600]
+      "position": [
+        800,
+        2600
+      ]
     },
     {
       "parameters": {
@@ -885,7 +1314,10 @@
       "name": "Prepare Get Budget",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 2800]
+      "position": [
+        400,
+        2800
+      ]
     },
     {
       "parameters": {
@@ -897,7 +1329,10 @@
       "name": "Get Budget Forecast",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 2800],
+      "position": [
+        600,
+        2800
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -909,13 +1344,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, data: $json } }}"
+        "responseBody": "={{ { success: true, data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-budget",
       "name": "Response Budget",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 2800]
+      "position": [
+        800,
+        2800
+      ]
     },
     {
       "parameters": {
@@ -925,7 +1385,10 @@
       "name": "Prepare Save Alerts",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 3000]
+      "position": [
+        400,
+        3000
+      ]
     },
     {
       "parameters": {
@@ -937,7 +1400,10 @@
       "name": "Save Alert Settings",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [600, 3000],
+      "position": [
+        600,
+        3000
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -949,13 +1415,38 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Alert settings saved', data: $json } }}"
+        "responseBody": "={{ { success: true, message: 'Alert settings saved', data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response-alerts",
       "name": "Response Alerts",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 3000]
+      "position": [
+        800,
+        3000
+      ]
     }
   ],
   "connections": {

@@ -12,7 +12,10 @@
       "name": "Webhook Reports API",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 400],
+      "position": [
+        250,
+        400
+      ],
       "webhookId": "reports-api-v2.4.0"
     },
     {
@@ -31,7 +34,10 @@
       "name": "Generate PDF",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 200]
+      "position": [
+        450,
+        200
+      ]
     },
     {
       "parameters": {
@@ -49,7 +55,10 @@
       "name": "Generate Excel",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 400]
+      "position": [
+        450,
+        400
+      ]
     },
     {
       "parameters": {
@@ -67,7 +76,10 @@
       "name": "Generate CSV",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 600]
+      "position": [
+        450,
+        600
+      ]
     },
     {
       "parameters": {
@@ -85,7 +97,10 @@
       "name": "Get Report",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 800]
+      "position": [
+        450,
+        800
+      ]
     },
     {
       "parameters": {
@@ -103,7 +118,10 @@
       "name": "Get Reports List",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1000]
+      "position": [
+        450,
+        1000
+      ]
     },
     {
       "parameters": {
@@ -115,7 +133,10 @@
       "name": "Fetch Data for PDF",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 200],
+      "position": [
+        650,
+        200
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -131,7 +152,10 @@
       "name": "Build HTML Template",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [850, 200]
+      "position": [
+        850,
+        200
+      ]
     },
     {
       "parameters": {
@@ -176,7 +200,10 @@
       "name": "Generate PDF via API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1050, 200]
+      "position": [
+        1050,
+        200
+      ]
     },
     {
       "parameters": {
@@ -188,7 +215,10 @@
       "name": "Save Report to DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1250, 200],
+      "position": [
+        1250,
+        200
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -201,14 +231,37 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'generate_pdf', report_id: $json.id, file_url: $json.file_url, format: 'pdf' } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-pdf",
       "name": "Response PDF",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1450, 200]
+      "position": [
+        1450,
+        200
+      ]
     },
     {
       "parameters": {
@@ -220,7 +273,10 @@
       "name": "Fetch Data for Excel",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 400],
+      "position": [
+        650,
+        400
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -236,7 +292,10 @@
       "name": "Build Excel File",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [850, 400]
+      "position": [
+        850,
+        400
+      ]
     },
     {
       "parameters": {
@@ -248,7 +307,10 @@
       "name": "Save Excel Report",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1050, 400],
+      "position": [
+        1050,
+        400
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -261,14 +323,37 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'generate_excel', report_id: $json.id, file_url: $json.file_url, format: 'excel' } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-excel",
       "name": "Response Excel",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1250, 400]
+      "position": [
+        1250,
+        400
+      ]
     },
     {
       "parameters": {
@@ -280,7 +365,10 @@
       "name": "Fetch Data for CSV",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 600],
+      "position": [
+        650,
+        600
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -296,7 +384,10 @@
       "name": "Build CSV File",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [850, 600]
+      "position": [
+        850,
+        600
+      ]
     },
     {
       "parameters": {
@@ -308,7 +399,10 @@
       "name": "Save CSV Report",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1050, 600],
+      "position": [
+        1050,
+        600
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -321,14 +415,37 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'generate_csv', report_id: $json.id, file_url: $json.file_url, format: 'csv', csv_data: $node['Build CSV File'].json.csv } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-csv",
       "name": "Response CSV",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1250, 600]
+      "position": [
+        1250,
+        600
+      ]
     },
     {
       "parameters": {
@@ -340,7 +457,10 @@
       "name": "Get Report by ID",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 800],
+      "position": [
+        650,
+        800
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -353,14 +473,37 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_report', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-get-report",
       "name": "Response Get Report",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 800]
+      "position": [
+        850,
+        800
+      ]
     },
     {
       "parameters": {
@@ -372,7 +515,10 @@
       "name": "Get Reports List",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 1000],
+      "position": [
+        650,
+        1000
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -385,28 +531,74 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_reports_list', data: $json, count: $json.length } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-get-reports-list",
       "name": "Response Reports List",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 1000]
+      "position": [
+        850,
+        1000
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
         "options": {
-          "responseCode": 400
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-error",
       "name": "Response Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [650, 1200]
+      "position": [
+        650,
+        1200
+      ]
     }
   ],
   "connections": {

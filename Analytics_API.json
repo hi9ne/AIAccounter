@@ -12,7 +12,10 @@
       "name": "Webhook Analytics API",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "webhookId": "analytics-api-v2.4.0"
     },
     {
@@ -31,7 +34,10 @@
       "name": "Get Income Expense Stats",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 200]
+      "position": [
+        450,
+        200
+      ]
     },
     {
       "parameters": {
@@ -49,7 +55,10 @@
       "name": "Get Chart Data",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 350]
+      "position": [
+        450,
+        350
+      ]
     },
     {
       "parameters": {
@@ -67,7 +76,10 @@
       "name": "Get Top Categories",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 500]
+      "position": [
+        450,
+        500
+      ]
     },
     {
       "parameters": {
@@ -85,7 +97,10 @@
       "name": "Get Category Analytics",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 650]
+      "position": [
+        450,
+        650
+      ]
     },
     {
       "parameters": {
@@ -103,7 +118,10 @@
       "name": "Get Spending Patterns",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 800]
+      "position": [
+        450,
+        800
+      ]
     },
     {
       "parameters": {
@@ -121,7 +139,10 @@
       "name": "Get Balance Trend",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 950]
+      "position": [
+        450,
+        950
+      ]
     },
     {
       "parameters": {
@@ -139,7 +160,10 @@
       "name": "Update Analytics Cache",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1100]
+      "position": [
+        450,
+        1100
+      ]
     },
     {
       "parameters": {
@@ -157,7 +181,10 @@
       "name": "Get Cached Analytics",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1250]
+      "position": [
+        450,
+        1250
+      ]
     },
     {
       "parameters": {
@@ -175,7 +202,10 @@
       "name": "Save Chart Config",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1400]
+      "position": [
+        450,
+        1400
+      ]
     },
     {
       "parameters": {
@@ -193,7 +223,10 @@
       "name": "Get Chart Configs",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1550]
+      "position": [
+        450,
+        1550
+      ]
     },
     {
       "parameters": {
@@ -205,7 +238,10 @@
       "name": "PostgreSQL Get Stats",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 200],
+      "position": [
+        650,
+        200
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -223,7 +259,10 @@
       "name": "PostgreSQL Chart Data",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 350],
+      "position": [
+        650,
+        350
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -241,7 +280,10 @@
       "name": "PostgreSQL Top Categories",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 500],
+      "position": [
+        650,
+        500
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -259,7 +301,10 @@
       "name": "PostgreSQL Category Analytics",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 650],
+      "position": [
+        650,
+        650
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -277,7 +322,10 @@
       "name": "PostgreSQL Spending Patterns",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 800],
+      "position": [
+        650,
+        800
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -295,7 +343,10 @@
       "name": "PostgreSQL Balance Trend",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 950],
+      "position": [
+        650,
+        950
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -313,7 +364,10 @@
       "name": "PostgreSQL Update Cache",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 1100],
+      "position": [
+        650,
+        1100
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -331,7 +385,10 @@
       "name": "PostgreSQL Get Cached",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 1250],
+      "position": [
+        650,
+        1250
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -349,7 +406,10 @@
       "name": "PostgreSQL Save Chart Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 1400],
+      "position": [
+        650,
+        1400
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -367,7 +427,10 @@
       "name": "PostgreSQL Get Chart Configs",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [650, 1550],
+      "position": [
+        650,
+        1550
+      ],
       "credentials": {
         "postgres": {
           "id": "supabase",
@@ -380,154 +443,407 @@
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_income_expense_stats', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-income-expense-stats",
       "name": "Response Stats",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 200]
+      "position": [
+        850,
+        200
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_chart_data', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-chart-data",
       "name": "Response Chart Data",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 350]
+      "position": [
+        850,
+        350
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_top_categories', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-top-categories",
       "name": "Response Top Categories",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 500]
+      "position": [
+        850,
+        500
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_category_analytics', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-category-analytics",
       "name": "Response Category Analytics",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 650]
+      "position": [
+        850,
+        650
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_spending_patterns', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-spending-patterns",
       "name": "Response Spending Patterns",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 800]
+      "position": [
+        850,
+        800
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_balance_trend', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-balance-trend",
       "name": "Response Balance Trend",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 950]
+      "position": [
+        850,
+        950
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'update_analytics_cache', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-update-cache",
       "name": "Response Update Cache",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 1100]
+      "position": [
+        850,
+        1100
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_cached_analytics', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-get-cached",
       "name": "Response Get Cached",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 1250]
+      "position": [
+        850,
+        1250
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'save_chart_config', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-save-chart-config",
       "name": "Response Save Chart Config",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 1400]
+      "position": [
+        850,
+        1400
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: true, action: 'get_chart_configs', data: $json } }}",
         "options": {
-          "responseCode": 200
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-get-chart-configs",
       "name": "Response Get Chart Configs",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 1550]
+      "position": [
+        850,
+        1550
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
         "options": {
-          "responseCode": 400
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
         }
       },
       "id": "response-error",
       "name": "Response Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [650, 1700]
+      "position": [
+        650,
+        1700
+      ]
     }
   ],
   "connections": {

@@ -11,7 +11,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "webhookId": "workspace-api-webhook"
     },
     {
@@ -30,7 +33,10 @@
       "name": "Route: create_workspace",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 200]
+      "position": [
+        450,
+        200
+      ]
     },
     {
       "parameters": {
@@ -48,7 +54,10 @@
       "name": "Route: get_workspaces",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 350]
+      "position": [
+        450,
+        350
+      ]
     },
     {
       "parameters": {
@@ -66,7 +75,10 @@
       "name": "Route: update_workspace",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 500]
+      "position": [
+        450,
+        500
+      ]
     },
     {
       "parameters": {
@@ -84,7 +96,10 @@
       "name": "Route: delete_workspace",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 650]
+      "position": [
+        450,
+        650
+      ]
     },
     {
       "parameters": {
@@ -102,7 +117,10 @@
       "name": "Route: get_members",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 800]
+      "position": [
+        450,
+        800
+      ]
     },
     {
       "parameters": {
@@ -120,7 +138,10 @@
       "name": "Route: create_invite",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 950]
+      "position": [
+        450,
+        950
+      ]
     },
     {
       "parameters": {
@@ -138,7 +159,10 @@
       "name": "Route: accept_invite",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1100]
+      "position": [
+        450,
+        1100
+      ]
     },
     {
       "parameters": {
@@ -156,7 +180,10 @@
       "name": "Route: remove_member",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1250]
+      "position": [
+        450,
+        1250
+      ]
     },
     {
       "parameters": {
@@ -174,7 +201,10 @@
       "name": "Route: update_member_role",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1400]
+      "position": [
+        450,
+        1400
+      ]
     },
     {
       "parameters": {
@@ -192,7 +222,10 @@
       "name": "Route: check_permission",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1550]
+      "position": [
+        450,
+        1550
+      ]
     },
     {
       "parameters": {
@@ -210,7 +243,10 @@
       "name": "Route: get_audit_logs",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1700]
+      "position": [
+        450,
+        1700
+      ]
     },
     {
       "parameters": {
@@ -228,7 +264,10 @@
       "name": "Route: switch_workspace",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 1850]
+      "position": [
+        450,
+        1850
+      ]
     },
     {
       "parameters": {
@@ -246,7 +285,10 @@
       "name": "Route: get_user_preferences",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 2000]
+      "position": [
+        450,
+        2000
+      ]
     },
     {
       "parameters": {
@@ -264,7 +306,10 @@
       "name": "Route: update_preferences",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [450, 2150]
+      "position": [
+        450,
+        2150
+      ]
     },
     {
       "parameters": {
@@ -276,7 +321,10 @@
       "name": "DB: Create Workspace",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 200],
+      "position": [
+        650,
+        200
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -294,7 +342,10 @@
       "name": "DB: Get Workspaces",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 350],
+      "position": [
+        650,
+        350
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -312,7 +363,10 @@
       "name": "DB: Update Workspace",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 500],
+      "position": [
+        650,
+        500
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -330,7 +384,10 @@
       "name": "DB: Delete Workspace",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 650],
+      "position": [
+        650,
+        650
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -348,7 +405,10 @@
       "name": "DB: Get Members",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 800],
+      "position": [
+        650,
+        800
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -364,7 +424,10 @@
       "name": "Code: Generate Invite Code",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [650, 950]
+      "position": [
+        650,
+        950
+      ]
     },
     {
       "parameters": {
@@ -376,7 +439,10 @@
       "name": "DB: Create Invite",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [850, 950],
+      "position": [
+        850,
+        950
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -394,7 +460,10 @@
       "name": "DB: Accept Invite",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 1100],
+      "position": [
+        650,
+        1100
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -412,7 +481,10 @@
       "name": "DB: Remove Member",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 1250],
+      "position": [
+        650,
+        1250
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -430,7 +502,10 @@
       "name": "DB: Update Member Role",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 1400],
+      "position": [
+        650,
+        1400
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -448,7 +523,10 @@
       "name": "DB: Check Permission",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 1550],
+      "position": [
+        650,
+        1550
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -466,7 +544,10 @@
       "name": "DB: Get Audit Logs",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 1700],
+      "position": [
+        650,
+        1700
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -484,7 +565,10 @@
       "name": "DB: Switch Workspace",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 1850],
+      "position": [
+        650,
+        1850
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -502,7 +586,10 @@
       "name": "DB: Get Preferences",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 2000],
+      "position": [
+        650,
+        2000
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -520,7 +607,10 @@
       "name": "DB: Update Preferences",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [650, 2150],
+      "position": [
+        650,
+        2150
+      ],
       "credentials": {
         "postgres": {
           "id": "1",
@@ -530,26 +620,109 @@
     },
     {
       "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "headers.Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "name": "headers.Access-Control-Allow-Methods",
+              "value": "POST, GET, OPTIONS"
+            },
+            {
+              "name": "headers.Access-Control-Allow-Headers",
+              "value": "Content-Type, Authorization"
+            },
+            {
+              "name": "headers.Access-Control-Max-Age",
+              "value": "86400"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set_cors_headers",
+      "name": "Set CORS Headers",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        800,
+        1075
+      ]
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: true, data: $json } }}"
+        "responseBody": "={{ { success: true, data: $json } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response_success",
       "name": "Response: Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [850, 1075]
+      "position": [
+        850,
+        1075
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseCode": 400,
-        "responseBody": "={{ { success: false, error: 'Invalid action' } }}"
+        "responseBody": "={{ { success: false, error: 'Invalid action' } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, GET, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              },
+              {
+                "name": "Access-Control-Max-Age",
+                "value": "86400"
+              }
+            ]
+          }
+        }
       },
       "id": "response_error",
       "name": "Response: Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [650, 2300]
+      "position": [
+        650,
+        2300
+      ]
     }
   ],
   "connections": {

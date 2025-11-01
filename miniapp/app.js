@@ -200,7 +200,7 @@ async function apiCall(endpoint, action, data = {}) {
         return await response.json();
     } catch (error) {
         console.error('API Error:', error);
-        showError('Ошибка соединения');
+        // Не показываем alert для каждой ошибки API - только логируем
         return null;
     }
 }
@@ -235,6 +235,11 @@ async function loadBalance() {
         period: 'month'
     });
     
+    if (!result) {
+        console.warn('⚠️ Не удалось загрузить баланс');
+        return;
+    }
+    
     if (result) {
         const balance = result.balance || 0;
         const change = result.change || 0;
@@ -254,6 +259,11 @@ async function loadQuickStats() {
         period: 'month'
     });
     
+    if (!result) {
+        console.warn('⚠️ Не удалось загрузить статистику');
+        return;
+    }
+    
     if (result) {
         document.querySelector('.stat-item.income .stat-value').textContent = 
             formatCurrency(result.total_income || 0);
@@ -270,6 +280,17 @@ async function loadRecentTransactions() {
     });
     
     const container = document.querySelector('.transactions-list');
+    
+    if (!result) {
+        console.warn('⚠️ Не удалось загрузить транзакции');
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-exclamation-circle"></i>
+                <p>Не удалось загрузить данные</p>
+            </div>
+        `;
+        return;
+    }
     
     if (result && result.transactions && result.transactions.length > 0) {
         container.innerHTML = result.transactions.map(t => `
@@ -714,33 +735,13 @@ function hideLoading() {
 }
 
 function showSuccess(message) {
-    // Fallback for old Telegram versions
-    if (typeof tg.showAlert === 'function') {
-        try {
-            tg.showAlert(message);
-        } catch (e) {
-            console.log('✅ ' + message);
-            alert('✅ ' + message);
-        }
-    } else {
-        console.log('✅ ' + message);
-        alert('✅ ' + message);
-    }
+    // Только console.log, без alert и showPopup
+    console.log('✅ ' + message);
 }
 
 function showError(message) {
-    // Fallback for old Telegram versions
-    if (typeof tg.showAlert === 'function') {
-        try {
-            tg.showAlert('⚠️ ' + message);
-        } catch (e) {
-            console.error('⚠️ ' + message);
-            alert('⚠️ ' + message);
-        }
-    } else {
-        console.error('⚠️ ' + message);
-        alert('⚠️ ' + message);
-    }
+    // Только console.error, без alert и showPopup
+    console.error('⚠️ ' + message);
 }
 
 // ========== EVENT LISTENERS ==========
