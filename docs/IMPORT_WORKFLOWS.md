@@ -120,7 +120,7 @@ curl -X OPTIONS https://hi9neee.app.n8n.cloud/webhook/workspace \
 {
   "parameters": {
     "respondWith": "json",
-    "responseBody": "={{ { success: true, data: $json } }}"
+    "responseBody": "={% raw %}{{ { success: true, data: $json } }}{% endraw %}"
   }
 }
 ```
@@ -130,7 +130,7 @@ curl -X OPTIONS https://hi9neee.app.n8n.cloud/webhook/workspace \
 {
   "parameters": {
     "respondWith": "json",
-    "responseBody": "={{ { success: true, data: $json } }}",
+    "responseBody": "={% raw %}{{ { success: true, data: $json } }}{% endraw %}",
     "options": {
       "responseHeaders": {
         "entries": [

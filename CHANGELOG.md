@@ -739,9 +739,9 @@ WHERE date = (SELECT MAX(date) FROM exchange_rates);
 ```sql
 -- Конвертация суммы с актуальным курсом
 SELECT 
-    {{ $fromAI("amount") }} as original_amount,
-    UPPER('{{ $fromAI("from_currency") }}') as from_currency,
-    UPPER('{{ $fromAI("to_currency") }}') as to_currency,
+    {% raw %}{{ $fromAI("amount") }}{% endraw %} as original_amount,
+    UPPER('{% raw %}{{ $fromAI("from_currency") }}{% endraw %}') as from_currency,
+    UPPER('{% raw %}{{ $fromAI("to_currency") }}{% endraw %}') as to_currency,
     get_exchange_rate(...) as rate,
     convert_amount(...) as converted_amount
 ```
