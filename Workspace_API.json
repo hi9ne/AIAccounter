@@ -6,13 +6,15 @@
         "httpMethod": "POST",
         "path": "workspace-api",
         "options": {
+          "allowedOrigins": "*",
           "allowedMethods": "GET,POST,OPTIONS"
-        }
+        },
+        "responseMode": "responseNode"
       },
       "id": "webhook_trigger",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         300
@@ -1128,6 +1130,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "webhook_trigger": {
+      "main": [
+        [
+          {
+            "node": "Route: create_workspace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_options_Workspace_API": {
+      "main": [
+        [
+          {
+            "node": "Response: OPTIONS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

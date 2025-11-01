@@ -184,8 +184,8 @@ async function apiCall(endpoint, action, data = {}) {
         if (!userId) return null;
 
         const payload = {
-            user_id: userId,
-            workspace_id: currentWorkspaceId,
+            userId: userId,  // Changed from user_id to userId for n8n compatibility
+            workspaceId: currentWorkspaceId,  // Changed from workspace_id to workspaceId
             action: action,
             ...data
         };

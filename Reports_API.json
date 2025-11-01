@@ -7,13 +7,14 @@
         "path": "reports-api",
         "responseMode": "responseNode",
         "options": {
+          "allowedOrigins": "*",
           "allowedMethods": "GET,POST,OPTIONS"
         }
       },
       "id": "webhook-reports",
       "name": "Webhook Reports API",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         400
@@ -844,6 +845,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "webhook-reports": {
+      "main": [
+        [
+          {
+            "node": "Check if OPTIONS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_options_Reports_API": {
+      "main": [
+        [
+          {
+            "node": "Response: OPTIONS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },

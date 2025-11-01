@@ -7,13 +7,14 @@
         "path": "analytics-api",
         "responseMode": "responseNode",
         "options": {
+          "allowedOrigins": "*",
           "allowedMethods": "GET,POST,OPTIONS"
         }
       },
       "id": "webhook-analytics",
       "name": "Webhook Analytics API",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         250,
         300
@@ -1193,6 +1194,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "webhook-analytics": {
+      "main": [
+        [
+          {
+            "node": "Check if OPTIONS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_options_Analytics_API": {
+      "main": [
+        [
+          {
+            "node": "Response: OPTIONS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   },
