@@ -343,10 +343,7 @@
         200
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -364,10 +361,7 @@
         350
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -385,10 +379,7 @@
         500
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -406,10 +397,7 @@
         650
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -427,10 +415,7 @@
         800
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -461,10 +446,7 @@
         950
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -482,10 +464,7 @@
         1100
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -503,10 +482,7 @@
         1250
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -524,10 +500,7 @@
         1400
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -545,10 +518,7 @@
         1550
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -566,10 +536,7 @@
         1700
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -587,10 +554,7 @@
         1850
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -608,10 +572,7 @@
         2000
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -629,10 +590,7 @@
         2150
       ],
       "credentials": {
-        "postgres": {
-          "id": "1",
-          "name": "PostgreSQL/Supabase"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {

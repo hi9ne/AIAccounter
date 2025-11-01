@@ -154,10 +154,7 @@
         200
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -236,10 +233,7 @@
         200
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -294,10 +288,7 @@
         400
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -328,10 +319,7 @@
         400
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -386,10 +374,7 @@
         600
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -420,10 +405,7 @@
         600
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -478,10 +460,7 @@
         800
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
@@ -536,10 +515,7 @@
         1000
       ],
       "credentials": {
-        "postgres": {
-          "id": "supabase",
-          "name": "Supabase PostgreSQL"
-        }
+        "postgres": {"id": "3CGZzcUsaAWp8nrl", "name": "Postgres account"}
       }
     },
     {
