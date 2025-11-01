@@ -234,7 +234,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE\n);",
+        "query": "SELECT * FROM get_income_expense_stats(\n  {{ $json.body.workspaceId}}::INTEGER,\n  '{{ $json.body.start_date}}'::DATE,\n  '{{ $json.body.end_date}}'::DATE\n);",
         "options": {}
       },
       "id": "postgres-income-expense-stats",
@@ -255,7 +255,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_income_expense_chart_data(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE,\n  '{{$json.interval}}'::TEXT\n);",
+        "query": "SELECT * FROM get_income_expense_chart_data(\n  {{ $json.body.workspaceId}}::INTEGER,\n  '{{ $json.body.start_date}}'::DATE,\n  '{{ $json.body.end_date}}'::DATE,\n  '{{$json.interval}}'::TEXT\n);",
         "options": {}
       },
       "id": "postgres-chart-data",
@@ -276,7 +276,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_top_expense_categories(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE,\n  {{$json.limit || 10}}::INTEGER\n);",
+        "query": "SELECT * FROM get_top_expense_categories(\n  {{ $json.body.workspaceId}}::INTEGER,\n  '{{ $json.body.start_date}}'::DATE,\n  '{{ $json.body.end_date}}'::DATE,\n  {{$json.limit || 10}}::INTEGER\n);",
         "options": {}
       },
       "id": "postgres-top-categories",
@@ -297,7 +297,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM category_analytics\nWHERE workspace_id = {{$json.workspaceId}}\n  AND month >= '{{$json.start_date}}'::DATE\n  AND month <= '{{$json.end_date}}'::DATE\nORDER BY month DESC, total_amount DESC;",
+        "query": "SELECT * FROM category_analytics\nWHERE workspace_id = {{ $json.body.workspaceId}}\n  AND month >= '{{ $json.body.start_date}}'::DATE\n  AND month <= '{{ $json.body.end_date}}'::DATE\nORDER BY month DESC, total_amount DESC;",
         "options": {}
       },
       "id": "postgres-category-analytics",
@@ -318,7 +318,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM spending_patterns\nWHERE workspace_id = {{$json.workspaceId}}\n  AND detected_at >= '{{$json.start_date}}'::TIMESTAMP\n  AND detected_at <= '{{$json.end_date}}'::TIMESTAMP\nORDER BY confidence_score DESC, detected_at DESC\nLIMIT {{$json.limit || 20}};",
+        "query": "SELECT * FROM spending_patterns\nWHERE workspace_id = {{ $json.body.workspaceId}}\n  AND detected_at >= '{{ $json.body.start_date}}'::TIMESTAMP\n  AND detected_at <= '{{ $json.body.end_date}}'::TIMESTAMP\nORDER BY confidence_score DESC, detected_at DESC\nLIMIT {{$json.limit || 20}};",
         "options": {}
       },
       "id": "postgres-spending-patterns",
@@ -339,7 +339,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH daily_balance AS (\n  SELECT \n    date,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as daily_income,\n    SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as daily_expense,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as daily_net\n  FROM (\n    SELECT date, amount, 'income' as type FROM income WHERE workspace_id = {{$json.workspaceId}}\n    UNION ALL\n    SELECT date, amount, 'expense' as type FROM expenses WHERE workspace_id = {{$json.workspaceId}}\n  ) t\n  WHERE date >= '{{$json.start_date}}'::DATE\n    AND date <= '{{$json.end_date}}'::DATE\n  GROUP BY date\n)\nSELECT \n  date,\n  daily_income,\n  daily_expense,\n  daily_net,\n  SUM(daily_net) OVER (ORDER BY date) as cumulative_balance\nFROM daily_balance\nORDER BY date;",
+        "query": "WITH daily_balance AS (\n  SELECT \n    date,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as daily_income,\n    SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as daily_expense,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as daily_net\n  FROM (\n    SELECT date, amount, 'income' as type FROM income WHERE workspace_id = {{ $json.body.workspaceId}}\n    UNION ALL\n    SELECT date, amount, 'expense' as type FROM expenses WHERE workspace_id = {{ $json.body.workspaceId}}\n  ) t\n  WHERE date >= '{{ $json.body.start_date}}'::DATE\n    AND date <= '{{ $json.body.end_date}}'::DATE\n  GROUP BY date\n)\nSELECT \n  date,\n  daily_income,\n  daily_expense,\n  daily_net,\n  SUM(daily_net) OVER (ORDER BY date) as cumulative_balance\nFROM daily_balance\nORDER BY date;",
         "options": {}
       },
       "id": "postgres-balance-trend",
@@ -360,7 +360,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT update_analytics_cache(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.cache_key}}'::TEXT,\n  '{{JSON.stringify($json.data)}}'::JSONB\n) as success;",
+        "query": "SELECT update_analytics_cache(\n  {{ $json.body.workspaceId}}::INTEGER,\n  '{{$json.cache_key}}'::TEXT,\n  '{{JSON.stringify($json.data)}}'::JSONB\n) as success;",
         "options": {}
       },
       "id": "postgres-update-cache",
@@ -381,7 +381,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_cached_analytics(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.cache_key}}'::TEXT,\n  {{$json.max_age_minutes || 60}}::INTEGER\n);",
+        "query": "SELECT * FROM get_cached_analytics(\n  {{ $json.body.workspaceId}}::INTEGER,\n  '{{$json.cache_key}}'::TEXT,\n  {{$json.max_age_minutes || 60}}::INTEGER\n);",
         "options": {}
       },
       "id": "postgres-get-cached",
@@ -402,7 +402,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO chart_configs (\n  workspace_id,\n  chart_type,\n  title,\n  config_json,\n  is_default\n) VALUES (\n  {{$json.workspaceId}},\n  '{{$json.chart_type}}',\n  '{{$json.title}}',\n  '{{JSON.stringify($json.config)}}'::JSONB,\n  {{$json.is_default || false}}\n)\nON CONFLICT (workspace_id, chart_type, title) \nDO UPDATE SET\n  config_json = EXCLUDED.config_json,\n  is_default = EXCLUDED.is_default,\n  updated_at = NOW()\nRETURNING *;",
+        "query": "INSERT INTO chart_configs (\n  workspace_id,\n  chart_type,\n  title,\n  config_json,\n  is_default\n) VALUES (\n  {{ $json.body.workspaceId}},\n  '{{$json.chart_type}}',\n  '{{$json.title}}',\n  '{{JSON.stringify($json.config)}}'::JSONB,\n  {{$json.is_default || false}}\n)\nON CONFLICT (workspace_id, chart_type, title) \nDO UPDATE SET\n  config_json = EXCLUDED.config_json,\n  is_default = EXCLUDED.is_default,\n  updated_at = NOW()\nRETURNING *;",
         "options": {}
       },
       "id": "postgres-save-chart-config",
@@ -423,7 +423,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM chart_configs\nWHERE workspace_id = {{$json.workspaceId}}\n  {{$json.chart_type ? \"AND chart_type = '\" + $json.chart_type + \"'\" : \"\"}}\nORDER BY is_default DESC, created_at DESC;",
+        "query": "SELECT * FROM chart_configs\nWHERE workspace_id = {{ $json.body.workspaceId}}\n  {{$json.chart_type ? \"AND chart_type = '\" + $json.chart_type + \"'\" : \"\"}}\nORDER BY is_default DESC, created_at DESC;",
         "options": {}
       },
       "id": "postgres-get-chart-configs",

@@ -129,7 +129,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE\n);",
+        "query": "SELECT * FROM get_income_expense_stats(\n  {{ $json.body.workspaceId}}::INTEGER,\n  '{{ $json.body.start_date}}'::DATE,\n  '{{ $json.body.end_date}}'::DATE\n);",
         "options": {}
       },
       "id": "postgres-fetch-data-pdf",
@@ -269,7 +269,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  i.date, i.category, i.amount, 'income' as type, i.description\nFROM income i\nWHERE i.workspace_id = {{$json.workspaceId}}\n  AND i.date >= '{{$json.start_date}}'::DATE\n  AND i.date <= '{{$json.end_date}}'::DATE\nUNION ALL\nSELECT \n  e.date, e.category, e.amount, 'expense' as type, e.description\nFROM expenses e\nWHERE e.workspace_id = {{$json.workspaceId}}\n  AND e.date >= '{{$json.start_date}}'::DATE\n  AND e.date <= '{{$json.end_date}}'::DATE\nORDER BY date DESC;",
+        "query": "SELECT \n  i.date, i.category, i.amount, 'income' as type, i.description\nFROM income i\nWHERE i.workspace_id = {{ $json.body.workspaceId}}\n  AND i.date >= '{{ $json.body.start_date}}'::DATE\n  AND i.date <= '{{ $json.body.end_date}}'::DATE\nUNION ALL\nSELECT \n  e.date, e.category, e.amount, 'expense' as type, e.description\nFROM expenses e\nWHERE e.workspace_id = {{ $json.body.workspaceId}}\n  AND e.date >= '{{ $json.body.start_date}}'::DATE\n  AND e.date <= '{{ $json.body.end_date}}'::DATE\nORDER BY date DESC;",
         "options": {}
       },
       "id": "postgres-fetch-data-excel",
@@ -361,7 +361,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  date, category, amount, 'income' as type, description\nFROM income\nWHERE workspace_id = {{$json.workspaceId}}\n  AND date >= '{{$json.start_date}}'::DATE\n  AND date <= '{{$json.end_date}}'::DATE\nUNION ALL\nSELECT \n  date, category, amount, 'expense' as type, description\nFROM expenses\nWHERE workspace_id = {{$json.workspaceId}}\n  AND date >= '{{$json.start_date}}'::DATE\n  AND date <= '{{$json.end_date}}'::DATE\nORDER BY date DESC;",
+        "query": "SELECT \n  date, category, amount, 'income' as type, description\nFROM income\nWHERE workspace_id = {{ $json.body.workspaceId}}\n  AND date >= '{{ $json.body.start_date}}'::DATE\n  AND date <= '{{ $json.body.end_date}}'::DATE\nUNION ALL\nSELECT \n  date, category, amount, 'expense' as type, description\nFROM expenses\nWHERE workspace_id = {{ $json.body.workspaceId}}\n  AND date >= '{{ $json.body.start_date}}'::DATE\n  AND date <= '{{ $json.body.end_date}}'::DATE\nORDER BY date DESC;",
         "options": {}
       },
       "id": "postgres-fetch-data-csv",
@@ -453,7 +453,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM reports\nWHERE id = {{$json.report_id}}\n  AND workspace_id = {{$json.workspaceId}};",
+        "query": "SELECT * FROM reports\nWHERE id = {{$json.report_id}}\n  AND workspace_id = {{ $json.body.workspaceId}};",
         "options": {}
       },
       "id": "postgres-get-report",
@@ -511,7 +511,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM reports\nWHERE workspace_id = {{$json.workspaceId}}\nORDER BY generated_at DESC\nLIMIT {{$json.limit || 20}};",
+        "query": "SELECT * FROM reports\nWHERE workspace_id = {{ $json.body.workspaceId}}\nORDER BY generated_at DESC\nLIMIT {{$json.limit || 20}};",
         "options": {}
       },
       "id": "postgres-get-reports-list",

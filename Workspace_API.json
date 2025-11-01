@@ -318,7 +318,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT create_workspace_with_owner('{{$json[\"name\"]}}', {{$json[\"userId\"]}}, '{{$json[\"description\"]}}', '{{$json[\"currency\"]}}') as workspace_id",
+        "query": "SELECT create_workspace_with_owner('{{$json.body.name}}', {{$json.body.userId}}, '{{$json.body.description}}', '{{$json.body.currency}}') as workspace_id",
         "additionalFields": {}
       },
       "id": "db_create_workspace",
