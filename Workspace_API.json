@@ -23,10 +23,23 @@
     },
     {
       "parameters": {
+        "jsCode": "// Extract body from webhook payload\nreturn $input.item.json.body || $input.item.json;"
+      },
+      "id": "extract_body",
+      "name": "Extract Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
         "conditions": {
           "string": [
             {
-              "value1": "={{$json[\"body\"][\"action\"]}}",
+              "value1": "={{$json[\"action\"]}}",
               "operation": "equals",
               "value2": "create_workspace"
             }
@@ -318,7 +331,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT create_workspace_with_owner('{{$json.body.name}}', {{$json.body.userId}}, '{{$json.body.description}}', '{{$json.body.currency}}') as workspace_id",
+        "query": "SELECT create_workspace_with_owner('{{$json.name}}', {{$json.userId}}, '{{$json.description}}', '{{$json.currency}}') as workspace_id",
         "additionalFields": {}
       },
       "id": "db_create_workspace",
