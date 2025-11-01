@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract body from webhook payload\nreturn $input.item.json.body || $input.item.json;"
+        "jsCode": "// Extract body from webhook payload\nconst body = $input.item.json.body || $input.item.json;\nreturn { json: body };"
       },
       "id": "extract_body_reports",
       "name": "Extract Body",
