@@ -222,7 +222,8 @@ async function loadWorkspaces() {
         // Create default workspace
         const createResult = await apiCall('workspace', 'create_workspace', {
             name: 'Мой кошелек',
-            type: 'personal'
+            description: 'Личный кошелёк',
+            currency: selectedCurrency
         });
         if (createResult) {
             currentWorkspaceId = createResult.workspace_id;
@@ -255,8 +256,14 @@ async function loadBalance() {
 }
 
 async function loadQuickStats() {
+    // Calculate date range for current month
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+    
     const result = await apiCall('analytics', 'get_income_expense_stats', {
-        period: 'month'
+        start_date: startDate,
+        end_date: endDate
     });
     
     if (!result) {

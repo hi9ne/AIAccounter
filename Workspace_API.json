@@ -36,7 +36,7 @@
       "id": "route_create_workspace",
       "name": "Route: create_workspace",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         200
@@ -57,7 +57,7 @@
       "id": "route_get_workspaces",
       "name": "Route: get_workspaces",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         350
@@ -78,7 +78,7 @@
       "id": "route_update_workspace",
       "name": "Route: update_workspace",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         500
@@ -99,7 +99,7 @@
       "id": "route_delete_workspace",
       "name": "Route: delete_workspace",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         650
@@ -120,7 +120,7 @@
       "id": "route_get_members",
       "name": "Route: get_members",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         800
@@ -141,7 +141,7 @@
       "id": "route_create_invite",
       "name": "Route: create_invite",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         950
@@ -162,7 +162,7 @@
       "id": "route_accept_invite",
       "name": "Route: accept_invite",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1100
@@ -183,7 +183,7 @@
       "id": "route_remove_member",
       "name": "Route: remove_member",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1250
@@ -204,7 +204,7 @@
       "id": "route_update_role",
       "name": "Route: update_member_role",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1400
@@ -225,7 +225,7 @@
       "id": "route_check_permission",
       "name": "Route: check_permission",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1550
@@ -246,7 +246,7 @@
       "id": "route_audit_logs",
       "name": "Route: get_audit_logs",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1700
@@ -267,7 +267,7 @@
       "id": "route_switch_workspace",
       "name": "Route: switch_workspace",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1850
@@ -288,7 +288,7 @@
       "id": "route_get_preferences",
       "name": "Route: get_user_preferences",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         2000
@@ -309,7 +309,7 @@
       "id": "route_update_preferences",
       "name": "Route: update_preferences",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         2150
@@ -318,7 +318,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT create_workspace_with_owner('={{$json[\"body\"][\"name\"]}}', {{$json[\"body\"][\"user_id\"]}}, '={{$json[\"body\"][\"description\"]}}', '={{$json[\"body\"][\"currency\"]}}') as workspace_id",
+        "query": "SELECT create_workspace_with_owner('{{$json[\"name\"]}}', {{$json[\"userId\"]}}, '{{$json[\"description\"]}}', '{{$json[\"currency\"]}}') as workspace_id",
         "additionalFields": {}
       },
       "id": "db_create_workspace",
@@ -360,7 +360,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE workspaces SET name = '={{$json[\"body\"][\"name\"]}}', description = '={{$json[\"body\"][\"description\"]}}', currency = '={{$json[\"body\"][\"currency\"]}}', updated_at = CURRENT_TIMESTAMP WHERE id = {{$json[\"body\"][\"workspace_id\"]}} AND owner_id = {{$json[\"body\"][\"user_id\"]}} RETURNING *",
+        "query": "UPDATE workspaces SET name = '{{$json[\"body\"][\"name\"]}}', description = '{{$json[\"body\"][\"description\"]}}', currency = '{{$json[\"body\"][\"currency\"]}}', updated_at = CURRENT_TIMESTAMP WHERE id = {{$json[\"body\"][\"workspace_id\"]}} AND owner_id = {{$json[\"body\"][\"user_id\"]}} RETURNING *",
         "additionalFields": {}
       },
       "id": "db_update_workspace",
@@ -436,7 +436,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO workspace_invites (workspace_id, invite_code, role, created_by, expires_at, max_uses) VALUES ({{$json[\"body\"][\"workspace_id\"]}}, '={{$json[\"invite_code\"]}}', '={{$json[\"body\"][\"role\"]}}', {{$json[\"body\"][\"user_id\"]}}, CURRENT_TIMESTAMP + INTERVAL '7 days', {{$json[\"body\"][\"max_uses\"] || 1}}) RETURNING *",
+        "query": "INSERT INTO workspace_invites (workspace_id, invite_code, role, created_by, expires_at, max_uses) VALUES ({{$json[\"body\"][\"workspace_id\"]}}, '{{$json[\"invite_code\"]}}', '{{$json[\"body\"][\"role\"]}}', {{$json[\"body\"][\"user_id\"]}}, CURRENT_TIMESTAMP + INTERVAL '7 days', {{$json[\"body\"][\"max_uses\"] || 1}}) RETURNING *",
         "additionalFields": {}
       },
       "id": "db_create_invite",
@@ -457,7 +457,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT accept_workspace_invite('={{$json[\"body\"][\"invite_code\"]}}', {{$json[\"body\"][\"user_id\"]}}) as result",
+        "query": "SELECT accept_workspace_invite('{{$json[\"body\"][\"invite_code\"]}}', {{$json[\"body\"][\"user_id\"]}}) as result",
         "additionalFields": {}
       },
       "id": "db_accept_invite",
@@ -499,7 +499,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE workspace_members SET role = '={{$json[\"body\"][\"role\"]}}' WHERE workspace_id = {{$json[\"body\"][\"workspace_id\"]}} AND user_id = {{$json[\"body\"][\"member_id\"]}} RETURNING *",
+        "query": "UPDATE workspace_members SET role = '{{$json[\"body\"][\"role\"]}}' WHERE workspace_id = {{$json[\"body\"][\"workspace_id\"]}} AND user_id = {{$json[\"body\"][\"member_id\"]}} RETURNING *",
         "additionalFields": {}
       },
       "id": "db_update_role",
@@ -520,7 +520,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT check_workspace_permission({{$json[\"body\"][\"workspace_id\"]}}, {{$json[\"body\"][\"user_id\"]}}, '={{$json[\"body\"][\"permission\"]}}') as has_permission",
+        "query": "SELECT check_workspace_permission({{$json[\"body\"][\"workspace_id\"]}}, {{$json[\"body\"][\"user_id\"]}}, '{{$json[\"body\"][\"permission\"]}}') as has_permission",
         "additionalFields": {}
       },
       "id": "db_check_permission",
@@ -604,7 +604,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO user_preferences (user_id, theme, language, timezone, notification_settings) VALUES ({{$json[\"body\"][\"user_id\"]}}, '={{$json[\"body\"][\"theme\"]}}', '={{$json[\"body\"][\"language\"]}}', '={{$json[\"body\"][\"timezone\"]}}', '{{$json[\"body\"][\"notification_settings\"]}}') ON CONFLICT (user_id) DO UPDATE SET theme = EXCLUDED.theme, language = EXCLUDED.language, timezone = EXCLUDED.timezone, notification_settings = EXCLUDED.notification_settings, updated_at = CURRENT_TIMESTAMP RETURNING *",
+        "query": "INSERT INTO user_preferences (user_id, theme, language, timezone, notification_settings) VALUES ({{$json[\"body\"][\"user_id\"]}}, '{{$json[\"body\"][\"theme\"]}}', '{{$json[\"body\"][\"language\"]}}', '{{$json[\"body\"][\"timezone\"]}}', '{{$json[\"body\"][\"notification_settings\"]}}') ON CONFLICT (user_id) DO UPDATE SET theme = EXCLUDED.theme, language = EXCLUDED.language, timezone = EXCLUDED.timezone, notification_settings = EXCLUDED.notification_settings, updated_at = CURRENT_TIMESTAMP RETURNING *",
         "additionalFields": {}
       },
       "id": "db_update_preferences",

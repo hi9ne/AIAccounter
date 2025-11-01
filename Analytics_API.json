@@ -26,7 +26,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_income_expense_stats"
             }
@@ -36,7 +36,7 @@
       "id": "switch-get-income-expense-stats",
       "name": "Get Income Expense Stats",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         200
@@ -47,7 +47,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_chart_data"
             }
@@ -57,7 +57,7 @@
       "id": "switch-get-chart-data",
       "name": "Get Chart Data",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         350
@@ -68,7 +68,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_top_categories"
             }
@@ -78,7 +78,7 @@
       "id": "switch-get-top-categories",
       "name": "Get Top Categories",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         500
@@ -89,7 +89,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_category_analytics"
             }
@@ -99,7 +99,7 @@
       "id": "switch-get-category-analytics",
       "name": "Get Category Analytics",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         650
@@ -110,7 +110,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_spending_patterns"
             }
@@ -120,7 +120,7 @@
       "id": "switch-get-spending-patterns",
       "name": "Get Spending Patterns",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         800
@@ -131,7 +131,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_balance_trend"
             }
@@ -141,7 +141,7 @@
       "id": "switch-get-balance-trend",
       "name": "Get Balance Trend",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         950
@@ -152,7 +152,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "update_analytics_cache"
             }
@@ -162,7 +162,7 @@
       "id": "switch-update-cache",
       "name": "Update Analytics Cache",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1100
@@ -173,7 +173,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_cached_analytics"
             }
@@ -183,7 +183,7 @@
       "id": "switch-get-cached",
       "name": "Get Cached Analytics",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1250
@@ -194,7 +194,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "save_chart_config"
             }
@@ -204,7 +204,7 @@
       "id": "switch-save-chart-config",
       "name": "Save Chart Config",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1400
@@ -215,7 +215,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_chart_configs"
             }
@@ -225,7 +225,7 @@
       "id": "switch-get-chart-configs",
       "name": "Get Chart Configs",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1550
@@ -234,7 +234,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE\n);",
+        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE\n);",
         "options": {}
       },
       "id": "postgres-income-expense-stats",
@@ -255,7 +255,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_income_expense_chart_data(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE,\n  '{{$json.body.interval}}'::TEXT\n);",
+        "query": "SELECT * FROM get_income_expense_chart_data(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE,\n  '{{$json.interval}}'::TEXT\n);",
         "options": {}
       },
       "id": "postgres-chart-data",
@@ -276,7 +276,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_top_expense_categories(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE,\n  {{$json.body.limit || 10}}::INTEGER\n);",
+        "query": "SELECT * FROM get_top_expense_categories(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE,\n  {{$json.limit || 10}}::INTEGER\n);",
         "options": {}
       },
       "id": "postgres-top-categories",
@@ -297,7 +297,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM category_analytics\nWHERE workspace_id = {{$json.body.workspace_id}}\n  AND month >= '{{$json.body.start_date}}'::DATE\n  AND month <= '{{$json.body.end_date}}'::DATE\nORDER BY month DESC, total_amount DESC;",
+        "query": "SELECT * FROM category_analytics\nWHERE workspace_id = {{$json.workspaceId}}\n  AND month >= '{{$json.start_date}}'::DATE\n  AND month <= '{{$json.end_date}}'::DATE\nORDER BY month DESC, total_amount DESC;",
         "options": {}
       },
       "id": "postgres-category-analytics",
@@ -318,7 +318,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM spending_patterns\nWHERE workspace_id = {{$json.body.workspace_id}}\n  AND detected_at >= '{{$json.body.start_date}}'::TIMESTAMP\n  AND detected_at <= '{{$json.body.end_date}}'::TIMESTAMP\nORDER BY confidence_score DESC, detected_at DESC\nLIMIT {{$json.body.limit || 20}};",
+        "query": "SELECT * FROM spending_patterns\nWHERE workspace_id = {{$json.workspaceId}}\n  AND detected_at >= '{{$json.start_date}}'::TIMESTAMP\n  AND detected_at <= '{{$json.end_date}}'::TIMESTAMP\nORDER BY confidence_score DESC, detected_at DESC\nLIMIT {{$json.limit || 20}};",
         "options": {}
       },
       "id": "postgres-spending-patterns",
@@ -339,7 +339,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH daily_balance AS (\n  SELECT \n    date,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as daily_income,\n    SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as daily_expense,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as daily_net\n  FROM (\n    SELECT date, amount, 'income' as type FROM income WHERE workspace_id = {{$json.body.workspace_id}}\n    UNION ALL\n    SELECT date, amount, 'expense' as type FROM expenses WHERE workspace_id = {{$json.body.workspace_id}}\n  ) t\n  WHERE date >= '{{$json.body.start_date}}'::DATE\n    AND date <= '{{$json.body.end_date}}'::DATE\n  GROUP BY date\n)\nSELECT \n  date,\n  daily_income,\n  daily_expense,\n  daily_net,\n  SUM(daily_net) OVER (ORDER BY date) as cumulative_balance\nFROM daily_balance\nORDER BY date;",
+        "query": "WITH daily_balance AS (\n  SELECT \n    date,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as daily_income,\n    SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as daily_expense,\n    SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as daily_net\n  FROM (\n    SELECT date, amount, 'income' as type FROM income WHERE workspace_id = {{$json.workspaceId}}\n    UNION ALL\n    SELECT date, amount, 'expense' as type FROM expenses WHERE workspace_id = {{$json.workspaceId}}\n  ) t\n  WHERE date >= '{{$json.start_date}}'::DATE\n    AND date <= '{{$json.end_date}}'::DATE\n  GROUP BY date\n)\nSELECT \n  date,\n  daily_income,\n  daily_expense,\n  daily_net,\n  SUM(daily_net) OVER (ORDER BY date) as cumulative_balance\nFROM daily_balance\nORDER BY date;",
         "options": {}
       },
       "id": "postgres-balance-trend",
@@ -360,7 +360,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT update_analytics_cache(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.cache_key}}'::TEXT,\n  '{{JSON.stringify($json.body.data)}}'::JSONB\n) as success;",
+        "query": "SELECT update_analytics_cache(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.cache_key}}'::TEXT,\n  '{{JSON.stringify($json.data)}}'::JSONB\n) as success;",
         "options": {}
       },
       "id": "postgres-update-cache",
@@ -381,7 +381,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_cached_analytics(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.cache_key}}'::TEXT,\n  {{$json.body.max_age_minutes || 60}}::INTEGER\n);",
+        "query": "SELECT * FROM get_cached_analytics(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.cache_key}}'::TEXT,\n  {{$json.max_age_minutes || 60}}::INTEGER\n);",
         "options": {}
       },
       "id": "postgres-get-cached",
@@ -402,7 +402,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO chart_configs (\n  workspace_id,\n  chart_type,\n  title,\n  config_json,\n  is_default\n) VALUES (\n  {{$json.body.workspace_id}},\n  '{{$json.body.chart_type}}',\n  '{{$json.body.title}}',\n  '{{JSON.stringify($json.body.config)}}'::JSONB,\n  {{$json.body.is_default || false}}\n)\nON CONFLICT (workspace_id, chart_type, title) \nDO UPDATE SET\n  config_json = EXCLUDED.config_json,\n  is_default = EXCLUDED.is_default,\n  updated_at = NOW()\nRETURNING *;",
+        "query": "INSERT INTO chart_configs (\n  workspace_id,\n  chart_type,\n  title,\n  config_json,\n  is_default\n) VALUES (\n  {{$json.workspaceId}},\n  '{{$json.chart_type}}',\n  '{{$json.title}}',\n  '{{JSON.stringify($json.config)}}'::JSONB,\n  {{$json.is_default || false}}\n)\nON CONFLICT (workspace_id, chart_type, title) \nDO UPDATE SET\n  config_json = EXCLUDED.config_json,\n  is_default = EXCLUDED.is_default,\n  updated_at = NOW()\nRETURNING *;",
         "options": {}
       },
       "id": "postgres-save-chart-config",
@@ -423,7 +423,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM chart_configs\nWHERE workspace_id = {{$json.body.workspace_id}}\n  {{$json.body.chart_type ? \"AND chart_type = '\" + $json.body.chart_type + \"'\" : \"\"}}\nORDER BY is_default DESC, created_at DESC;",
+        "query": "SELECT * FROM chart_configs\nWHERE workspace_id = {{$json.workspaceId}}\n  {{$json.chart_type ? \"AND chart_type = '\" + $json.chart_type + \"'\" : \"\"}}\nORDER BY is_default DESC, created_at DESC;",
         "options": {}
       },
       "id": "postgres-get-chart-configs",
@@ -814,7 +814,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
+        "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.action } }}",
         "options": {
           "responseCode": 400,
           "responseHeaders": {

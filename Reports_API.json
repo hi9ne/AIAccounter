@@ -26,7 +26,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "generate_pdf"
             }
@@ -36,7 +36,7 @@
       "id": "switch-generate-pdf",
       "name": "Generate PDF",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         200
@@ -47,7 +47,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "generate_excel"
             }
@@ -57,7 +57,7 @@
       "id": "switch-generate-excel",
       "name": "Generate Excel",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         400
@@ -68,7 +68,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "generate_csv"
             }
@@ -78,7 +78,7 @@
       "id": "switch-generate-csv",
       "name": "Generate CSV",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         600
@@ -89,7 +89,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_report"
             }
@@ -99,7 +99,7 @@
       "id": "switch-get-report",
       "name": "Get Report",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         800
@@ -110,7 +110,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{$json.body.action}}",
+              "value1": "={{$json.action}}",
               "operation": "equals",
               "value2": "get_reports_list"
             }
@@ -120,7 +120,7 @@
       "id": "switch-get-reports-list",
       "name": "Get Reports List",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [
         450,
         1000
@@ -129,7 +129,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.body.workspace_id}}::INTEGER,\n  '{{$json.body.start_date}}'::DATE,\n  '{{$json.body.end_date}}'::DATE\n);",
+        "query": "SELECT * FROM get_income_expense_stats(\n  {{$json.workspaceId}}::INTEGER,\n  '{{$json.start_date}}'::DATE,\n  '{{$json.end_date}}'::DATE\n);",
         "options": {}
       },
       "id": "postgres-fetch-data-pdf",
@@ -269,7 +269,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  i.date, i.category, i.amount, 'income' as type, i.description\nFROM income i\nWHERE i.workspace_id = {{$json.body.workspace_id}}\n  AND i.date >= '{{$json.body.start_date}}'::DATE\n  AND i.date <= '{{$json.body.end_date}}'::DATE\nUNION ALL\nSELECT \n  e.date, e.category, e.amount, 'expense' as type, e.description\nFROM expenses e\nWHERE e.workspace_id = {{$json.body.workspace_id}}\n  AND e.date >= '{{$json.body.start_date}}'::DATE\n  AND e.date <= '{{$json.body.end_date}}'::DATE\nORDER BY date DESC;",
+        "query": "SELECT \n  i.date, i.category, i.amount, 'income' as type, i.description\nFROM income i\nWHERE i.workspace_id = {{$json.workspaceId}}\n  AND i.date >= '{{$json.start_date}}'::DATE\n  AND i.date <= '{{$json.end_date}}'::DATE\nUNION ALL\nSELECT \n  e.date, e.category, e.amount, 'expense' as type, e.description\nFROM expenses e\nWHERE e.workspace_id = {{$json.workspaceId}}\n  AND e.date >= '{{$json.start_date}}'::DATE\n  AND e.date <= '{{$json.end_date}}'::DATE\nORDER BY date DESC;",
         "options": {}
       },
       "id": "postgres-fetch-data-excel",
@@ -361,7 +361,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  date, category, amount, 'income' as type, description\nFROM income\nWHERE workspace_id = {{$json.body.workspace_id}}\n  AND date >= '{{$json.body.start_date}}'::DATE\n  AND date <= '{{$json.body.end_date}}'::DATE\nUNION ALL\nSELECT \n  date, category, amount, 'expense' as type, description\nFROM expenses\nWHERE workspace_id = {{$json.body.workspace_id}}\n  AND date >= '{{$json.body.start_date}}'::DATE\n  AND date <= '{{$json.body.end_date}}'::DATE\nORDER BY date DESC;",
+        "query": "SELECT \n  date, category, amount, 'income' as type, description\nFROM income\nWHERE workspace_id = {{$json.workspaceId}}\n  AND date >= '{{$json.start_date}}'::DATE\n  AND date <= '{{$json.end_date}}'::DATE\nUNION ALL\nSELECT \n  date, category, amount, 'expense' as type, description\nFROM expenses\nWHERE workspace_id = {{$json.workspaceId}}\n  AND date >= '{{$json.start_date}}'::DATE\n  AND date <= '{{$json.end_date}}'::DATE\nORDER BY date DESC;",
         "options": {}
       },
       "id": "postgres-fetch-data-csv",
@@ -453,7 +453,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM reports\nWHERE id = {{$json.body.report_id}}\n  AND workspace_id = {{$json.body.workspace_id}};",
+        "query": "SELECT * FROM reports\nWHERE id = {{$json.report_id}}\n  AND workspace_id = {{$json.workspaceId}};",
         "options": {}
       },
       "id": "postgres-get-report",
@@ -511,7 +511,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM reports\nWHERE workspace_id = {{$json.body.workspace_id}}\nORDER BY generated_at DESC\nLIMIT {{$json.body.limit || 20}};",
+        "query": "SELECT * FROM reports\nWHERE workspace_id = {{$json.workspaceId}}\nORDER BY generated_at DESC\nLIMIT {{$json.limit || 20}};",
         "options": {}
       },
       "id": "postgres-get-reports-list",
@@ -569,7 +569,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.body.action } }}",
+        "responseBody": "={{ { success: false, error: 'Unknown action: ' + $json.action } }}",
         "options": {
           "responseCode": 400,
           "responseHeaders": {
