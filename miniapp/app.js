@@ -29,11 +29,11 @@ if (window.Telegram?.WebApp) {
     console.warn('⚠️ Telegram WebApp not found, using mock for testing');
 }
 
-// Import configuration
+// Import configuration with fallback
 const config = window.MiniAppConfig || {
-    mode: 'n8n',
+    mode: 'fallback',
     n8nWebhooks: {
-        miniapp: 'https://hi9neee.app.n8n.cloud/webhook/miniapp',
+        miniapp: 'https://hi9neee.app.n8n.cloud/webhook/test', // Fallback endpoint
         workspace: 'https://hi9neee.app.n8n.cloud/webhook/workspace-api',
         analytics: 'https://hi9neee.app.n8n.cloud/webhook/analytics-api',
         reports: 'https://hi9neee.app.n8n.cloud/webhook/reports-api'
@@ -181,27 +181,53 @@ function getUserId() {
 async function apiCall(endpoint, action, data = {}) {
     try {
         const userId = getUserId();
-        if (!userId) return null;
+        if (!userId) {
+            console.warn('⚠️ User ID not available');
+            return { success: false, error: 'User ID not available' };
+        }
 
         const payload = {
-            userId: userId,  // Changed from user_id to userId for n8n compatibility
-            workspaceId: currentWorkspaceId,  // Changed from workspace_id to workspaceId
+            userId: userId,
+            workspaceId: currentWorkspaceId,
             action: action,
             ...data
         };
 
-        const response = await fetch(config.n8nWebhooks[endpoint], {
+        console.log(`🚀 API Call: ${endpoint}/${action}`, payload);
+
+        const webhookUrl = config.n8nWebhooks[endpoint];
+        if (!webhookUrl) {
+            console.error(`❌ No webhook URL for endpoint: ${endpoint}`);
+            return { success: false, error: `Endpoint ${endpoint} not configured` };
+        }
+
+        const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error('Network error');
-        return await response.json();
+        console.log(`📡 Response status: ${response.status}`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.error(`❌ Webhook not found: ${webhookUrl}`);
+                return { success: false, error: 'API endpoint not found. Please check n8n workflow setup.' };
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log(`✅ API Response:`, result);
+        return result;
     } catch (error) {
-        console.error('API Error:', error);
-        // Не показываем alert для каждой ошибки API - только логируем
-        return null;
+        console.error(`❌ API Error (${endpoint}/${action}):`, error);
+        return { 
+            success: false, 
+            error: error.message || 'Network error',
+            endpoint: endpoint,
+            action: action
+        };
     }
 }
 
@@ -232,30 +258,35 @@ async function loadWorkspaces() {
 }
 
 async function loadBalance() {
+    console.log('📊 Loading balance...');
     const result = await apiCall('miniapp', 'get_stats', {
         period: 'month'
     });
     
-    if (!result) {
-        console.warn('⚠️ Не удалось загрузить баланс');
+    if (!result || !result.success) {
+        console.warn('⚠️ Не удалось загрузить баланс:', result?.error || 'Unknown error');
+        // Показываем заглушку вместо ошибки
+        document.querySelector('.balance-amount').textContent = '0 с';
+        const changeEl = document.querySelector('.balance-change');
+        changeEl.querySelector('span').className = 'change-neutral';
+        changeEl.querySelector('span').textContent = '0%';
         return;
     }
     
-    if (result) {
-        const balance = result.balance || 0;
-        const change = result.change || 0;
-        const changePercent = result.change_percent || 0;
-        
-        document.querySelector('.balance-amount').textContent = formatCurrency(balance);
-        
-        const changeEl = document.querySelector('.balance-change');
-        const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
-        changeEl.querySelector('span').className = changeClass;
-        changeEl.querySelector('span').textContent = `${change >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
-    }
+    const balance = result.balance || 0;
+    const change = result.change || 0;
+    const changePercent = result.change_percent || 0;
+    
+    document.querySelector('.balance-amount').textContent = formatCurrency(balance);
+    
+    const changeEl = document.querySelector('.balance-change');
+    const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
+    changeEl.querySelector('span').className = changeClass;
+    changeEl.querySelector('span').textContent = `${change >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
 }
 
 async function loadQuickStats() {
+    console.log('📈 Loading quick stats...');
     // Calculate date range for current month
     const today = new Date();
     const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
@@ -266,17 +297,18 @@ async function loadQuickStats() {
         end_date: endDate
     });
     
-    if (!result) {
-        console.warn('⚠️ Не удалось загрузить статистику');
+    if (!result || !result.success) {
+        console.warn('⚠️ Не удалось загрузить статистику:', result?.error || 'Unknown error');
+        // Показываем заглушки
+        document.querySelector('.stat-item.income .stat-value').textContent = '0 с';
+        document.querySelector('.stat-item.expense .stat-value').textContent = '0 с';
         return;
     }
     
-    if (result) {
-        document.querySelector('.stat-item.income .stat-value').textContent = 
-            formatCurrency(result.total_income || 0);
-        document.querySelector('.stat-item.expense .stat-value').textContent = 
-            formatCurrency(result.total_expenses || 0);
-    }
+    document.querySelector('.stat-item.income .stat-value').textContent = 
+        formatCurrency(result.total_income || 0);
+    document.querySelector('.stat-item.expense .stat-value').textContent = 
+        formatCurrency(result.total_expenses || 0);
 }
 
 async function loadRecentTransactions() {
