@@ -16,10 +16,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1856,
-        -608
+        -1184,
+        -656
       ],
-      "id": "ae075a9e-aea5-4870-b241-9641858ac4aa",
+      "id": "65a2fe2b-2a39-4a40-ae78-04a8c64fe308",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -35,13 +35,13 @@
         ],
         "additionalFields": {}
       },
-      "id": "a9b3a9f7-e9a8-42c7-b046-82aef9f10554",
+      "id": "b4d14f00-76dd-4d36-97ac-c39898b9f817",
       "name": "Telegram Bot Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [
-        16,
-        -736
+        -3024,
+        -784
       ],
       "webhookId": "b8605f3e-0f52-4ffc-a4c9-1728eb0e09e2",
       "credentials": {
@@ -132,13 +132,13 @@
         },
         "options": {}
       },
-      "id": "af0d7d9c-eb12-4384-8c24-6cd58f91475a",
+      "id": "84bee63d-61be-4f24-93b9-6ae7652df7f0",
       "name": "Message Type Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        688,
-        -752
+        -2352,
+        -800
       ]
     },
     {
@@ -147,13 +147,13 @@
         "fileId": "={{ $json.message.voice.file_id }}",
         "additionalFields": {}
       },
-      "id": "b73ad234-bade-498b-85d7-364c6946727f",
+      "id": "b6e7a15e-21a6-4679-b5d9-72b252284546",
       "name": "Download Voice File",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1168,
-        -928
+        -1880,
+        -976
       ],
       "webhookId": "8fa0a59a-be53-4897-83bb-5b18ed71b529",
       "credentials": {
@@ -169,13 +169,13 @@
         "operation": "transcribe",
         "options": {}
       },
-      "id": "e21002cb-1a02-46a2-a5ac-f79847ec73f9",
+      "id": "50aea74b-3278-43c9-9d1d-52f65fa2c72a",
       "name": "Transcribe Audio",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        1632,
-        -928
+        -1408,
+        -976
       ],
       "credentials": {
         "openAiApi": {
@@ -202,27 +202,41 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1632,
-        -736
+        -1504,
+        -752
       ],
-      "id": "a91c6bc9-f952-49bb-b706-435e4d64f283",
+      "id": "455f0c71-ab2a-4838-8395-78b317a74360",
       "name": "Prepare Text Data"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$('Telegram Bot Trigger').first().json.message.message_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -1056,
+        -656
+      ],
+      "id": "ba19e01e-cb7f-40ad-bc00-dd4e1dcb03e7",
+      "name": "Conversation Memory"
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.text }}\n\n",
         "options": {
-          "systemMessage": "=Вы — финансовый ассистент и наставник. Ваша задача — помогать пользователю эффективно управлять расходами, обеспечивая точность и структурированность записей. Ваша манера общения должна быть профессиональной, но при этом дружелюбной, с небольшим использованием эмодзи для улучшения восприятия.\n\nВходящее сообщение от пользователя: {{ $json.text }}\nТекущая дата: {{ $now }}\n\n\n\nИнструменты управления финансами\n\nВы имеете доступ к следующим инструментам:\n\n1. `get_transactions`\n\nНазначение: Используйте этот инструмент, когда пользователь запрашивает информацию о своих недавних расходах или жее доходах.\nИнструкции:\nОпределите дату из запроса пользователя. Если конкретная дата не названа, используйте текущую дату {{ $now }}.\nЗапросите из базы данных все расходы пользователя за указанную дату.\nТы должен использовать `calculator` суммировать все суммы которые были за расходы или доходы, исходя от того про что запросил пользователь, и выдать ответ с общей суммой расходов или же доходов.\nСформируйте ответ, строго следуя указанному ниже формату, без использования символов Markdown (например, решеток `###`). Суммы указываются в сомах:\n\n<!-- end list -->\n\n\nЗаписанные транзакции:\n\n- Категория (К примеру еда):\n- Имя расхода 1 - сумма расхода\n- Имя расхода 2 - сумма расхода\nВсего потрачено в категории: [сумма расходов в категории] в сомах.\n\n- Категория 2 (К примеру одежда):\n- Имя расхода 1 - сумма расхода\n- Имя расхода 2 - сумма расхода\nВсего потрачено в категории: [сумма расходов в категории] в сомах.\n\n\n2. `add_transaction`\n\n\n\nНазначение: Используйте этот инструмент, когда пользователь сообщает о новой покупке или расходе. Вы всегда должны использовать эту функцию при добавлении.\n\nИнструкции:\n\nПеред вызовом убедитесь, что пользователь назвал предмет покупки/оплаченную услугу и точную сумму.\n\nДо вызова инструмента add_transaction, обязательно определите, к какой категории относится данная покупка, используя только список ниже.\n\nОбязательно определите, какой из двух доступных кошельков (`МБанк` или `Наличка`) был использован для транзакции, если не удалось определить то запишите что было по Мбанк на время, потом после уточнения запиши правильный вид транзакции, запомни это.\n\n-----\n\nДоступные статьи доходов и расходов\n\nИспользуйте только эти категории для классификации трат. Не создавайте новые категории. Каждая категория снабжена описанием для более точного понимания.\n\nКатегории доходов:\n\nВыручка с ИИ агентов: Доход, полученный от продаж или внедрения ИИ-агентов.\nВыручка с Fusion: Доход, полученный от проектов, связанных с Fusion.\nПрочие поступления: Любые доходы, которые не подходят под другие категории.\nДолг поступление: Возврат долга, который вам вернули.\nЗарплата: Основной доход от работы.\nПоступление от проектов: Доход от выполнения сторонних проектов или фриланса.\nПроценты с депозита: Доход от процентов по банковским вкладам.\nПеремещение средств (поступление): Поступление денег при переводе между своими кошельками (не является доходом).\n\nКатегории расходов:\n\nОплата услуг: Оплата различных услуг (например, химчистка, парикмахер, и т.д.).\nАренда помещения: Ежемесячные платежи за аренду жилья или офиса.\nОплата за сервисы: Подписки на онлайн-сервисы, облачные хранилища, и т.д.\nТранспорт: Затраты на бензин, такси, общественный транспорт.\nПитание: Расходы на продукты, походы в кафе и рестораны.\nЛичные расходы: Небольшие, ежедневные траты, которые не подходят под другие категории.\nШоппинг: Покупки одежды, обуви и других непродовольственных товаров.\nРазвлечения/отдых: Затраты на кино, концерты, хобби, путешествия.\nДолг расходы: Выплата долга или кредита.\nРасходы на связь: Оплата мобильной связи и интернета.\nПеремещение средств (списание): Перевод денег между своими кошельками (не является расходом).\nПрочие расходы: Любые расходы, которые не подходят под другие категории.\nДивиденды: Выплаты акционерам от прибыли компании.\nПополнение Депозита: Перевод средств на накопительный счет (не является расходом).\n\n-----\n\nДоступные кошельки\n\nВы можете использовать только два кошелька для транзакций:\n\nМБанк\nНаличка\n\n-----\n\nВ колонку Тип Доход/Расход нужно вписать только одно значение: доход или расход, вы должны определить это через контекст сообщения пользователя.\nСтиль общения\n\nВаше финальное сообщение должно быть от лица финансового наставника. Используйте короткие и четкие предложения. Подтверждайте или одобряйте транзакции. В случае необдуманных расходов, вы можете тактично высказать свое профессиональное мнение, напоминая о важности финансовой дисциплины. Допускается использование 1-2 уместных эмодзи, чтобы сделать сообщение более наглядным."
+          "systemMessage": "=Ты — AI финансовый помощник с доступом к Supabase базе данных для управления личными и корпоративными финансами в Кыргызстане.\nВалюты: сом (KGS), доллар (USD), евро (EUR), рубль (RUB). Текущая дата: {{ new Date().toLocaleDateString('ru-RU') }}\n\n🏢 СИСТЕМА WORKSPACE:\nУ каждого пользователя есть workspace_id. Все операции привязаны к workspace. Используй функции:\n- get_user_workspaces() - получить список workspace пользователя\n- create_workspace_with_owner() - создать новый workspace\n- check_workspace_permission() - проверить права доступа\n\n---\n💸 РАСХОДЫ: используй инструмент Add_expense с параметрами:\n- workspace_id: ID рабочего пространства (ОБЯЗАТЕЛЬНО!)\n- category: продукты, транспорт, кафе/рестораны, аренда офиса, зарплата, налоги, маркетинг, канцтовары, интернет/связь, коммунальные услуги, обучение, подписки, прочее\n- amount: сумма (только число)\n- currency: валюта (KGS/сом по умолчанию, USD/доллар, EUR/евро, RUB/рубль)\n- description: описание (опционально)\n- date: DD.MM.YYYY (опционально, если не указано - будет сегодня)\n\n💰 ДОХОДЫ: используй инструмент Add_income с параметрами:\n- workspace_id: ID рабочего пространства (ОБЯЗАТЕЛЬНО!)\n- category: зарплата, продажи, инвестиции, подработка, кэшбек, прочее\n- amount, currency, description, date (аналогично)\n\n📊 АНАЛИЗ: используй инструмент Parsing_of_the_month с параметрами:\n- workspace_id: ID рабочего пространства\n- month: название месяца (например 'октябрь')\n- type: 'расход' или 'доход'\n- filter_category: опционально\n\n💱 КОНВЕРТАЦИЯ ВАЛЮТ:\nИспользуй функцию convert_amount() или get_exchange_rate() из базы:\n- 'Конвертируй X сом в доллары' → convert_amount(X, 'KGS', 'USD', CURRENT_DATE)\n- 'Какой курс доллара?' → get_exchange_rate('USD', 'KGS', CURRENT_DATE)\n\nПри показе статистики в конкретной валюте:\n1. Получи данные через get_income_expense_stats()\n2. Используй convert_amount() для конвертации сумм\n3. Суммируй результаты в запрошенной валюте\n\n📈 АНАЛИТИКА:\nИспользуй готовые функции для аналитики:\n- get_income_expense_stats(workspace_id, start_date, end_date) - основная статистика\n- get_top_expense_categories(workspace_id, start_date, end_date, limit) - топ категорий\n- get_spending_patterns(workspace_id) - паттерны трат\n- get_category_analytics(workspace_id, period) - аналитика по категориям\n- get_cached_analytics(workspace_id, cache_key) - кешированные данные\n\n---\nВАЖНО: Распознавай валюту из текста:\n- 'сом', 'сомов', 'KGS' → currency: KGS\n- 'доллар', 'долларов', '$', 'USD' → currency: USD\n- 'евро', 'EUR' → currency: EUR\n- 'рубль', 'рублей', 'RUB' → currency: RUB\n- Если валюта не указана → по умолчанию KGS\n\n✅ После успешной операции формируй читаемый ответ.\nПример: \"✅ Расход добавлен: 100 USD на 'продукты' (30.10.2025)\"\n\n📝 РЕДАКТИРОВАНИЕ ТРАНЗАКЦИЙ:\nИспользуй функцию safe_update_transaction():\n- 'Измени последний расход на 1500 сом' → safe_update_transaction(user_id, 'expense', 'last', 'amount', '1500')\n- 'Поменяй категорию транзакции 15 на продукты' → safe_update_transaction(user_id, 'expense', '15', 'category', 'продукты')\n\n🗑️ УДАЛЕНИЕ/ВОССТАНОВЛЕНИЕ:\nИспользуй мягкое удаление через поле deleted_at в таблицах expenses/income\n\n� ИСТОРИЯ ИЗМЕНЕНИЙ:\nИспользуй таблицу transaction_history с функцией log_transaction_change()\n\n---\n� ПОВТОРЯЮЩИЕСЯ ПЛАТЕЖИ (ПОДПИСКИ):\n\n📌 СОЗДАНИЕ: используй create_recurring_payment()\n📋 СПИСОК: SELECT из таблицы recurring_payments WHERE user_id = X AND is_active = true\n❌ ОТМЕНА: UPDATE recurring_payments SET is_active = false\n⚡ ВЫПОЛНЕНИЕ: execute_recurring_payment()\n🔔 НАПОМИНАНИЯ: get_pending_reminders()\n\n---\n� БЮДЖЕТ И ЛИМИТЫ:\n\n� БЮДЖЕТ:\n- Таблица: budgets (user_id, workspace_id, month, budget_amount)\n- Функция прогноза: get_budget_forecast(user_id)\n- Проверка алертов: check_budget_alerts(user_id, new_expense_amount)\n\n🎯 ЛИМИТЫ КАТЕГОРИЙ:\n- Таблица: limits (user_id, category, month, limit_amount)\n- Проверка: check_category_limit_alert(user_id, category, new_amount)\n\n⚙️ НАСТРОЙКИ АЛЕРТОВ:\n- Таблица: budget_alerts_config\n- Пороги: budget_warning_threshold, budget_critical_threshold\n\n---\n🔔 УВЕДОМЛЕНИЯ:\n\n📬 Таблица notifications с полями:\n- notification_type: budget_warning, budget_exceeded, limit_warning, limit_exceeded, recurring_reminder, unusual_spending\n- priority: urgent, high, normal, low\n- is_read, is_sent\n\n📊 ML АНАЛИЗ:\n- detect_unusual_spending() - детекция необычных трат\n- update_spending_patterns() - обновление паттернов\n- Таблица: spending_patterns с confidence_score\n\n---\n🏢 WORKSPACE ФУНКЦИИ:\n\n👥 УЧАСТНИКИ:\n- accept_workspace_invite() - принять приглашение\n- remove_workspace_member() - удалить участника\n- Таблица workspace_members с ролями: owner, admin, editor, viewer\n\n📊 АНАЛИТИКА:\n- get_chart_data() - данные для графиков\n- get_income_expense_chart_data() - графики доходов/расходов\n- update_analytics_cache() - кеширование\n\n� БЕЗОПАСНОСТЬ:\n- Таблица audit_logs для логирования действий\n- log_audit_event() для записи событий\n- check_workspace_permission() для проверки прав\n\n---\n�️ ОСНОВНЫЕ ТАБЛИЦЫ SUPABASE:\n\n� ТРАНЗАКЦИИ:\n- expenses: расходы с workspace_id, user_id, amount, currency, category, date, deleted_at\n- income: доходы с аналогичной структурой\n- transaction_history: история изменений\n\n👤 ПОЛЬЗОВАТЕЛИ:\n- users: основная информация пользователей\n- user_preferences: настройки пользователя\n- workspace_members: участники workspace с ролями\n\n💰 ФИНАНСЫ:\n- budgets: бюджеты по месяцам\n- limits: лимиты по категориям\n- exchange_rates: курсы валют\n- recurring_payments: регулярные платежи\n\n📈 АНАЛИТИКА:\n- analytics_cache: кеш для аналитики\n- category_analytics: аналитика по категориям\n- spending_patterns: паттерны трат\n- chart_configs: настройки графиков\n\n🔔 СИСТЕМА:\n- notifications: уведомления\n- audit_logs: логи действий\n- error_logs: логи ошибок\n- reports: отчеты\n\n💱 ВАЛЮТЫ:\n- Автоматический расчет обратных курсов через trigger calculate_reverse_rate\n- Функция cleanup_old_rates() для очистки старых курсов\n\n---\nОБЩИЕ ПРАВИЛА:\n\n1. ВСЕГДА указывай workspace_id в запросах к базе\n2. Используй функции Supabase вместо прямых SQL запросов где возможно\n3. Проверяй права пользователя через check_workspace_permission()\n4. Логируй важные действия через audit_logs\n5. Кешируй аналитику через analytics_cache для производительности\n6. Используй soft delete (deleted_at) вместо физического удаления\n7. Все суммы храни в NUMERIC(12,2) для точности\n8. Даты в формате DATE, времена в TIMESTAMP WITH TIME ZONE\n9. Валюты всегда в верхнем регистре (KGS, USD, EUR, RUB)\n10. Для ML анализа используй spending_patterns и ml_forecasts таблицы\n\n---\n🎯 НОВЫЕ ИНСТРУМЕНТЫ:\n\n📊 РАСШИРЕННАЯ АНАЛИТИКА:\n- Get_income_expense_stats() - детальная статистика доходов/расходов за период\n- Get_top_categories() - топ категорий расходов с процентами\n- Update_spending_patterns() - обновление ML паттернов трат пользователя\n\n🏢 УПРАВЛЕНИЕ WORKSPACE:\n- Get_workspaces() - список всех workspace пользователя с ролями\n- При первом использовании система автоматически выберет активный workspace\n\n💰 БЮДЖЕТ И ЛИМИТЫ:\n- Set_budget(amount, currency, month) - установить месячный бюджет\n- Set_category_limit(category, amount, currency, month) - лимит на категорию\n\nПримеры использования:\n- \"Установи бюджет 50000 сом на ноябрь\" → Set_budget(amount: 50000, currency: 'KGS', month: '2025-11')\n- \"Лимит на продукты 15000 сом\" → Set_category_limit(category: 'продукты', amount: 15000)\n- \"Покажи статистику за октябрь\" → Get_income_expense_stats(start_date: '01.10.2025', end_date: '31.10.2025')\n- \"Топ категорий за месяц\" → Get_top_categories(limit: 5)\n- \"Обнови паттерны трат\" → Update_spending_patterns()\n\nВСЕГДА используй эти функции для более точной аналитики вместо прямых SQL запросов!"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        2368,
-        -832
+        -40,
+        -880
       ],
-      "id": "fdf36915-cfb3-4002-8ed7-5ecd83553fa7",
+      "id": "97e8d04b-d293-4217-9e22-5cbc581a5777",
       "name": "Financial Assistant",
       "onError": "continueErrorOutput"
     },
@@ -238,10 +252,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        3216,
-        -832
+        1456,
+        -880
       ],
-      "id": "8a5279fc-1345-481c-ab35-5b8b03f45885",
+      "id": "3f6fa69e-7e8b-4182-9a60-55a9c655b4b9",
       "name": "Send Telegram Response",
       "webhookId": "a2f9609c-4b7a-4d51-aaa6-c889f56aefc9",
       "credentials": {
@@ -254,16 +268,92 @@
     {
       "parameters": {
         "operation": "executeQuery",
+        "query": "WITH monthly_data AS (\n  SELECT \n    category,\n    COUNT(*) as transaction_count,\n    SUM(amount) as total_amount,\n    AVG(amount) as avg_amount\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND TO_CHAR(date, 'YYYY-MM') = '{{ $json.year_month }}'\n    {{ $json.category ? \"AND category = '\" + $json.category + \"'\" : \"\" }}\n  GROUP BY category\n  ORDER BY total_amount DESC\n)\nSELECT \n  *,\n  (SELECT SUM(total_amount) FROM monthly_data) as grand_total\nFROM monthly_data;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2800,
+        208
+      ],
+      "id": "e47a3d28-9ee1-4325-9691-460decd7085a",
+      "name": "Анализ доходов",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9af39ade-d2ac-4587-b4cd-bccb18fece32",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "расход",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3024,
+        112
+      ],
+      "id": "ea88bea6-457b-426f-a41c-fa63cad0131a",
+      "name": "Проверка типа"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH monthly_data AS (\n  SELECT \n    category,\n    COUNT(*) as transaction_count,\n    SUM(amount) as total_amount,\n    AVG(amount) as avg_amount\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND TO_CHAR(date, 'YYYY-MM') = '{{ $json.year_month }}'\n    {{ $json.category ? \"AND category = '\" + $json.category + \"'\" : \"\" }}\n  GROUP BY category\n  ORDER BY total_amount DESC\n)\nSELECT \n  *,\n  (SELECT SUM(total_amount) FROM monthly_data) as grand_total\nFROM monthly_data;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2800,
+        16
+      ],
+      "id": "227093f6-9fb8-4443-ab08-602282a79214",
+      "name": "Анализ расходов",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
         "query": "INSERT INTO users (user_id, username, first_name, last_name, telegram_chat_id)\nVALUES (\n  {{ $json.message.from.id }},\n  '{{ $json.message.from.username || \"\" }}',\n  '{{ $json.message.from.first_name || \"\" }}',\n  '{{ $json.message.from.last_name || \"\" }}',\n  {{ $json.message.chat.id }}\n)\nON CONFLICT (user_id) \nDO UPDATE SET \n  username = EXCLUDED.username,\n  last_activity = NOW()\nRETURNING *;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        -736
+        -2800,
+        -784
       ],
-      "id": "9b8dcb08-d558-49b2-a860-840665c97aac",
+      "id": "b4457dfd-5bd4-4547-801d-7c51622c87d6",
       "name": "Регистрация/обновление пользователя",
       "credentials": {
         "postgres": {
@@ -290,25 +380,25 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        464,
-        -736
+        -2576,
+        -784
       ],
-      "id": "c5b3bfe7-a187-4942-89d1-4720145bbe59",
+      "id": "403e6ffd-c8d0-4d85-8060-d32a4b75ee68",
       "name": "Edit Fields"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, operation_type, source)\nVALUES (\n  1109421300,\n  COALESCE(\n    TO_DATE('{{ $fromAI(\"date\", \"Дата операции в формате DD.MM.YYYY, если не указана то пустая строка\", \"string\", \"\") }}', 'DD.MM.YYYY'),\n    CURRENT_DATE\n  ),\n  '{{ $fromAI(\"category\", \"Категория дохода: зарплата, продажи, инвестиции, подработка, кэшбек, прочее\", \"string\") }}',\n  {{ $fromAI(\"amount\", \"Сумма дохода, только число\", \"number\") }},\n  UPPER('{{ $fromAI(\"currency\", \"Валюта: сом/KGS, доллар/USD, евро/EUR, рубль/RUB. Если не указана - KGS\", \"string\", \"KGS\") }}'),\n  '{{ $fromAI(\"description\", \"Описание дохода, если есть\", \"string\", \"\") }}',\n  'доход',\n  'telegram'\n)\nRETURNING id, TO_CHAR(date, 'DD.MM.YYYY') as date, category, amount, currency, description;",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n)\nINSERT INTO income (user_id, workspace_id, date, category, amount, currency, description, operation_type, source)\nSELECT\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }},\n  uw.workspace_id,\n  COALESCE(\n    TO_DATE('{{ $fromAI(\"date\", \"Дата операции в формате DD.MM.YYYY, если не указана то пустая строка\", \"string\", \"\") }}', 'DD.MM.YYYY'),\n    CURRENT_DATE\n  ),\n  '{{ $fromAI(\"category\", \"Категория дохода: зарплата, продажи, инвестиции, подработка, кэшбек, прочее\", \"string\") }}',\n  {{ $fromAI(\"amount\", \"Сумма дохода, только число\", \"number\") }},\n  UPPER('{{ $fromAI(\"currency\", \"Валюта: сом/KGS, доллар/USD, евро/EUR, рубль/RUB. Если не указана - KGS\", \"string\", \"KGS\") }}'),\n  '{{ $fromAI(\"description\", \"Описание дохода, если есть\", \"string\", \"\") }}',\n  'доход',\n  'telegram'\nFROM user_workspace uw\nRETURNING id, workspace_id, TO_CHAR(date, 'DD.MM.YYYY') as date, category, amount, currency, description;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2112,
-        -608
+        -928,
+        -656
       ],
-      "id": "47d02cab-f4e5-40bf-8b5b-a79f11ff696f",
+      "id": "fd752155-74b7-4346-b0e3-af93bfb9a1f0",
       "name": "Add_income",
       "credentials": {
         "postgres": {
@@ -320,16 +410,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=WITH month_mapping AS (\n  SELECT * FROM (VALUES\n    ('январь', 1), ('февраль', 2), ('март', 3), ('апрель', 4),\n    ('май', 5), ('июнь', 6), ('июль', 7), ('август', 8),\n    ('сентябрь', 9), ('октябрь', 10), ('ноябрь', 11), ('декабрь', 12)\n  ) AS m(month_name, month_num)\n),\nfiltered_data AS (\n  SELECT\n    TO_CHAR(t.date, 'DD.MM.YYYY') as date,\n    t.category,\n    t.amount,\n    COALESCE(t.description, '') as description\n  FROM {{ $fromAI(\"type\", \"Тип операции: 'расход' или 'доход'\", \"string\") === 'расход' ? 'expenses' : 'income' }} t\n  INNER JOIN month_mapping mm ON EXTRACT(MONTH FROM t.date) = mm.month_num\n  WHERE t.user_id = 1109421300\n    AND EXTRACT(YEAR FROM t.date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    AND LOWER(mm.month_name) = LOWER('{{ $fromAI(\"month\", \"Название месяца на русском языке (например: октябрь, ноябрь)\", \"string\") }}')\n    AND (NULLIF('{{ $fromAI(\"filter_category\", \"Категория для фильтрации опционально\", \"string\", \"\") }}', '') IS NULL OR t.category = '{{ $fromAI(\"filter_category\", \"Категория для фильтрации опционально\", \"string\", \"\") }}')\n)\nSELECT \n  *,\n  (SELECT COUNT(*) FROM filtered_data) as total_rows,\n  (SELECT SUM(amount) FROM filtered_data) as total_amount\nFROM filtered_data\nORDER BY date DESC;",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n),\nmonth_mapping AS (\n  SELECT * FROM (VALUES\n    ('январь', 1), ('февраль', 2), ('март', 3), ('апрель', 4),\n    ('май', 5), ('июнь', 6), ('июль', 7), ('август', 8),\n    ('сентябрь', 9), ('октябрь', 10), ('ноябрь', 11), ('декабрь', 12)\n  ) AS m(month_name, month_num)\n),\nfiltered_data AS (\n  SELECT\n    TO_CHAR(t.date, 'DD.MM.YYYY') as date,\n    t.category,\n    t.amount,\n    t.currency,\n    COALESCE(t.description, '') as description\n  FROM {{ $fromAI(\"type\", \"Тип операции: 'расход' или 'доход'\", \"string\") === 'расход' ? 'expenses' : 'income' }} t\n  INNER JOIN month_mapping mm ON EXTRACT(MONTH FROM t.date) = mm.month_num\n  INNER JOIN user_workspace uw ON t.workspace_id = uw.workspace_id\n  WHERE t.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND EXTRACT(YEAR FROM t.date) = EXTRACT(YEAR FROM CURRENT_DATE)\n    AND LOWER(mm.month_name) = LOWER('{{ $fromAI(\"month\", \"Название месяца на русском языке (например: октябрь, ноябрь)\", \"string\") }}')\n    AND (NULLIF('{{ $fromAI(\"filter_category\", \"Категория для фильтрации опционально\", \"string\", \"\") }}', '') IS NULL OR t.category = '{{ $fromAI(\"filter_category\", \"Категория для фильтрации опционально\", \"string\", \"\") }}')\n    AND t.deleted_at IS NULL\n)\nSELECT \n  *,\n  (SELECT COUNT(*) FROM filtered_data) as total_rows,\n  (SELECT SUM(amount) FROM filtered_data) as total_amount,\n  (SELECT COUNT(DISTINCT currency) FROM filtered_data) as currency_count\nFROM filtered_data\nORDER BY date DESC\nLIMIT 100;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2240,
-        -608
+        -800,
+        -656
       ],
-      "id": "a4ae5d96-afad-43b0-b187-432a36feaf5d",
+      "id": "f694199c-2323-4473-937a-b3460e3a3008",
       "name": "Parsing_of_the_month",
       "credentials": {
         "postgres": {
@@ -341,17 +431,38 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, operation_type, source)\nVALUES (\n  1109421300,\n  COALESCE(\n    TO_DATE('{{ $fromAI(\"date\", \"Дата операции в формате DD.MM.YYYY, если не указана то пустая строка\", \"string\", \"\") }}', 'DD.MM.YYYY'),\n    CURRENT_DATE\n  ),\n  '{{ $fromAI(\"category\", \"Категория расхода: продукты, транспорт, кафе/рестораны, аренда офиса, зарплата, налоги, маркетинг, канцтовары, интернет/связь, коммунальные услуги, обучение, подписки, прочее\", \"string\") }}',\n  {{ $fromAI(\"amount\", \"Сумма расхода, только число\", \"number\") }},\n  UPPER('{{ $fromAI(\"currency\", \"Валюта: сом/KGS, доллар/USD, евро/EUR, рубль/RUB. Если не указана - KGS\", \"string\", \"KGS\") }}'),\n  '{{ $fromAI(\"description\", \"Описание расхода, если есть\", \"string\", \"\") }}',\n  'расход',\n  'telegram'\n)\nRETURNING id, TO_CHAR(date, 'DD.MM.YYYY') as date, category, amount, currency, description;",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n)\nINSERT INTO expenses (user_id, workspace_id, date, category, amount, currency, description, operation_type, source)\nSELECT\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }},\n  uw.workspace_id,\n  COALESCE(\n    TO_DATE('{{ $fromAI(\"date\", \"Дата операции в формате DD.MM.YYYY, если не указана то пустая строка\", \"string\", \"\") }}', 'DD.MM.YYYY'),\n    CURRENT_DATE\n  ),\n  '{{ $fromAI(\"category\", \"Категория расхода: продукты, транспорт, кафе/рестораны, аренда офиса, зарплата, налоги, маркетинг, канцтовары, интернет/связь, коммунальные услуги, обучение, подписки, прочее\", \"string\") }}',\n  {{ $fromAI(\"amount\", \"Сумма расхода, только число\", \"number\") }},\n  UPPER('{{ $fromAI(\"currency\", \"Валюта: сом/KGS, доллар/USD, евро/EUR, рубль/RUB. Если не указана - KGS\", \"string\", \"KGS\") }}'),\n  '{{ $fromAI(\"description\", \"Описание расхода, если есть\", \"string\", \"\") }}',\n  'расход',\n  'telegram'\nFROM user_workspace uw\nRETURNING id, workspace_id, TO_CHAR(date, 'DD.MM.YYYY') as date, category, amount, currency, description;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2368,
-        -608
+        -672,
+        -656
       ],
-      "id": "7ebeb8ef-2e0c-42ed-9983-98317f09230a",
+      "id": "69e9f948-895e-4031-b2b9-1c368177b8aa",
       "name": "Add_expense",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Проверка лимита по категории\nWITH expense_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total_spent\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND date >= DATE_TRUNC('month', CURRENT_DATE)\n),\ncategory_limit AS (\n  SELECT limit_amount\n  FROM limits\n  WHERE user_id = {{ $json.user_id }}\n    AND category = '{{ $json.category }}'\n    AND month = TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  LIMIT 1\n)\nSELECT \n  e.total_spent,\n  l.limit_amount,\n  CASE \n    WHEN l.limit_amount IS NULL THEN NULL\n    WHEN e.total_spent > l.limit_amount THEN 'exceeded'\n    WHEN e.total_spent > (l.limit_amount * 0.8) THEN 'warning'\n    ELSE 'ok'\n  END as limit_status,\n  CASE\n    WHEN l.limit_amount IS NOT NULL THEN ROUND((e.total_spent / l.limit_amount) * 100)\n    ELSE NULL\n  END as percent_used\nFROM expense_sum e\nLEFT JOIN category_limit l ON true;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -544,
+        -656
+      ],
+      "id": "06e605ac-237d-46b4-a4e1-4a60fd76f817",
+      "name": "Checking_limits",
       "credentials": {
         "postgres": {
           "id": "3CGZzcUsaAWp8nrl",
@@ -364,25 +475,25 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        2496,
-        -608
+        -416,
+        -656
       ],
-      "id": "117aa963-256c-40f2-91ce-1832439f3fbf",
+      "id": "37fd5867-d94f-4c5e-86dc-9186d4a15d13",
       "name": "Calc"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=WITH conversion AS (\n  SELECT \n    {{ $fromAI(\"amount\", \"Сумма для конвертации, только число\", \"number\") }} as original_amount,\n    UPPER('{{ $fromAI(\"from_currency\", \"Из какой валюты конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}') as from_currency,\n    UPPER('{{ $fromAI(\"to_currency\", \"В какую валюту конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}') as to_currency,\n    get_exchange_rate(\n      UPPER('{{ $fromAI(\"from_currency\", \"Из какой валюты конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}'),\n      UPPER('{{ $fromAI(\"to_currency\", \"В какую валюту конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}'),\n      CURRENT_DATE\n    ) as rate\n)\nSELECT \n  original_amount,\n  from_currency,\n  to_currency,\n  rate,\n  ROUND(original_amount * rate, 2) as converted_amount,\n  CURRENT_DATE as conversion_date\nFROM conversion;",
+        "query": "=SELECT \n  {{ $fromAI(\"amount\", \"Сумма для конвертации, только число\", \"number\") }} as original_amount,\n  UPPER('{{ $fromAI(\"from_currency\", \"Из какой валюты конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}') as from_currency,\n  UPPER('{{ $fromAI(\"to_currency\", \"В какую валюту конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}') as to_currency,\n  get_exchange_rate(\n    UPPER('{{ $fromAI(\"from_currency\", \"Из какой валюты конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}'),\n    UPPER('{{ $fromAI(\"to_currency\", \"В какую валюту конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}'),\n    CURRENT_DATE\n  ) as rate,\n  convert_amount(\n    {{ $fromAI(\"amount\", \"Сумма для конвертации, только число\", \"number\") }},\n    UPPER('{{ $fromAI(\"from_currency\", \"Из какой валюты конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}'),\n    UPPER('{{ $fromAI(\"to_currency\", \"В какую валюту конвертировать: сом/KGS, доллар/USD, евро/EUR, рубль/RUB\", \"string\") }}'),\n    CURRENT_DATE\n  ) as converted_amount,\n  TO_CHAR(CURRENT_DATE, 'DD.MM.YYYY') as conversion_date;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2624,
-        -608
+        -288,
+        -656
       ],
-      "id": "7df81fcf-49f2-44d0-bb6a-9f55161cc36f",
+      "id": "a68a759c-9a05-4be8-9c1e-11acbcff2e04",
       "name": "Convert_currency",
       "credentials": {
         "postgres": {
@@ -394,16 +505,16 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT \n  from_currency,\n  to_currency,\n  rate,\n  TO_CHAR(date, 'DD.MM.YYYY') as rate_date,\n  source\nFROM v_latest_rates\nWHERE from_currency IN ('KGS', 'USD', 'EUR', 'RUB')\n  AND to_currency IN ('KGS', 'USD', 'EUR', 'RUB')\n  AND from_currency != to_currency\nORDER BY from_currency, to_currency;",
+        "query": "=WITH latest_rates AS (\n  SELECT DISTINCT ON (from_currency, to_currency)\n    from_currency,\n    to_currency,\n    rate,\n    date,\n    source\n  FROM exchange_rates\n  WHERE from_currency IN ('KGS', 'USD', 'EUR', 'RUB')\n    AND to_currency IN ('KGS', 'USD', 'EUR', 'RUB')\n    AND from_currency != to_currency\n  ORDER BY from_currency, to_currency, date DESC\n)\nSELECT \n  from_currency,\n  to_currency,\n  rate,\n  TO_CHAR(date, 'DD.MM.YYYY') as rate_date,\n  source,\n  CASE \n    WHEN from_currency = 'USD' AND to_currency = 'KGS' THEN '💵 Доллар → Сом'\n    WHEN from_currency = 'EUR' AND to_currency = 'KGS' THEN '💶 Евро → Сом'\n    WHEN from_currency = 'RUB' AND to_currency = 'KGS' THEN '💷 Рубль → Сом'\n    ELSE from_currency || ' → ' || to_currency\n  END as display_name\nFROM latest_rates\nORDER BY \n  CASE from_currency \n    WHEN 'USD' THEN 1 \n    WHEN 'EUR' THEN 2 \n    WHEN 'RUB' THEN 3 \n    ELSE 4 \n  END, to_currency;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2752,
-        -608
+        -160,
+        -656
       ],
-      "id": "afc2ba5f-e51e-4c74-9cbb-9683f845c252",
+      "id": "75a9e5ee-41a0-4155-a64a-35976bb50a33",
       "name": "Get_exchange_rates",
       "credentials": {
         "postgres": {
@@ -415,17 +526,38 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT * FROM safe_update_transaction(\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }},\n  '{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}',\n  '{{ $fromAI(\"transaction_id\", \"ID транзакции или 'last' для последней\", \"string\") }}',\n  '{{ $fromAI(\"field\", \"Поле для изменения: amount, category, description, date, currency\", \"string\") }}',\n  '{{ $fromAI(\"new_value\", \"Новое значение\", \"string\") }}'\n);",
+        "query": "=SELECT * FROM safe_update_transaction(\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }}::BIGINT,\n  '{{ $fromAI(\"transaction_type\", \"Тип: expense или income (НЕ 'расход' или 'доход'!)\", \"string\") }}',\n  '{{ $fromAI(\"transaction_id\", \"ID транзакции или 'last' для последней\", \"string\") }}',\n  '{{ $fromAI(\"field\", \"Поле для изменения: amount, category, description, date, currency\", \"string\") }}',\n  '{{ $fromAI(\"new_value\", \"Новое значение (для даты используй DD.MM.YYYY)\", \"string\") }}'\n);",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2880,
-        -608
+        -32,
+        -656
       ],
-      "id": "a45592cc-234a-4e27-a5d6-91cbedd0882c",
+      "id": "b14f6902-3522-408b-8e82-eb076a8ebfa8",
       "name": "Edit_transaction",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH found_transaction AS (\n  SELECT \n    CASE \n      WHEN LOWER('{{ $fromAI(\"transaction_id\", \"ID транзакции или 'last' для последней\", \"string\") }}') = 'last' \n      THEN get_last_transaction({{ $('Telegram Bot Trigger').first().json.message.from.id }}, LOWER('{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}'))\n      ELSE CAST(NULLIF('{{ $fromAI(\"transaction_id\", \"ID транзакции или 'last' для последней\", \"string\") }}', 'last') AS INTEGER)\n    END as tid\n),\ndelete_expense AS (\n  UPDATE expenses\n  SET deleted_at = NOW(),\n      deleted_by = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n  WHERE id = (SELECT tid FROM found_transaction)\n    AND user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND deleted_at IS NULL\n    AND LOWER('{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}') = 'expense'\n  RETURNING id, amount, category, currency, date\n),\ndelete_income AS (\n  UPDATE income\n  SET deleted_at = NOW(),\n      deleted_by = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n  WHERE id = (SELECT tid FROM found_transaction)\n    AND user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND deleted_at IS NULL\n    AND LOWER('{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}') = 'income'\n  RETURNING id, amount, category, currency, date\n),\nlog_deletion AS (\n  SELECT log_transaction_change(\n    LOWER('{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}'),\n    (SELECT tid FROM found_transaction),\n    'deleted',\n    NULL,\n    NULL,\n    NULL,\n    {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n  ) as history_id\n)\nSELECT \n  COALESCE(\n    (SELECT row_to_json(delete_expense.*) FROM delete_expense),\n    (SELECT row_to_json(delete_income.*) FROM delete_income)\n  ) as deleted_transaction,\n  (SELECT history_id FROM log_deletion) as history_id,\n  'deleted' as status;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        96,
+        -656
+      ],
+      "id": "ea753789-e03f-43e8-a009-79b1d7706043",
+      "name": "Delete_transaction",
       "credentials": {
         "postgres": {
           "id": "3CGZzcUsaAWp8nrl",
@@ -442,11 +574,284 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        3008,
-        -608
+        224,
+        -656
       ],
-      "id": "e313972e-8519-498f-8f4f-9e46ef0fdd6a",
+      "id": "dd2b5a90-c69a-439b-8b70-f0cc48601a88",
       "name": "Restore_transaction",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH found_transaction AS (\n  SELECT \n    CASE \n      WHEN LOWER('{{ $fromAI(\"transaction_id\", \"ID транзакции или 'last'\", \"string\") }}') = 'last' \n      THEN get_last_transaction({{ $('Telegram Bot Trigger').first().json.message.from.id }}, LOWER('{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}'))\n      ELSE CAST(NULLIF('{{ $fromAI(\"transaction_id\", \"ID транзакции или 'last'\", \"string\") }}', 'last') AS INTEGER)\n    END as tid\n)\nSELECT \n  id,\n  action,\n  field_changed,\n  old_value,\n  new_value,\n  changed_by,\n  TO_CHAR(changed_at, 'DD.MM.YYYY HH24:MI:SS') as changed_at\nFROM transaction_history\nWHERE transaction_type = LOWER('{{ $fromAI(\"transaction_type\", \"Тип: expense или income\", \"string\") }}')\n  AND transaction_id = (SELECT tid FROM found_transaction)\nORDER BY changed_at DESC\nLIMIT 50;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        352,
+        -656
+      ],
+      "id": "53dbd3e8-7069-4ca9-99bc-62b89451d043",
+      "name": "Get_transaction_history",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT * FROM create_recurring_payment(\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }}::BIGINT,\n  '{{ $fromAI(\"title\", \"Название платежа (например Netflix, Аренда офиса)\", \"string\") }}'::VARCHAR,\n  {{ $fromAI(\"amount\", \"Сумма платежа, только число\", \"number\") }}::NUMERIC,\n  UPPER('{{ $fromAI(\"currency\", \"Валюта: KGS/сом, USD/доллар, EUR/евро, RUB/рубль\", \"string\") }}')::VARCHAR,\n  '{{ $fromAI(\"category\", \"Категория расхода: продукты, транспорт, аренда офиса, подписки и т.д.\", \"string\") }}'::VARCHAR,\n  LOWER('{{ $fromAI(\"frequency\", \"Частота: daily (ежедневно), weekly (еженедельно), monthly (ежемесячно), yearly (ежегодно)\", \"string\") }}')::VARCHAR,\n  COALESCE(TO_DATE(NULLIF('{{ $fromAI(\"start_date\", \"Дата начала в формате DD.MM.YYYY (опционально, по умолчанию сегодня)\", \"string\", \"\") }}', ''), 'DD.MM.YYYY'), CURRENT_DATE),\n  NULL::TEXT,\n  'expense'::VARCHAR,\n  {{ $fromAI(\"interval_value\", \"Каждые N периодов (например 1 для каждый месяц, 2 для каждые 2 недели)\", \"number\", 1) }}::INTEGER,\n  {{ $fromAI(\"remind_days_before\", \"За сколько дней напоминать (по умолчанию 3)\", \"number\", 3) }}::INTEGER,\n  {{ $fromAI(\"auto_create\", \"Создавать транзакцию автоматически: true или false (по умолчанию false)\", \"boolean\", false) }}::BOOLEAN\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        -656
+      ],
+      "id": "439e1060-23c9-4d86-84a3-37ea30316fbe",
+      "name": "Create_recurring_payment",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  id,\n  title,\n  amount,\n  currency,\n  category,\n  frequency,\n  interval_value,\n  TO_CHAR(next_payment_date, 'DD.MM.YYYY') as next_payment_date,\n  remind_days_before,\n  auto_create,\n  total_executions,\n  TO_CHAR(created_at, 'DD.MM.YYYY') as created_at\nFROM recurring_payments\nWHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n  AND is_active = true\n  AND (end_date IS NULL OR end_date >= CURRENT_DATE)\nORDER BY next_payment_date ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        608,
+        -656
+      ],
+      "id": "de4eaba6-63c5-44aa-bccc-56c97f3b11b8",
+      "name": "List_recurring_payments",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE recurring_payments\nSET \n  is_active = false,\n  end_date = CURRENT_DATE,\n  updated_at = NOW()\nWHERE id = {{ $fromAI(\"payment_id\", \"ID подписки для отмены\", \"number\") }}\n  AND user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n  AND is_active = true\nRETURNING \n  id,\n  title,\n  amount,\n  currency,\n  'cancelled' as status,\n  TO_CHAR(end_date, 'DD.MM.YYYY') as cancelled_date;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        736,
+        -656
+      ],
+      "id": "f762c277-26b3-459e-ae4d-6797f0aa85df",
+      "name": "Cancel_recurring_payment",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT * FROM get_budget_forecast(\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }}::BIGINT\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        864,
+        -656
+      ],
+      "id": "bce21b0f-6ce1-40e9-bc9c-7d402299917f",
+      "name": "Get_budget_forecast",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  id,\n  notification_type,\n  title,\n  message,\n  priority,\n  is_read,\n  TO_CHAR(created_at, 'DD.MM.YYYY HH24:MI') as created_at,\n  related_transaction_id,\n  metadata\nFROM notifications\nWHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n  AND ({{ $fromAI(\"unread_only\", \"Показать только непрочитанные: true или false\", \"boolean\", true) }} = false OR is_read = false)\nORDER BY \n  CASE priority \n    WHEN 'urgent' THEN 1 \n    WHEN 'high' THEN 2 \n    WHEN 'normal' THEN 3 \n    ELSE 4 \n  END,\n  created_at DESC\nLIMIT {{ $fromAI(\"limit\", \"Количество уведомлений для показа\", \"number\", 10) }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        992,
+        -656
+      ],
+      "id": "8804e28a-ac2b-44a5-93f5-9dde9603bd74",
+      "name": "Get_notifications",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO budget_alerts_config (\n  user_id,\n  budget_warning_threshold,\n  budget_critical_threshold,\n  category_warning_threshold,\n  category_critical_threshold,\n  max_alerts_per_day,\n  updated_at\n) VALUES (\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }},\n  {{ $fromAI(\"budget_warning\", \"Порог предупреждения о бюджете в % (например 75, 80, 90)\", \"number\", 80) }},\n  {{ $fromAI(\"budget_critical\", \"Критический порог бюджета в % (обычно 100)\", \"number\", 100) }},\n  {{ $fromAI(\"category_warning\", \"Порог предупреждения для лимитов категорий в %\", \"number\", 80) }},\n  {{ $fromAI(\"category_critical\", \"Критический порог для лимитов категорий в %\", \"number\", 100) }},\n  {{ $fromAI(\"max_alerts_per_day\", \"Максимальное количество уведомлений в день\", \"number\", 5) }},\n  NOW()\n)\nON CONFLICT (user_id) \nDO UPDATE SET\n  budget_warning_threshold = EXCLUDED.budget_warning_threshold,\n  budget_critical_threshold = EXCLUDED.budget_critical_threshold,\n  category_warning_threshold = EXCLUDED.category_warning_threshold,\n  category_critical_threshold = EXCLUDED.category_critical_threshold,\n  max_alerts_per_day = EXCLUDED.max_alerts_per_day,\n  updated_at = NOW()\nRETURNING \n  user_id,\n  budget_warning_threshold,\n  budget_critical_threshold,\n  category_warning_threshold,\n  category_critical_threshold,\n  max_alerts_per_day,\n  'configured' as status;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1120,
+        -656
+      ],
+      "id": "0a7c58af-74ba-4f92-9cca-a6181117df1a",
+      "name": "Configure_alerts",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n)\nSELECT * FROM get_income_expense_stats(\n  (SELECT workspace_id FROM user_workspace),\n  '{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY (по умолчанию начало месяца)\", \"string\", DATE_TRUNC('month', CURRENT_DATE)::TEXT) }}'::DATE,\n  '{{ $fromAI(\"end_date\", \"Дата конца периода в формате DD.MM.YYYY (по умолчанию сегодня)\", \"string\", CURRENT_DATE::TEXT) }}'::DATE\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1248,
+        -656
+      ],
+      "id": "a2f8b5c3-9d4e-4f15-8a61-2b3c75e48901",
+      "name": "Get_income_expense_stats",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n)\nSELECT * FROM get_top_expense_categories(\n  (SELECT workspace_id FROM user_workspace),\n  '{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY (по умолчанию начало месяца)\", \"string\", DATE_TRUNC('month', CURRENT_DATE)::TEXT) }}'::DATE,\n  '{{ $fromAI(\"end_date\", \"Дата конца периода в формате DD.MM.YYYY (по умолчанию сегодня)\", \"string\", CURRENT_DATE::TEXT) }}'::DATE,\n  {{ $fromAI(\"limit\", \"Количество топ категорий для показа (по умолчанию 10)\", \"number\", 10) }}\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1376,
+        -656
+      ],
+      "id": "b3e9f7d2-8c5f-4e26-9b72-3d4f86e59f12",
+      "name": "Get_top_categories",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT * FROM get_user_workspaces(\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }}::BIGINT\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1504,
+        -656
+      ],
+      "id": "c4f0a1e3-9e5f-4f37-8c83-4e5g97f6a023",
+      "name": "Get_workspaces",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT * FROM update_spending_patterns(\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }}::BIGINT\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1632,
+        -656
+      ],
+      "id": "d5e1b2f4-ae6f-4e48-9d94-5f6ha8g7b134",
+      "name": "Update_spending_patterns",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n)\nINSERT INTO budgets (user_id, workspace_id, month, budget_amount, currency)\nSELECT\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }},\n  uw.workspace_id,\n  COALESCE(\n    '{{ $fromAI(\"month\", \"Месяц в формате YYYY-MM (например 2025-11), если не указан - текущий месяц\", \"string\", \"\") }}',\n    TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  ),\n  {{ $fromAI(\"amount\", \"Сумма бюджета, только число\", \"number\") }},\n  UPPER('{{ $fromAI(\"currency\", \"Валюта бюджета: KGS/USD/EUR/RUB (по умолчанию KGS)\", \"string\", \"KGS\") }}')\nFROM user_workspace uw\nON CONFLICT (user_id, month) \nDO UPDATE SET \n  budget_amount = EXCLUDED.budget_amount,\n  currency = EXCLUDED.currency,\n  updated_at = NOW()\nRETURNING \n  id,\n  month,\n  budget_amount,\n  currency,\n  'budget_set' as status;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1760,
+        -656
+      ],
+      "id": "e6f2c3d5-bf7f-4f59-8e05-6g7hi9j8k245",
+      "name": "Set_budget",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n)\nINSERT INTO limits (user_id, workspace_id, category, month, limit_amount, currency)\nSELECT\n  {{ $('Telegram Bot Trigger').first().json.message.from.id }},\n  uw.workspace_id,\n  '{{ $fromAI(\"category\", \"Категория для лимита: продукты, транспорт, кафе/рестораны и т.д.\", \"string\") }}',\n  COALESCE(\n    '{{ $fromAI(\"month\", \"Месяц в формате YYYY-MM (например 2025-11), если не указан - текущий месяц\", \"string\", \"\") }}',\n    TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  ),\n  {{ $fromAI(\"amount\", \"Сумма лимита, только число\", \"number\") }},\n  UPPER('{{ $fromAI(\"currency\", \"Валюта лимита: KGS/USD/EUR/RUB (по умолчанию KGS)\", \"string\", \"KGS\") }}')\nFROM user_workspace uw\nON CONFLICT (user_id, category, month) \nDO UPDATE SET \n  limit_amount = EXCLUDED.limit_amount,\n  currency = EXCLUDED.currency,\n  updated_at = NOW()\nRETURNING \n  id,\n  category,\n  month,\n  limit_amount,\n  currency,\n  'limit_set' as status;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1888,
+        -656
+      ],
+      "id": "f7g3d4e6-cg8f-4g60-9f16-7h8ij0k9l356",
+      "name": "Set_category_limit",
       "credentials": {
         "postgres": {
           "id": "3CGZzcUsaAWp8nrl",
@@ -465,10 +870,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        1104,
-        -592
+        -1920,
+        -544
       ],
-      "id": "7d0708b8-867e-46c0-b233-fd3c06eaf90c",
+      "id": "68c1d461-69c0-4dc3-ab9e-1820316ae87f",
       "name": "AI Agent"
     },
     {
@@ -483,10 +888,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        912,
-        -368
+        -2128,
+        -312
       ],
-      "id": "48c9ae37-5f87-4765-80b8-3d21f83f6565",
+      "id": "d3d8ff01-953a-43bb-896f-d008c62def31",
       "name": "OpenAI Chat Model1",
       "credentials": {
         "openAiApi": {
@@ -503,10 +908,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        1040,
-        -368
+        -2000,
+        -208
       ],
-      "id": "e0af4b9d-7f87-4624-ae23-f0dfa57720a8",
+      "id": "1bb999a7-a37c-4bc8-80b8-4edc5b67a2f8",
       "name": "Simple Memory"
     },
     {
@@ -514,10 +919,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        1168,
-        -368
+        -1872,
+        -312
       ],
-      "id": "e4426882-bdae-4892-8d3e-8b65d0c046b2",
+      "id": "22957e54-22af-470b-ab90-edce09ca3310",
       "name": "Calculator"
     },
     {
@@ -530,11 +935,33 @@
       "type": "n8n-nodes-base.apiTemplateIo",
       "typeVersion": 1,
       "position": [
-        1632,
-        -480
+        -1408,
+        -536
       ],
-      "id": "dc45df34-7343-4ae3-aeb5-d130c8ea6af6",
+      "id": "33668895-83f2-45c2-804a-0b66019695ac",
       "name": "Create a pdf",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "WCFzWPXSnueTP8ef",
+          "name": "APITemplate.io Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "c1d77b23eda325b2",
+        "jsonParameters": true,
+        "propertiesJson": "{\n  \"name\": \"apitemplate.io\",\n  \"sales\": {\n    \"data\": [30,40,45,50,49,60,70,91,125],\n    \"categories\": [1991,1992,1993,1994,1995,1996,1997,1998,1999]\n  },\n  \"team\": {\n    \"data\": [44,55,13,43,22],\n    \"labels\": [\"Team A\",\"Team B\",\"Team C\",\"Team D\",\"Team E\"]\n  }\n}"
+      },
+      "type": "n8n-nodes-base.apiTemplateIoTool",
+      "typeVersion": 1,
+      "position": [
+        -3024,
+        656
+      ],
+      "id": "31fa010a-3462-4268-99b7-3120343b46c2",
+      "name": "Create a pdf in APITemplate.io",
       "credentials": {
         "apiTemplateIoApi": {
           "id": "WCFzWPXSnueTP8ef",
@@ -550,10 +977,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCode",
       "typeVersion": 1.3,
       "position": [
-        1296,
-        -368
+        -1744,
+        -312
       ],
-      "id": "47e0f7d7-21f7-47b9-8ea9-8783560f7422",
+      "id": "2d174262-76e5-427b-bc04-86c1737c3d39",
       "name": "Code Tool"
     },
     {
@@ -565,10 +992,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1424,
-        -368
+        -1488,
+        -272
       ],
-      "id": "29639fef-a0a1-478f-bd88-296f5e79e260",
+      "id": "f474a56f-229c-4160-99e1-d1adc70b4296",
       "name": "Get_week_statistic",
       "credentials": {
         "postgres": {
@@ -579,23 +1006,32 @@
     },
     {
       "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{ $json.text }}"
+        "fieldsToSummarize": {
+          "values": [
+            {}
+          ]
+        },
+        "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.3,
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
       "position": [
-        1984,
-        -608
+        -3024,
+        432
       ],
-      "id": "fe2a8d54-f563-4990-9bc8-ee146b8dea41",
-      "name": "Postgres Chat Memory",
-      "credentials": {
-        "postgres": {
-          "id": "3CGZzcUsaAWp8nrl",
-          "name": "Postgres account"
-        }
-      }
+      "id": "74046dbb-f83e-4c20-a742-4ad1558fa927",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -3024,
+        -208
+      ],
+      "id": "700d1e69-b971-46b3-8db9-a3248eb98b2c",
+      "name": "Create a row"
     }
   ],
   "pinData": {},
@@ -680,11 +1116,40 @@
         ]
       ]
     },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Financial Assistant": {
       "main": [
         [
           {
             "node": "Send Telegram Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверка типа": {
+      "main": [
+        [
+          {
+            "node": "Анализ расходов",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Анализ доходов",
             "type": "main",
             "index": 0
           }
@@ -746,6 +1211,17 @@
         ]
       ]
     },
+    "Checking_limits": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Calc": {
       "ai_tool": [
         [
@@ -790,7 +1266,161 @@
         ]
       ]
     },
+    "Delete_transaction": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Restore_transaction": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_transaction_history": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_recurring_payment": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List_recurring_payments": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancel_recurring_payment": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_budget_forecast": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_notifications": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure_alerts": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_income_expense_stats": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_top_categories": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_workspaces": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_spending_patterns": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_budget": {
+      "ai_tool": [
+        [
+          {
+            "node": "Financial Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_category_limit": {
       "ai_tool": [
         [
           {
@@ -845,6 +1475,11 @@
         ]
       ]
     },
+    "Create a pdf in APITemplate.io": {
+      "ai_tool": [
+        []
+      ]
+    },
     "Code Tool": {
       "ai_tool": [
         [
@@ -866,24 +1501,13 @@
           }
         ]
       ]
-    },
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Financial Assistant",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c89965a4-99b1-4428-8aaf-7efc6f370a57",
+  "versionId": "452cf336-fb42-482f-a0c3-2bea20974d0e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
