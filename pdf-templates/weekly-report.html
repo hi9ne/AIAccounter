@@ -1,0 +1,210 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.3/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<style>
+  body {
+    -webkit-font-smoothing: antialiased;
+    background: #F9FAFB;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+</style>
+
+<div class="container mx-auto px-8 py-6"></div>
+  
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="text-6xl mb-3">💼</div>
+    <h1 class="text-4xl font-bold text-purple-700 mb-2">Недельный отчёт</h1>
+    <p class="text-xl text-gray-600">{{period}}</p>
+    <p class="text-sm text-gray-500 mt-2">👤 {{user_name}}</p>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 text-center">
+      <div class="text-3xl mb-2">💸</div>
+      <div class="text-sm text-gray-600 uppercase font-semibold mb-1">Расходы</div>
+      <div class="text-3xl font-bold text-red-600">{{total_expenses}} {{currency_symbol}}</div>
+    </div>
+    <div class="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 text-center">
+      <div class="text-3xl mb-2">💰</div>
+      <div class="text-sm text-gray-600 uppercase font-semibold mb-1">Доходы</div>
+      <div class="text-3xl font-bold text-green-600">{{total_income}} {{currency_symbol}}</div>
+    </div>
+    <div class="bg-purple-50 border-l-4 border-purple-500 rounded-lg p-4 text-center">
+      <div class="text-3xl mb-2">📈</div>
+      <div class="text-sm text-gray-600 uppercase font-semibold mb-1">Баланс</div>
+      <div class="text-3xl font-bold text-purple-600">{{balance}} {{currency_symbol}}</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-2 gap-6 mb-8">
+    <div class="bg-white border rounded-lg p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">Распределение расходов</h3>
+      <div id="categoryPieChart"></div>
+    </div>
+    <div class="bg-white border rounded-lg p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">Динамика по дням</h3>
+      <div id="dailyBarChart"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white border rounded-lg shadow-sm overflow-hidden mb-8">
+    <h3 class="text-lg font-semibold text-gray-700 p-4 bg-gray-50 border-b">Детали по дням</h3>
+    <table class="w-full">
+      <thead class="bg-purple-600 text-white">
+        <tr>
+          <th class="px-4 py-3 text-left text-sm font-semibold">Дата</th>
+          <th class="px-4 py-3 text-right text-sm font-semibold">Расходы</th>
+          <th class="px-4 py-3 text-right text-sm font-semibold">Доходы</th>
+          <th class="px-4 py-3 text-right text-sm font-semibold">Баланс</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for day in daily_details %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm font-medium text-purple-600">{{day.date}}</td>
+          <td class="px-4 py-3 text-sm text-right text-red-600 font-semibold">{{day.expenses}} {{currency_symbol}}</td>
+          <td class="px-4 py-3 text-sm text-right text-green-600 font-semibold">{{day.income}} {{currency_symbol}}</td>
+          <td class="px-4 py-3 text-sm text-right font-bold">{{day.balance}} {{currency_symbol}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Metrics -->
+  <div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">📊</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Средний расход</div>
+      <div class="text-xl font-bold text-red-600">{{avg_daily_expense}} {{currency_symbol}}</div>
+    </div>
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">💰</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Средний доход</div>
+      <div class="text-xl font-bold text-green-600">{{avg_daily_income}} {{currency_symbol}}</div>
+    </div>
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">🔄</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Транзакций</div>
+      <div class="text-xl font-bold text-gray-700">{{transaction_count}}</div>
+    </div>
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">💸</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Расходных</div>
+      <div class="text-xl font-bold text-gray-700">{{expense_count}}</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="text-center text-sm text-gray-400 mt-6 pt-4 border-t">
+    🤖 AIAccounter • Автоматический отчёт
+  </div>
+
+</div>
+
+<script>
+  // Wait for page load
+  window.addEventListener('DOMContentLoaded', function() {
+    // Pie Chart - Categories
+    var categoryLabels = [{% for cat in top_categories_table %}'{{cat.label}}'{% if not loop.last %}, {% endif %}{% endfor %}];
+    var categoryData = [{% for cat in top_categories_table %}{{cat.value}}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+  new ApexCharts(document.querySelector("#categoryPieChart"), {
+    series: categoryData,
+    chart: {
+      type: 'donut',
+      width: '100%',
+      height: 280,
+      animations: {
+        enabled: false,
+      },
+      toolbar: {
+        show: false
+      }
+    },
+    labels: categoryLabels,
+    colors: ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#6366F1'],
+    legend: {
+      position: 'bottom',
+      fontSize: '12px'
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return val.toFixed(1) + "%"
+      }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '60%'
+        }
+      }
+    }
+  }).render();
+
+  // Bar Chart - Daily
+  var dailyLabels = [{% for day in daily_details %}'{{day.date}}'{% if not loop.last %}, {% endif %}{% endfor %}];
+  var expensesData = [{% for day in daily_details %}{{day.expenses}}{% if not loop.last %}, {% endif %}{% endfor %}];
+  var incomeData = [{% for day in daily_details %}{{day.income}}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+  new ApexCharts(document.querySelector("#dailyBarChart"), {
+    chart: {
+      type: 'bar',
+      width: '100%',
+      height: 280,
+      animations: {
+        enabled: false,
+      },
+      toolbar: {
+        show: false
+      }
+    },
+    series: [
+      {
+        name: 'Расходы',
+        data: expensesData
+      },
+      {
+        name: 'Доходы',
+        data: incomeData
+      }
+    ],
+    xaxis: {
+      categories: dailyLabels,
+      labels: {
+        style: {
+          fontSize: '11px'
+        }
+      }
+    },
+    yaxis: {
+      labels: {
+        formatter: function (val) {
+          return val.toLocaleString() + ' ₸'
+        }
+      }
+    },
+    colors: ['#EF4444', '#10B981'],
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        columnWidth: '70%'
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    legend: {
+      position: 'top',
+      horizontalAlign: 'center'
+    }
+  }).render();
+  
+  }); // End DOMContentLoaded
+</script>

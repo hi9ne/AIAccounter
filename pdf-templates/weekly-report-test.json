@@ -1,0 +1,85 @@
+{
+  "title": "📊 Недельный финансовый отчет",
+  "user_name": "Алик Мукан",
+  "period": "28.10.2025 - 04.11.2025",
+  "currency_symbol": "₸",
+  "total_expenses": 45280,
+  "total_income": 85000,
+  "balance": 39720,
+  "transaction_count": 47,
+  "expense_count": 38,
+  "income_count": 9,
+  "avg_daily_expense": 6468,
+  "avg_daily_income": 12143,
+  "top_categories_table": [
+    {
+      "label": "Продукты",
+      "value": 18500,
+      "percentage": 40.9
+    },
+    {
+      "label": "Транспорт",
+      "value": 8900,
+      "percentage": 19.7
+    },
+    {
+      "label": "Кафе/рестораны",
+      "value": 7200,
+      "percentage": 15.9
+    },
+    {
+      "label": "Развлечения",
+      "value": 5680,
+      "percentage": 12.5
+    },
+    {
+      "label": "Прочее",
+      "value": 5000,
+      "percentage": 11.0
+    }
+  ],
+  "daily_details": [
+    {
+      "date": "04.11",
+      "expenses": 5200,
+      "income": 0,
+      "balance": -5200
+    },
+    {
+      "date": "03.11",
+      "expenses": 8900,
+      "income": 50000,
+      "balance": 41100
+    },
+    {
+      "date": "02.11",
+      "expenses": 4500,
+      "income": 0,
+      "balance": -4500
+    },
+    {
+      "date": "01.11",
+      "expenses": 7800,
+      "income": 15000,
+      "balance": 7200
+    },
+    {
+      "date": "31.10",
+      "expenses": 6200,
+      "income": 20000,
+      "balance": 13800
+    },
+    {
+      "date": "30.10",
+      "expenses": 5680,
+      "income": 0,
+      "balance": -5680
+    },
+    {
+      "date": "29.10",
+      "expenses": 7000,
+      "income": 0,
+      "balance": -7000
+    }
+  ]
+}

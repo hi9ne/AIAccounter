@@ -1,0 +1,277 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.0.3/tailwind.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<style>
+  body {
+    -webkit-font-smoothing: antialiased;
+    background: #F9FAFB;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+</style>
+
+<div class="container mx-auto px-8 py-6">
+  
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <div class="text-6xl mb-3">📊</div>
+    <h1 class="text-4xl font-bold text-blue-700 mb-2">Месячный отчёт</h1>
+    <p class="text-xl text-gray-600">{{period}}</p>
+    <p class="text-sm text-gray-500 mt-2">👤 {{user_name}}</p>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 text-center">
+      <div class="text-3xl mb-2">💸</div>
+      <div class="text-sm text-gray-600 uppercase font-semibold mb-1">Расходы</div>
+      <div class="text-3xl font-bold text-red-600">{{total_expenses_formatted}}</div>
+      <div class="text-xs text-gray-500 mt-1">% к прошлому</div>
+    </div>
+    <div class="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 text-center">
+      <div class="text-3xl mb-2">💰</div>
+      <div class="text-sm text-gray-600 uppercase font-semibold mb-1">Доходы</div>
+      <div class="text-3xl font-bold text-green-600">{{total_income_formatted}}</div>
+      <div class="text-xs text-gray-500 mt-1">% к прошлому</div>
+    </div>
+    <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 text-center">
+      <div class="text-3xl mb-2">📈</div>
+      <div class="text-sm text-gray-600 uppercase font-semibold mb-1">Баланс</div>
+      <div class="text-3xl font-bold text-blue-600">{{balance_formatted}}</div>
+    </div>
+  </div>
+
+  <!-- Budget Progress -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border rounded-lg p-6 mb-8">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="text-lg font-semibold text-gray-700">💼 Бюджет месяца</h3>
+      <span class="text-2xl font-bold text-blue-600">{{budget_used_percent}}%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-8 mb-3">
+      <div class="bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="width: {{budget_used_percent}}%;">
+        {{budget_used_formatted}}
+      </div>
+    </div>
+    <div class="flex justify-between text-sm">
+      <span class="text-gray-600">Лимит: <strong>{{budget_amount_formatted}}</strong></span>
+      <span class="text-green-600">Остаток: <strong>{{budget_remaining_formatted}}</strong></span>
+    </div>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="grid grid-cols-1 gap-6 mb-8">
+    <div class="bg-white border rounded-lg p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">Тренд по неделям</h3>
+      <div id="weeklyTrendChart"></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-6 mb-8">
+    <div class="bg-white border rounded-lg p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">Распределение расходов</h3>
+      <div id="categoryPieChart"></div>
+    </div>
+    <div class="bg-white border rounded-lg p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">Топ-5 категорий</h3>
+      <div id="categoryBarChart"></div>
+    </div>
+  </div>
+
+  <!-- Expense Table -->
+  <div class="bg-white border rounded-lg shadow-sm overflow-hidden mb-8">
+    <h3 class="text-lg font-semibold text-gray-700 p-4 bg-gray-50 border-b">Детали по категориям</h3>
+    <table class="w-full">
+      <thead class="bg-blue-600 text-white">
+        <tr>
+          <th class="px-4 py-3 text-left text-sm font-semibold">Категория</th>
+          <th class="px-4 py-3 text-right text-sm font-semibold">Сумма</th>
+          <th class="px-4 py-3 text-right text-sm font-semibold">%</th>
+          <th class="px-4 py-3 text-right text-sm font-semibold">Операций</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in expense_breakdown %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm font-medium text-gray-700">{{row.category}}</td>
+          <td class="px-4 py-3 text-sm text-right text-red-600 font-semibold">{{row.amount_formatted}}</td>
+          <td class="px-4 py-3 text-sm text-right font-semibold">{{row.percentage}}%</td>
+          <td class="px-4 py-3 text-sm text-right text-gray-600">{{row.count}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">💰</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Средний доход/день</div>
+      <div class="text-xl font-bold text-green-600">{{avg_daily_income_formatted}}</div>
+    </div>
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">💸</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Средний расход/день</div>
+      <div class="text-xl font-bold text-red-600">{{avg_daily_expense_formatted}}</div>
+    </div>
+    <div class="bg-gray-50 border rounded-lg p-4 text-center">
+      <div class="text-2xl mb-2">🔄</div>
+      <div class="text-xs text-gray-500 uppercase mb-1">Всего транзакций</div>
+      <div class="text-xl font-bold text-gray-700">{{transaction_count}}</div>
+    </div>
+  </div>
+
+  <!-- Forecast -->
+  <div class="bg-gradient-to-r from-purple-50 to-pink-50 border rounded-lg p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4 text-center">🔮 Прогноз на след. месяц</h3>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="text-center">
+        <div class="text-sm text-gray-500 mb-2">Расходы</div>
+        <div class="text-2xl font-bold text-red-600">{{forecast_expense_formatted}}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-sm text-gray-500 mb-2">Доходы</div>
+        <div class="text-2xl font-bold text-green-600">{{forecast_income_formatted}}</div>
+      </div>
+      <div class="text-center">
+        <div class="text-sm text-gray-500 mb-2">Баланс</div>
+        <div class="text-2xl font-bold text-blue-600">{{forecast_balance_formatted}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="text-center text-sm text-gray-400 mt-6 pt-4 border-t">
+    🤖 AIAccounter • Автоматический отчёт
+  </div>
+
+</div>
+
+<script>
+  // Wait for page load
+  window.addEventListener('DOMContentLoaded', function() {
+    // Pie Chart
+    var categoryLabels = [{% for cat in top_categories %}'{{cat.name}}'{% if not loop.last %}, {% endif %}{% endfor %}];
+    var categoryData = [{% for cat in top_categories %}{{cat.amount}}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+  new ApexCharts(document.querySelector("#categoryPieChart"), {
+    series: categoryData,
+    chart: {
+      type: 'donut',
+      width: '100%',
+      height: 300,
+      animations: { enabled: false },
+      toolbar: { show: false }
+    },
+    labels: categoryLabels,
+    colors: ['#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#6366F1'],
+    legend: {
+      position: 'bottom',
+      fontSize: '11px'
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return val.toFixed(1) + "%"
+      }
+    },
+    plotOptions: {
+      pie: {
+        donut: { size: '65%' }
+      }
+    }
+  }).render();
+
+  // Bar Chart - Categories
+  new ApexCharts(document.querySelector("#categoryBarChart"), {
+    chart: {
+      type: 'bar',
+      width: '100%',
+      height: 300,
+      animations: { enabled: false },
+      toolbar: { show: false }
+    },
+    series: [{
+      name: 'Сумма',
+      data: categoryData
+    }],
+    xaxis: {
+      categories: categoryLabels,
+      labels: {
+        style: { fontSize: '10px' }
+      }
+    },
+    yaxis: {
+      labels: {
+        formatter: function (val) {
+          return val.toLocaleString() + ' ₸'
+        }
+      }
+    },
+    colors: ['#3B82F6'],
+    plotOptions: {
+      bar: {
+        borderRadius: 6,
+        columnWidth: '60%',
+        distributed: true
+      }
+    },
+    dataLabels: { enabled: false },
+    legend: { show: false }
+  }).render();
+
+  // Line Chart - Weekly Trend
+  var weekLabels = [{% for week in weekly_data %}'{{week.label}}'{% if not loop.last %}, {% endif %}{% endfor %}];
+  var weekExpenses = [{% for week in weekly_data %}{{week.expenses}}{% if not loop.last %}, {% endif %}{% endfor %}];
+  var weekIncome = [{% for week in weekly_data %}{{week.income}}{% if not loop.last %}, {% endif %}{% endfor %}];
+
+  new ApexCharts(document.querySelector("#weeklyTrendChart"), {
+    chart: {
+      type: 'area',
+      width: '100%',
+      height: 300,
+      animations: { enabled: false },
+      toolbar: { show: false }
+    },
+    series: [
+      {
+        name: 'Расходы',
+        data: weekExpenses
+      },
+      {
+        name: 'Доходы',
+        data: weekIncome
+      }
+    ],
+    xaxis: {
+      categories: weekLabels
+    },
+    yaxis: {
+      labels: {
+        formatter: function (val) {
+          return val.toLocaleString() + ' ₸'
+        }
+      }
+    },
+    colors: ['#EF4444', '#10B981'],
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.2,
+      }
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3
+    },
+    dataLabels: { enabled: false },
+    legend: {
+      position: 'top',
+      horizontalAlign: 'center'
+    }
+  }).render();
+  
+  }); // End DOMContentLoaded
+</script>

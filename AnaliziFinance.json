@@ -82,7 +82,7 @@
             {
               "conditions": {
                 "options": {
-                  "caseSensitive": true,
+                  "caseSensitive": false,
                   "leftValue": "",
                   "typeValidation": "strict",
                   "version": 2
@@ -91,41 +91,113 @@
                   {
                     "id": "57c00950-88c8-4c71-bfe1-5e243b0b71dc",
                     "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/get_week_report",
+                    "rightValue": "^(/weekly_report|недельный отчёт|недельный отчет|отчет за неделю|отчёт за неделю)",
                     "operator": {
                       "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "165ec6b6-bb25-4fcf-bc6f-4caf5e7bb406",
-                    "leftValue": "={{ $('Telegram Bot Trigger').item.json.message.text }}",
-                    "rightValue": "period",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                      "operation": "regex"
                     }
                   }
                 ],
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "report for period"
+              "outputKey": "Weekly Report"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "monthly-report-cmd",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "^(/monthly_report|месячный отчёт|месячный отчет|отчет за месяц|отчёт за месяц)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Monthly Report"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "period-report-cmd",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "^(отчет за период|отчёт за период|отчет с|отчёт с|период)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Period Report"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "monthly-report-cmd",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "^(/monthly_report|месячный отчёт|месячный отчет|отчет за месяц|отчёт за месяц)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Monthly Report"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "period-report-cmd",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "(отчет за период|отчёт за период|отчет с|отчёт с)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Period Report"
             },
             {
               "conditions": {
@@ -1139,6 +1211,621 @@
           "name": "Alikbek Financer"
         }
       }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 21 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        720
+      ],
+      "id": "daily-report-trigger",
+      "name": "Daily Report Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        960
+      ],
+      "id": "weekly-report-trigger",
+      "name": "Weekly Report Trigger"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 1 * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        1200
+      ],
+      "id": "monthly-report-trigger",
+      "name": "Monthly Report Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Получить всех активных пользователей для отправки ежедневного отчета\nSELECT DISTINCT\n  u.user_id,\n  u.telegram_chat_id,\n  u.first_name,\n  w.id as workspace_id\nFROM users u\nJOIN workspace_members wm ON u.user_id = wm.user_id\nJOIN workspaces w ON wm.workspace_id = w.id\nWHERE u.telegram_chat_id IS NOT NULL\n  AND wm.is_active = true\n  AND w.is_active = true\n  AND u.last_activity >= NOW() - INTERVAL '7 days'\nORDER BY u.user_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        64,
+        720
+      ],
+      "id": "get-active-users",
+      "name": "Get Active Users",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Получить данные за сегодня для пользователя\nWITH today_expenses AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_expenses,\n    COUNT(*) as expense_count,\n    json_agg(\n      json_build_object(\n        'category', category,\n        'amount', amount,\n        'currency', currency,\n        'description', description\n      ) ORDER BY amount DESC\n    ) as expenses_detail\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE(date) = CURRENT_DATE\n    AND deleted_at IS NULL\n),\ntoday_income AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_income,\n    COUNT(*) as income_count\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE(date) = CURRENT_DATE\n    AND deleted_at IS NULL\n),\nmonth_stats AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as month_expenses\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)\n    AND deleted_at IS NULL\n),\nbudget_info AS (\n  SELECT budget_amount, currency\n  FROM budgets\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND month = TO_CHAR(CURRENT_DATE, 'YYYY-MM')\n  LIMIT 1\n)\nSELECT \n  {{ $json.user_id }} as user_id,\n  {{ $json.telegram_chat_id }} as chat_id,\n  '{{ $json.first_name }}' as user_name,\n  te.total_expenses,\n  te.expense_count,\n  te.expenses_detail,\n  ti.total_income,\n  ti.income_count,\n  ms.month_expenses,\n  bi.budget_amount,\n  bi.currency as budget_currency,\n  CASE \n    WHEN bi.budget_amount > 0 THEN ROUND((ms.month_expenses / bi.budget_amount) * 100, 1)\n    ELSE 0\n  END as budget_used_percent\nFROM today_expenses te\nCROSS JOIN today_income ti\nCROSS JOIN month_stats ms\nLEFT JOIN budget_info bi ON true;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        384,
+        720
+      ],
+      "id": "get-daily-stats",
+      "name": "Get Daily Stats",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Создай краткий ежедневный финансовый отчет на основе этих данных:\n\n👤 Пользователь: {{ $json.user_name }}\n📅 Дата: {{ new Date().toLocaleDateString('ru-RU') }}\n\n💸 СЕГОДНЯ:\n- Расходы: {{ $json.total_expenses }} сом ({{ $json.expense_count }} транзакций)\n- Доходы: {{ $json.total_income }} сом ({{ $json.income_count }} транзакций)\n- Баланс дня: {{ $json.total_income - $json.total_expenses }} сом\n\n📊 МЕСЯЦ:\n- Потрачено: {{ $json.month_expenses }} сом\n- Бюджет: {{ $json.budget_amount || 'не установлен' }} {{ $json.budget_currency || '' }}\n- Использовано бюджета: {{ $json.budget_used_percent }}%\n\n📋 Детали расходов за сегодня:\n{{ JSON.stringify($json.expenses_detail, null, 2) }}\n\nНапиши:\n1. Краткий итог дня (2-3 предложения)\n2. Анализ трат (что заметил)\n3. Один полезный совет или рекомендацию\n\nФормат: дружелюбный, мотивирующий, с эмодзи. Максимум 10 строк.",
+        "options": {
+          "systemMessage": "Ты финансовый аналитик, который делает краткие ежедневные отчеты. Говори по-русски, используй эмодзи, будь позитивным и мотивирующим."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        704,
+        720
+      ],
+      "id": "daily-report-ai",
+      "name": "Daily Report AI"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        880
+      ],
+      "id": "daily-openai-model",
+      "name": "OpenAI Daily Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SyI2pOUeSfbt1JRh",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "=🌙 *Ежедневный отчет*\n\n{{ $('Daily Report AI').item.json.output }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        720
+      ],
+      "id": "send-daily-report",
+      "name": "Send Daily Report",
+      "webhookId": "daily-report-send",
+      "credentials": {
+        "telegramApi": {
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Получить данные за неделю для отчета\nWITH week_expenses AS (\n  SELECT \n    DATE(date) as expense_date,\n    category,\n    SUM(amount) as daily_total,\n    currency,\n    COUNT(*) as transaction_count\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND date >= CURRENT_DATE - INTERVAL '7 days'\n    AND deleted_at IS NULL\n  GROUP BY DATE(date), category, currency\n  ORDER BY DATE(date) DESC, daily_total DESC\n),\nweek_income AS (\n  SELECT \n    DATE(date) as income_date,\n    category,\n    SUM(amount) as daily_total,\n    currency\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND date >= CURRENT_DATE - INTERVAL '7 days'\n    AND deleted_at IS NULL\n  GROUP BY DATE(date), category, currency\n  ORDER BY DATE(date) DESC\n),\nweek_summary AS (\n  SELECT \n    COALESCE(SUM(we.daily_total), 0) as total_expenses,\n    COALESCE(SUM(wi.daily_total), 0) as total_income,\n    (SELECT COUNT(*) FROM expenses WHERE user_id = {{ $json.user_id }} AND workspace_id = {{ $json.workspace_id }} AND date >= CURRENT_DATE - INTERVAL '7 days' AND deleted_at IS NULL) as expense_count,\n    (SELECT COUNT(*) FROM income WHERE user_id = {{ $json.user_id }} AND workspace_id = {{ $json.workspace_id }} AND date >= CURRENT_DATE - INTERVAL '7 days' AND deleted_at IS NULL) as income_count\n  FROM week_expenses we\n  FULL OUTER JOIN week_income wi ON we.expense_date = wi.income_date\n),\ntop_categories AS (\n  SELECT \n    category,\n    SUM(amount) as category_total,\n    ROUND((SUM(amount) / (SELECT SUM(amount) FROM expenses WHERE user_id = {{ $json.user_id }} AND workspace_id = {{ $json.workspace_id }} AND date >= CURRENT_DATE - INTERVAL '7 days' AND deleted_at IS NULL)) * 100, 1) as percentage\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND date >= CURRENT_DATE - INTERVAL '7 days'\n    AND deleted_at IS NULL\n  GROUP BY category\n  ORDER BY category_total DESC\n  LIMIT 5\n)\nSELECT \n  {{ $json.user_id }} as user_id,\n  {{ $json.telegram_chat_id }} as chat_id,\n  '{{ $json.first_name }}' as user_name,\n  {{ $json.workspace_id }} as workspace_id,\n  (SELECT json_agg(row_to_json(we.*)) FROM week_expenses we) as expenses_by_day,\n  (SELECT json_agg(row_to_json(wi.*)) FROM week_income wi) as income_by_day,\n  ws.total_expenses,\n  ws.total_income,\n  ws.expense_count,\n  ws.income_count,\n  (SELECT json_agg(row_to_json(tc.*)) FROM top_categories tc) as top_categories,\n  TO_CHAR(CURRENT_DATE - INTERVAL '7 days', 'DD.MM.YYYY') as period_start,\n  TO_CHAR(CURRENT_DATE, 'DD.MM.YYYY') as period_end\nFROM week_summary ws;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        384,
+        960
+      ],
+      "id": "get-weekly-data",
+      "name": "Get Weekly Data",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Подготовка данных для недельного PDF отчета\nconst data = $input.first().json;\n\n// Форматируем данные по дням для графика\nconst expensesByDay = data.expenses_by_day || [];\nconst incomeByDay = data.income_by_day || [];\n\n// Создаем массив дат и сумм для графика\nconst dates = [];\nconst expensesData = [];\nconst incomeData = [];\n\n// Группируем расходы по дням\nconst expenseMap = {};\nexpensesByDay.forEach(exp => {\n  const date = new Date(exp.expense_date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });\n  if (!expenseMap[date]) {\n    expenseMap[date] = 0;\n  }\n  expenseMap[date] += parseFloat(exp.daily_total || 0);\n});\n\n// Группируем доходы по дням\nconst incomeMap = {};\nincomeByDay.forEach(inc => {\n  const date = new Date(inc.income_date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });\n  if (!incomeMap[date]) {\n    incomeMap[date] = 0;\n  }\n  incomeMap[date] += parseFloat(inc.daily_total || 0);\n});\n\n// Получаем все уникальные даты\nconst allDates = [...new Set([...Object.keys(expenseMap), ...Object.keys(incomeMap)])];\nallDates.sort();\n\n// Заполняем массивы для графика\nallDates.forEach(date => {\n  dates.push(date);\n  expensesData.push(Math.round(expenseMap[date] || 0));\n  incomeData.push(Math.round(incomeMap[date] || 0));\n});\n\n// Топ категорий расходов\nconst topCategories = (data.top_categories || []).map(cat => ({\n  label: cat.category,\n  value: Math.round(parseFloat(cat.category_total || 0)),\n  percentage: parseFloat(cat.percentage || 0)\n}));\n\n// Данные для круговой диаграммы\nconst categoryLabels = topCategories.map(c => c.label);\nconst categoryValues = topCategories.map(c => c.value);\n\n// Итоговые данные\nconst result = {\n  // Заголовок и период\n  title: `📊 Недельный финансовый отчет`,\n  user_name: data.user_name || 'Пользователь',\n  period: `${data.period_start} - ${data.period_end}`,\n  \n  // Основные показатели\n  total_expenses: Math.round(parseFloat(data.total_expenses || 0)),\n  total_income: Math.round(parseFloat(data.total_income || 0)),\n  balance: Math.round(parseFloat(data.total_income || 0) - parseFloat(data.total_expenses || 0)),\n  transaction_count: parseInt(data.expense_count || 0) + parseInt(data.income_count || 0),\n  expense_count: parseInt(data.expense_count || 0),\n  income_count: parseInt(data.income_count || 0),\n  \n  // График доходов/расходов по дням\n  daily_chart: {\n    labels: dates,\n    datasets: [\n      {\n        label: 'Расходы',\n        data: expensesData,\n        backgroundColor: 'rgba(255, 99, 132, 0.8)',\n        borderColor: 'rgb(255, 99, 132)'\n      },\n      {\n        label: 'Доходы',\n        data: incomeData,\n        backgroundColor: 'rgba(75, 192, 192, 0.8)',\n        borderColor: 'rgb(75, 192, 192)'\n      }\n    ]\n  },\n  \n  // Круговая диаграмма топ категорий\n  category_chart: {\n    labels: categoryLabels,\n    data: categoryValues\n  },\n  \n  // Таблица топ категорий\n  top_categories_table: topCategories,\n  \n  // Детальная информация по дням\n  daily_details: allDates.map(date => ({\n    date: date,\n    expenses: expenseMap[date] || 0,\n    income: incomeMap[date] || 0,\n    balance: (incomeMap[date] || 0) - (expenseMap[date] || 0)\n  })),\n  \n  // Дополнительные метрики\n  avg_daily_expense: Math.round(parseFloat(data.total_expenses || 0) / 7),\n  avg_daily_income: Math.round(parseFloat(data.total_income || 0) / 7)\n};\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        960
+      ],
+      "id": "format-weekly-data",
+      "name": "Format Weekly Data"
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "5a677b23ed6c2fe6",
+        "jsonParameters": true,
+        "propertiesJson": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        704,
+        960
+      ],
+      "id": "generate-weekly-pdf",
+      "name": "Generate Weekly PDF",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "WCFzWPXSnueTP8ef",
+          "name": "APITemplate.io Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Get Weekly Data').item.json.chat_id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {
+          "caption": "=📊 *Недельный отчет*\n\n📅 Период: {{ $('Format Weekly Data').item.json.period }}\n👤 {{ $('Format Weekly Data').item.json.user_name }}\n\n💸 Расходы: {{ $('Format Weekly Data').item.json.total_expenses }} сом\n💰 Доходы: {{ $('Format Weekly Data').item.json.total_income }} сом\n📈 Баланс: {{ $('Format Weekly Data').item.json.balance }} сом\n\n📝 Транзакций: {{ $('Format Weekly Data').item.json.transaction_count }}\n📊 Среднее в день: {{ $('Format Weekly Data').item.json.avg_daily_expense }} сом",
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        960
+      ],
+      "id": "send-weekly-pdf",
+      "name": "Send Weekly PDF",
+      "webhookId": "weekly-pdf-send",
+      "credentials": {
+        "telegramApi": {
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Получить данные за месяц для отчета\nWITH month_expenses AS (\n  SELECT \n    DATE(date) as expense_date,\n    category,\n    SUM(amount) as daily_total,\n    currency,\n    COUNT(*) as transaction_count\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\n    AND deleted_at IS NULL\n  GROUP BY DATE(date), category, currency\n  ORDER BY DATE(date) DESC, daily_total DESC\n),\nmonth_income AS (\n  SELECT \n    DATE(date) as income_date,\n    category,\n    SUM(amount) as daily_total,\n    currency\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\n    AND deleted_at IS NULL\n  GROUP BY DATE(date), category, currency\n  ORDER BY DATE(date) DESC\n),\nmonth_summary AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_expenses,\n    COUNT(*) as expense_count\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\n    AND deleted_at IS NULL\n),\nmonth_income_summary AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_income,\n    COUNT(*) as income_count\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\n    AND deleted_at IS NULL\n),\ncategory_breakdown AS (\n  SELECT \n    category,\n    SUM(amount) as category_total,\n    COUNT(*) as category_count,\n    ROUND(AVG(amount), 2) as avg_transaction,\n    ROUND((SUM(amount) / (SELECT total_expenses FROM month_summary)) * 100, 1) as percentage\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\n    AND deleted_at IS NULL\n  GROUP BY category\n  ORDER BY category_total DESC\n),\nbudget_comparison AS (\n  SELECT \n    budget_amount,\n    currency,\n    (SELECT total_expenses FROM month_summary) as actual_expenses,\n    CASE \n      WHEN budget_amount > 0 THEN ROUND(((SELECT total_expenses FROM month_summary) / budget_amount) * 100, 1)\n      ELSE 0\n    END as budget_used_percent\n  FROM budgets\n  WHERE user_id = {{ $json.user_id }}\n    AND workspace_id = {{ $json.workspace_id }}\n    AND month = TO_CHAR(CURRENT_DATE - INTERVAL '1 month', 'YYYY-MM')\n  LIMIT 1\n)\nSELECT \n  {{ $json.user_id }} as user_id,\n  {{ $json.telegram_chat_id }} as chat_id,\n  '{{ $json.first_name }}' as user_name,\n  {{ $json.workspace_id }} as workspace_id,\n  ms.total_expenses,\n  mis.total_income,\n  ms.expense_count,\n  mis.income_count,\n  (SELECT json_agg(row_to_json(me.*)) FROM month_expenses me) as expenses_by_day,\n  (SELECT json_agg(row_to_json(mi.*)) FROM month_income mi) as income_by_day,\n  (SELECT json_agg(row_to_json(cb.*)) FROM category_breakdown cb) as category_breakdown,\n  bc.budget_amount,\n  bc.currency as budget_currency,\n  bc.budget_used_percent,\n  TO_CHAR(DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month'), 'DD.MM.YYYY') as period_start,\n  TO_CHAR(DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') + INTERVAL '1 month' - INTERVAL '1 day', 'DD.MM.YYYY') as period_end,\n  TO_CHAR(DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month'), 'Month YYYY') as month_name\nFROM month_summary ms\nCROSS JOIN month_income_summary mis\nLEFT JOIN budget_comparison bc ON true;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        384,
+        1200
+      ],
+      "id": "get-monthly-data",
+      "name": "Get Monthly Data",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Подготовка данных для месячного PDF отчета\nconst data = $input.first().json;\n\n// Форматируем категории с детализацией\nconst categoryBreakdown = (data.category_breakdown || []).map(cat => ({\n  category: cat.category,\n  total: Math.round(parseFloat(cat.category_total || 0)),\n  count: parseInt(cat.category_count || 0),\n  avg: Math.round(parseFloat(cat.avg_transaction || 0)),\n  percentage: parseFloat(cat.percentage || 0)\n}));\n\n// Данные для круговой диаграммы категорий\nconst categoryLabels = categoryBreakdown.map(c => c.category);\nconst categoryValues = categoryBreakdown.map(c => c.total);\n\n// Данные по дням для графика\nconst expensesByDay = data.expenses_by_day || [];\nconst incomeByDay = data.income_by_day || [];\n\n// Группируем по дням\nconst dayMap = {};\nexpensesByDay.forEach(exp => {\n  const day = new Date(exp.expense_date).getDate();\n  if (!dayMap[day]) dayMap[day] = { expenses: 0, income: 0 };\n  dayMap[day].expenses += parseFloat(exp.daily_total || 0);\n});\n\nincomeByDay.forEach(inc => {\n  const day = new Date(inc.income_date).getDate();\n  if (!dayMap[day]) dayMap[day] = { expenses: 0, income: 0 };\n  dayMap[day].income += parseFloat(inc.daily_total || 0);\n});\n\n// Создаем массивы для графика\nconst days = Object.keys(dayMap).sort((a, b) => a - b);\nconst expensesData = days.map(d => Math.round(dayMap[d].expenses));\nconst incomeData = days.map(d => Math.round(dayMap[d].income));\n\n// Расчет бюджета\nconst budgetAmount = parseFloat(data.budget_amount || 0);\nconst totalExpenses = parseFloat(data.total_expenses || 0);\nconst budgetUsedPercent = parseFloat(data.budget_used_percent || 0);\nconst budgetRemaining = Math.round(budgetAmount - totalExpenses);\n\n// Статус бюджета\nlet budgetStatus = 'В пределах бюджета';\nlet budgetStatusColor = '#4CAF50';\nif (budgetUsedPercent >= 100) {\n  budgetStatus = '⚠️ Бюджет превышен';\n  budgetStatusColor = '#F44336';\n} else if (budgetUsedPercent >= 80) {\n  budgetStatus = '⚡ Близко к лимиту';\n  budgetStatusColor = '#FF9800';\n}\n\n// Итоговые данные\nconst result = {\n  // Заголовок\n  title: `📊 Месячный финансовый отчет`,\n  month: data.month_name || 'Месяц',\n  user_name: data.user_name || 'Пользователь',\n  period: `${data.period_start} - ${data.period_end}`,\n  generated_date: new Date().toLocaleDateString('ru-RU'),\n  \n  // Основные показатели\n  total_expenses: Math.round(totalExpenses),\n  total_income: Math.round(parseFloat(data.total_income || 0)),\n  balance: Math.round(parseFloat(data.total_income || 0) - totalExpenses),\n  transaction_count: parseInt(data.expense_count || 0) + parseInt(data.income_count || 0),\n  expense_count: parseInt(data.expense_count || 0),\n  income_count: parseInt(data.income_count || 0),\n  \n  // Бюджет\n  budget_amount: Math.round(budgetAmount),\n  budget_currency: data.budget_currency || 'KGS',\n  budget_used: Math.round(totalExpenses),\n  budget_used_percent: Math.round(budgetUsedPercent),\n  budget_remaining: budgetRemaining,\n  budget_status: budgetStatus,\n  budget_status_color: budgetStatusColor,\n  \n  // График доходов/расходов по дням\n  monthly_chart: {\n    labels: days,\n    datasets: [\n      {\n        label: 'Расходы',\n        data: expensesData,\n        backgroundColor: 'rgba(255, 99, 132, 0.8)',\n        borderColor: 'rgb(255, 99, 132)',\n        borderWidth: 2\n      },\n      {\n        label: 'Доходы',\n        data: incomeData,\n        backgroundColor: 'rgba(75, 192, 192, 0.8)',\n        borderColor: 'rgb(75, 192, 192)',\n        borderWidth: 2\n      }\n    ]\n  },\n  \n  // Круговая диаграмма категорий\n  category_chart: {\n    labels: categoryLabels,\n    data: categoryValues,\n    colors: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF']\n  },\n  \n  // Детальная таблица категорий\n  category_breakdown_table: categoryBreakdown,\n  \n  // Средние показатели\n  avg_daily_expense: Math.round(totalExpenses / days.length),\n  avg_daily_income: Math.round(parseFloat(data.total_income || 0) / days.length),\n  avg_transaction_expense: Math.round(totalExpenses / parseInt(data.expense_count || 1)),\n  \n  // Самые дорогие дни\n  top_expense_days: days\n    .map(d => ({ day: d, amount: dayMap[d].expenses }))\n    .sort((a, b) => b.amount - a.amount)\n    .slice(0, 5)\n    .map(d => ({ day: d.day, amount: Math.round(d.amount) })),\n  \n  // Топ-3 категории\n  top_3_categories: categoryBreakdown.slice(0, 3)\n};\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        1200
+      ],
+      "id": "format-monthly-data",
+      "name": "Format Monthly Data"
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "c1177b23eddd4e88",
+        "jsonParameters": true,
+        "propertiesJson": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        704,
+        1200
+      ],
+      "id": "generate-monthly-pdf",
+      "name": "Generate Monthly PDF",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "WCFzWPXSnueTP8ef",
+          "name": "APITemplate.io Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Get Monthly Data').item.json.chat_id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {
+          "caption": "=📊 *Месячный отчет* - {{ $('Format Monthly Data').item.json.month }}\n\n📅 Период: {{ $('Format Monthly Data').item.json.period }}\n👤 {{ $('Format Monthly Data').item.json.user_name }}\n\n💸 Расходы: {{ $('Format Monthly Data').item.json.total_expenses }} сом\n💰 Доходы: {{ $('Format Monthly Data').item.json.total_income }} сом\n📈 Баланс: {{ $('Format Monthly Data').item.json.balance }} сом\n\n💼 Бюджет: {{ $('Format Monthly Data').item.json.budget_amount }} сом\n📊 Использовано: {{ $('Format Monthly Data').item.json.budget_used_percent }}%\n{{ $('Format Monthly Data').item.json.budget_status }}\n\n📝 Транзакций: {{ $('Format Monthly Data').item.json.transaction_count }}",
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        1200
+      ],
+      "id": "send-monthly-pdf",
+      "name": "Send Monthly PDF",
+      "webhookId": "monthly-pdf-send",
+      "credentials": {
+        "telegramApi": {
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=Ты финансовый помощник, который помогает пользователю получать отчеты за указанный период. \n\nКогда пользователь просит отчет за период, ты должен:\n1. Распознать даты начала и конца периода из текста\n2. Использовать инструмент Get_period_report_data для получения данных\n3. Сформировать краткий текстовый ответ с основными цифрами\n4. Сгенерировать PDF через инструмент Generate_period_pdf\n\nПримеры запросов:\n- 'отчет за период с 1 октября по 31 октября'\n- 'отчет с 15.10.2025 по 20.10.2025'\n- 'покажи отчет за последний месяц'\n- 'отчет за октябрь'\n\nТекущая дата: {{ new Date().toLocaleDateString('ru-RU') }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        704,
+        464
+      ],
+      "id": "period-report-agent",
+      "name": "Period Report Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "period-text-field",
+              "name": "text",
+              "value": "={{ $('Telegram Bot Trigger').first().json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "period-user-id",
+              "name": "user_id",
+              "value": "={{ $('Telegram Bot Trigger').first().json.message.from.id }}",
+              "type": "number"
+            },
+            {
+              "id": "period-chat-id",
+              "name": "chat_id",
+              "value": "={{ $('Telegram Bot Trigger').first().json.message.chat.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        384,
+        464
+      ],
+      "id": "prepare-period-request",
+      "name": "Prepare Period Request"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH user_workspace AS (\n  SELECT w.id as workspace_id\n  FROM workspaces w\n  JOIN workspace_members wm ON w.id = wm.workspace_id\n  WHERE wm.user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND wm.is_active = true\n    AND w.is_active = true\n  ORDER BY wm.joined_at DESC\n  LIMIT 1\n),\nperiod_expenses AS (\n  SELECT \n    DATE(date) as expense_date,\n    category,\n    SUM(amount) as daily_total,\n    currency,\n    COUNT(*) as transaction_count,\n    json_agg(\n      json_build_object(\n        'amount', amount,\n        'description', description,\n        'date', TO_CHAR(date, 'DD.MM.YYYY')\n      )\n    ) as transactions\n  FROM expenses\n  WHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND workspace_id = (SELECT workspace_id FROM user_workspace)\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND deleted_at IS NULL\n  GROUP BY DATE(date), category, currency\n  ORDER BY DATE(date) DESC\n),\nperiod_income AS (\n  SELECT \n    DATE(date) as income_date,\n    category,\n    SUM(amount) as daily_total,\n    currency\n  FROM income\n  WHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND workspace_id = (SELECT workspace_id FROM user_workspace)\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND deleted_at IS NULL\n  GROUP BY DATE(date), category, currency\n),\nperiod_summary AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_expenses,\n    COUNT(*) as expense_count\n  FROM expenses\n  WHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND workspace_id = (SELECT workspace_id FROM user_workspace)\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND deleted_at IS NULL\n),\nperiod_income_summary AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_income,\n    COUNT(*) as income_count\n  FROM income\n  WHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND workspace_id = (SELECT workspace_id FROM user_workspace)\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND deleted_at IS NULL\n),\ncategory_totals AS (\n  SELECT \n    category,\n    SUM(amount) as category_total,\n    ROUND((SUM(amount) / (SELECT total_expenses FROM period_summary)) * 100, 1) as percentage\n  FROM expenses\n  WHERE user_id = {{ $('Telegram Bot Trigger').first().json.message.from.id }}\n    AND workspace_id = (SELECT workspace_id FROM user_workspace)\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND deleted_at IS NULL\n  GROUP BY category\n  ORDER BY category_total DESC\n)\nSELECT \n  {{ $('Telegram Bot Trigger').first().json.message.from.id }} as user_id,\n  {{ $('Telegram Bot Trigger').first().json.message.chat.id }} as chat_id,\n  (SELECT workspace_id FROM user_workspace) as workspace_id,\n  ps.total_expenses,\n  pis.total_income,\n  ps.expense_count,\n  pis.income_count,\n  (SELECT json_agg(row_to_json(pe.*)) FROM period_expenses pe) as expenses_by_day,\n  (SELECT json_agg(row_to_json(pi.*)) FROM period_income pi) as income_by_day,\n  (SELECT json_agg(row_to_json(ct.*)) FROM category_totals ct) as category_totals,\n  '{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}' as period_start,\n  '{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}' as period_end\nFROM period_summary ps\nCROSS JOIN period_income_summary pis;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        960,
+        624
+      ],
+      "id": "get-period-data-tool",
+      "name": "Get_period_report_data",
+      "credentials": {
+        "postgres": {
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "49c77b23ede0d4e6",
+        "jsonParameters": true,
+        "propertiesJson": "={\n  \"title\": \"Отчет за период\",\n  \"period\": \"{{ $fromAI('period_start', 'Дата начала', 'string') }} - {{ $fromAI('period_end', 'Дата конца', 'string') }}\",\n  \"total_expenses\": {{ $fromAI('total_expenses', 'Сумма расходов', 'number') }},\n  \"total_income\": {{ $fromAI('total_income', 'Сумма доходов', 'number') }},\n  \"balance\": {{ $fromAI('total_income', 'Доходы', 'number') - $fromAI('total_expenses', 'Расходы', 'number') }},\n  \"expense_count\": {{ $fromAI('expense_count', 'Количество расходов', 'number') }},\n  \"income_count\": {{ $fromAI('income_count', 'Количество доходов', 'number') }},\n  \"category_totals\": \"{{ $fromAI('category_breakdown_json', 'JSON категорий', 'string', '[]') }}\"\n}"
+      },
+      "type": "n8n-nodes-base.apiTemplateIoTool",
+      "typeVersion": 1,
+      "position": [
+        960,
+        784
+      ],
+      "id": "generate-period-pdf-tool",
+      "name": "Generate_period_pdf",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "WCFzWPXSnueTP8ef",
+          "name": "APITemplate.io Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        624
+      ],
+      "id": "period-openai-model",
+      "name": "OpenAI Period Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SyI2pOUeSfbt1JRh",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Bot Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "reply_to_message_id": "={{ $('Telegram Bot Trigger').first().json.message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        464
+      ],
+      "id": "send-period-response",
+      "name": "Send Period Response",
+      "webhookId": "period-response-send",
+      "credentials": {
+        "telegramApi": {
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "voice-weekly",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "(недельный отчет|недельный отчёт|отчет за неделю|отчёт за неделю)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Weekly Report Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "voice-monthly",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "(месячный отчет|месячный отчёт|отчет за месяц|отчёт за месяц)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Monthly Report Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "voice-period",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "(отчет за период|отчёт за период|отчет с|отчёт с)",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Period Report Voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "voice-other",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Regular Voice"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "voice-command-router",
+      "name": "Voice Command Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        752,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "voice-text-assign",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        976,
+        -160
+      ],
+      "id": "prepare-voice-text",
+      "name": "Prepare Voice as Text"
     }
   ],
   "connections": {
@@ -1175,14 +1862,21 @@
         ],
         [
           {
-            "node": "AI Agent",
+            "node": "Get Active Users",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send message and wait for response",
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Period Request",
             "type": "main",
             "index": 0
           }
@@ -1211,7 +1905,7 @@
       "main": [
         [
           {
-            "node": "Financial Assistant",
+            "node": "Voice Command Router",
             "type": "main",
             "index": 0
           }
@@ -1637,6 +2331,262 @@
         [
           {
             "node": "Send a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Report Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Report Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monthly Report Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Users": {
+      "main": [
+        [
+          {
+            "node": "Get Daily Stats",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Weekly Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Monthly Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Daily Stats": {
+      "main": [
+        [
+          {
+            "node": "Daily Report AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Report AI": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Daily Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Daily Report AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Data": {
+      "main": [
+        [
+          {
+            "node": "Format Weekly Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Weekly Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Monthly Data": {
+      "main": [
+        [
+          {
+            "node": "Format Monthly Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Monthly Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Monthly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Monthly PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Monthly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Period Request": {
+      "main": [
+        [
+          {
+            "node": "Period Report Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Period Report Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Period Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Period Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Period Report Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_period_report_data": {
+      "ai_tool": [
+        [
+          {
+            "node": "Period Report Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate_period_pdf": {
+      "ai_tool": [
+        [
+          {
+            "node": "Period Report Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Command Router": {
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Voice as Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Voice as Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Voice as Text": {
+      "main": [
+        [
+          {
+            "node": "Period Report Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Financial Assistant",
             "type": "main",
             "index": 0
           }
