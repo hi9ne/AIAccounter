@@ -1,5 +1,4 @@
 {
-  "name": "AnaliziFinance",
   "nodes": [
     {
       "parameters": {
@@ -16,10 +15,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -1184,
-        -656
+        752,
+        160
       ],
-      "id": "65a2fe2b-2a39-4a40-ae78-04a8c64fe308",
+      "id": "93fb1cd1-c0bd-4941-b00c-ceaf7b55d5ac",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -35,13 +34,13 @@
         ],
         "additionalFields": {}
       },
-      "id": "b4d14f00-76dd-4d36-97ac-c39898b9f817",
+      "id": "42e54c46-7c81-4d95-91be-052ba0328ddb",
       "name": "Telegram Bot Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
       "position": [
-        -3024,
-        -784
+        -1088,
+        32
       ],
       "webhookId": "b8605f3e-0f52-4ffc-a4c9-1728eb0e09e2",
       "credentials": {
@@ -113,6 +112,31 @@
                 },
                 "conditions": [
                   {
+                    "id": "165ec6b6-bb25-4fcf-bc6f-4caf5e7bb406",
+                    "leftValue": "={{ $('Telegram Bot Trigger').item.json.message.text }}",
+                    "rightValue": "period",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "report for period"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
                     "id": "8c844924-b2ed-48b0-935c-c66a8fd0c778",
                     "leftValue": "={{ $json.message.text }}",
                     "rightValue": "",
@@ -132,13 +156,13 @@
         },
         "options": {}
       },
-      "id": "84bee63d-61be-4f24-93b9-6ae7652df7f0",
+      "id": "054f1261-076b-4f08-946e-6c5ac2672e37",
       "name": "Message Type Switch",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -2352,
-        -800
+        -416,
+        16
       ]
     },
     {
@@ -147,13 +171,13 @@
         "fileId": "={{ $json.message.voice.file_id }}",
         "additionalFields": {}
       },
-      "id": "b6e7a15e-21a6-4679-b5d9-72b252284546",
+      "id": "448a77fd-85de-40b3-87c6-2eaf363618d0",
       "name": "Download Voice File",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -1880,
-        -976
+        64,
+        -160
       ],
       "webhookId": "8fa0a59a-be53-4897-83bb-5b18ed71b529",
       "credentials": {
@@ -169,13 +193,13 @@
         "operation": "transcribe",
         "options": {}
       },
-      "id": "50aea74b-3278-43c9-9d1d-52f65fa2c72a",
+      "id": "c9cf8898-0bed-4b1c-b450-3a2beb89954b",
       "name": "Transcribe Audio",
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        -1408,
-        -976
+        528,
+        -160
       ],
       "credentials": {
         "openAiApi": {
@@ -202,10 +226,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1504,
-        -752
+        528,
+        32
       ],
-      "id": "455f0c71-ab2a-4838-8395-78b317a74360",
+      "id": "c28a8557-ed9a-499d-803e-5b03e2710218",
       "name": "Prepare Text Data"
     },
     {
@@ -216,10 +240,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -1056,
-        -656
+        880,
+        160
       ],
-      "id": "ba19e01e-cb7f-40ad-bc00-dd4e1dcb03e7",
+      "id": "d94ff864-a4e8-424b-ac20-d2216ce3de7a",
       "name": "Conversation Memory"
     },
     {
@@ -233,10 +257,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        -40,
-        -880
+        2224,
+        -64
       ],
-      "id": "97e8d04b-d293-4217-9e22-5cbc581a5777",
+      "id": "be9ba531-5b63-4547-a8a0-6ee5270e28d3",
       "name": "Financial Assistant",
       "onError": "continueErrorOutput"
     },
@@ -252,10 +276,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1456,
-        -880
+        4032,
+        -64
       ],
-      "id": "3f6fa69e-7e8b-4182-9a60-55a9c655b4b9",
+      "id": "81d9fe3d-d21a-473d-b3e3-f6d489fd2880",
       "name": "Send Telegram Response",
       "webhookId": "a2f9609c-4b7a-4d51-aaa6-c889f56aefc9",
       "credentials": {
@@ -274,10 +298,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2800,
-        208
+        -864,
+        1024
       ],
-      "id": "e47a3d28-9ee1-4325-9691-460decd7085a",
+      "id": "99b72a7d-9f35-410c-b5fd-f711ec06cfe5",
       "name": "Анализ доходов",
       "credentials": {
         "postgres": {
@@ -314,10 +338,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -3024,
-        112
+        -1088,
+        928
       ],
-      "id": "ea88bea6-457b-426f-a41c-fa63cad0131a",
+      "id": "af909326-07ca-4025-91b6-d22c81e42261",
       "name": "Проверка типа"
     },
     {
@@ -329,10 +353,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2800,
-        16
+        -864,
+        832
       ],
-      "id": "227093f6-9fb8-4443-ab08-602282a79214",
+      "id": "4f597868-0cc7-47c7-bd83-0fef71d8e4ad",
       "name": "Анализ расходов",
       "credentials": {
         "postgres": {
@@ -350,10 +374,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2800,
-        -784
+        -864,
+        32
       ],
-      "id": "b4457dfd-5bd4-4547-801d-7c51622c87d6",
+      "id": "7ad7337c-c2f8-477f-9056-fbb738782de0",
       "name": "Регистрация/обновление пользователя",
       "credentials": {
         "postgres": {
@@ -380,10 +404,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -2576,
-        -784
+        -640,
+        32
       ],
-      "id": "403e6ffd-c8d0-4d85-8060-d32a4b75ee68",
+      "id": "71e38656-63ae-44a6-b757-c7bafec41aee",
       "name": "Edit Fields"
     },
     {
@@ -395,10 +419,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -928,
-        -656
+        1008,
+        160
       ],
-      "id": "fd752155-74b7-4346-b0e3-af93bfb9a1f0",
+      "id": "2208d832-bc4b-4faf-9b1e-13f4b579257b",
       "name": "Add_income",
       "credentials": {
         "postgres": {
@@ -416,10 +440,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -800,
-        -656
+        1136,
+        160
       ],
-      "id": "f694199c-2323-4473-937a-b3460e3a3008",
+      "id": "4272e08c-07e7-4163-b75a-d67207502193",
       "name": "Parsing_of_the_month",
       "credentials": {
         "postgres": {
@@ -437,10 +461,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -672,
-        -656
+        1264,
+        160
       ],
-      "id": "69e9f948-895e-4031-b2b9-1c368177b8aa",
+      "id": "81e22fd9-965a-4f94-9f5d-7dccd54a4b6c",
       "name": "Add_expense",
       "credentials": {
         "postgres": {
@@ -458,10 +482,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -544,
-        -656
+        1392,
+        160
       ],
-      "id": "06e605ac-237d-46b4-a4e1-4a60fd76f817",
+      "id": "cf03a04c-f106-489f-86c4-4c63e00ca967",
       "name": "Checking_limits",
       "credentials": {
         "postgres": {
@@ -475,10 +499,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        -416,
-        -656
+        1520,
+        160
       ],
-      "id": "37fd5867-d94f-4c5e-86dc-9186d4a15d13",
+      "id": "dca47059-6491-4a57-abc3-06675e42a639",
       "name": "Calc"
     },
     {
@@ -490,10 +514,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -288,
-        -656
+        1648,
+        160
       ],
-      "id": "a68a759c-9a05-4be8-9c1e-11acbcff2e04",
+      "id": "28493685-51e8-4f2f-8adf-ae837898bbe4",
       "name": "Convert_currency",
       "credentials": {
         "postgres": {
@@ -511,10 +535,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -160,
-        -656
+        1776,
+        160
       ],
-      "id": "75a9e5ee-41a0-4155-a64a-35976bb50a33",
+      "id": "a75df156-38cd-4e39-b8af-38b91c5b0e9d",
       "name": "Get_exchange_rates",
       "credentials": {
         "postgres": {
@@ -532,10 +556,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        -32,
-        -656
+        1904,
+        160
       ],
-      "id": "b14f6902-3522-408b-8e82-eb076a8ebfa8",
+      "id": "a1c8a433-cac6-490b-b6b0-b77a8ef7cbe0",
       "name": "Edit_transaction",
       "credentials": {
         "postgres": {
@@ -553,10 +577,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        96,
-        -656
+        2032,
+        160
       ],
-      "id": "ea753789-e03f-43e8-a009-79b1d7706043",
+      "id": "4e992ea7-1ea8-4dbf-a109-01244e6fa72b",
       "name": "Delete_transaction",
       "credentials": {
         "postgres": {
@@ -574,10 +598,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        224,
-        -656
+        2128,
+        304
       ],
-      "id": "dd2b5a90-c69a-439b-8b70-f0cc48601a88",
+      "id": "03c37d52-42d8-43c3-8e76-fe0d8dc1e0f3",
       "name": "Restore_transaction",
       "credentials": {
         "postgres": {
@@ -595,10 +619,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        352,
-        -656
+        2288,
+        224
       ],
-      "id": "53dbd3e8-7069-4ca9-99bc-62b89451d043",
+      "id": "5938b065-2804-4274-b8e9-acd67e0f751c",
       "name": "Get_transaction_history",
       "credentials": {
         "postgres": {
@@ -616,10 +640,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        480,
-        -656
+        2416,
+        352
       ],
-      "id": "439e1060-23c9-4d86-84a3-37ea30316fbe",
+      "id": "925d4075-48bc-4c66-9c20-01bf079a2fb1",
       "name": "Create_recurring_payment",
       "credentials": {
         "postgres": {
@@ -637,10 +661,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        608,
-        -656
+        2544,
+        160
       ],
-      "id": "de4eaba6-63c5-44aa-bccc-56c97f3b11b8",
+      "id": "d9a4068b-144a-48e9-bb93-c851799bc316",
       "name": "List_recurring_payments",
       "credentials": {
         "postgres": {
@@ -658,10 +682,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        736,
-        -656
+        2656,
+        368
       ],
-      "id": "f762c277-26b3-459e-ae4d-6797f0aa85df",
+      "id": "24b919e5-9c5e-4f7d-b2b7-faebf41c3552",
       "name": "Cancel_recurring_payment",
       "credentials": {
         "postgres": {
@@ -679,10 +703,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        864,
-        -656
+        2800,
+        160
       ],
-      "id": "bce21b0f-6ce1-40e9-bc9c-7d402299917f",
+      "id": "ef73c36b-3984-4dc7-8ff3-b4082d0f3d09",
       "name": "Get_budget_forecast",
       "credentials": {
         "postgres": {
@@ -700,10 +724,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        992,
-        -656
+        2928,
+        160
       ],
-      "id": "8804e28a-ac2b-44a5-93f5-9dde9603bd74",
+      "id": "8301336c-adaf-419f-a6a6-c38adf2f61d2",
       "name": "Get_notifications",
       "credentials": {
         "postgres": {
@@ -721,10 +745,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1120,
-        -656
+        3056,
+        160
       ],
-      "id": "0a7c58af-74ba-4f92-9cca-a6181117df1a",
+      "id": "0238fa10-d749-4071-84a4-8faf6e1796ea",
       "name": "Configure_alerts",
       "credentials": {
         "postgres": {
@@ -742,10 +766,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1248,
-        -656
+        3184,
+        160
       ],
-      "id": "a2f8b5c3-9d4e-4f15-8a61-2b3c75e48901",
+      "id": "eda68622-f5df-4f10-b359-83361f14ef25",
       "name": "Get_income_expense_stats",
       "credentials": {
         "postgres": {
@@ -763,10 +787,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1376,
-        -656
+        3312,
+        160
       ],
-      "id": "b3e9f7d2-8c5f-4e26-9b72-3d4f86e59f12",
+      "id": "490d43ed-a02a-4f24-b16e-1dabf6cddc4e",
       "name": "Get_top_categories",
       "credentials": {
         "postgres": {
@@ -784,10 +808,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1504,
-        -656
+        3440,
+        160
       ],
-      "id": "c4f0a1e3-9e5f-4f37-8c83-4e5g97f6a023",
+      "id": "f5daefee-c872-4767-8872-74eecaf0edaa",
       "name": "Get_workspaces",
       "credentials": {
         "postgres": {
@@ -805,10 +829,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1632,
-        -656
+        3568,
+        160
       ],
-      "id": "d5e1b2f4-ae6f-4e48-9d94-5f6ha8g7b134",
+      "id": "e4967d3b-1d3b-48ad-bf6f-63fa214596e2",
       "name": "Update_spending_patterns",
       "credentials": {
         "postgres": {
@@ -826,10 +850,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1760,
-        -656
+        3696,
+        160
       ],
-      "id": "e6f2c3d5-bf7f-4f59-8e05-6g7hi9j8k245",
+      "id": "ebb30d02-cfb3-4c35-b475-c42124b25c63",
       "name": "Set_budget",
       "credentials": {
         "postgres": {
@@ -847,10 +871,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1888,
-        -656
+        3824,
+        160
       ],
-      "id": "f7g3d4e6-cg8f-4g60-9f16-7h8ij0k9l356",
+      "id": "8cbcc1f7-8719-4ad3-8a56-c2c23433025b",
       "name": "Set_category_limit",
       "credentials": {
         "postgres": {
@@ -864,16 +888,16 @@
         "promptType": "define",
         "text": "={{ $json.message.text }}",
         "options": {
-          "systemMessage": "Ты финансист и менеджер по отчетам который реагирует на команду /get_week_report. Ты должен получать Отчеты за посленюю неделю используя базу данных Get_transaction_history1, делить эту неделю на дни, и сколько было потрачено в какой день"
+          "systemMessage": "Ты финансист и менеджер по отчетам который реагирует на команду /get_week_report. Ты должен получать Отчеты за посленюю неделю используя базу данных get_last_week_report, делить эту неделю на дни, и сколько было потрачено в какой день"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        -1920,
-        -544
+        16,
+        464
       ],
-      "id": "68c1d461-69c0-4dc3-ab9e-1820316ae87f",
+      "id": "6474cf77-b0ac-4a8f-be41-d5f28ec195d1",
       "name": "AI Agent"
     },
     {
@@ -888,10 +912,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -2128,
-        -312
+        -160,
+        688
       ],
-      "id": "d3d8ff01-953a-43bb-896f-d008c62def31",
+      "id": "5a5ef7eb-29fd-4917-b967-d3139f9ab4fc",
       "name": "OpenAI Chat Model1",
       "credentials": {
         "openAiApi": {
@@ -908,10 +932,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -2000,
-        -208
+        -32,
+        688
       ],
-      "id": "1bb999a7-a37c-4bc8-80b8-4edc5b67a2f8",
+      "id": "e2e2ba2f-0a26-4e57-8b9d-5662b204f5a3",
       "name": "Simple Memory"
     },
     {
@@ -919,10 +943,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        -1872,
-        -312
+        96,
+        688
       ],
-      "id": "22957e54-22af-470b-ab90-edce09ca3310",
+      "id": "d6a551c9-9807-4b2e-a859-63309375a941",
       "name": "Calculator"
     },
     {
@@ -935,10 +959,10 @@
       "type": "n8n-nodes-base.apiTemplateIo",
       "typeVersion": 1,
       "position": [
-        -1408,
-        -536
+        592,
+        464
       ],
-      "id": "33668895-83f2-45c2-804a-0b66019695ac",
+      "id": "b92bac80-3905-45fa-8bfe-8acdb2e5bdcd",
       "name": "Create a pdf",
       "credentials": {
         "apiTemplateIoApi": {
@@ -957,50 +981,15 @@
       "type": "n8n-nodes-base.apiTemplateIoTool",
       "typeVersion": 1,
       "position": [
-        -3024,
-        656
+        -1088,
+        1472
       ],
-      "id": "31fa010a-3462-4268-99b7-3120343b46c2",
+      "id": "d3dcdaf7-c08e-4901-b0d3-8fc6ee5dd9bf",
       "name": "Create a pdf in APITemplate.io",
       "credentials": {
         "apiTemplateIoApi": {
           "id": "WCFzWPXSnueTP8ef",
           "name": "APITemplate.io Financer"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "description": "Используй данную ноду для того чтобы свормировать анные в нормальный json формат",
-        "jsCode": "// Получаем JSON данные из входящего запроса\nlet jsonData = $input.item.json.body.data;\n\n// Извлекаем данные из структуры JSON\nlet result = {\n  \"name\": jsonData.name,\n  \"sales\": {\n    \"data\": jsonData.sales.data,\n    \"categories\": jsonData.sales.categories\n  },\n  \"team\": {\n    \"data\": jsonData.team.data,\n    \"labels\": jsonData.team.labels\n  }\n};\n\nreturn result;"
-      },
-      "type": "@n8n/n8n-nodes-langchain.toolCode",
-      "typeVersion": 1.3,
-      "position": [
-        -1744,
-        -312
-      ],
-      "id": "2d174262-76e5-427b-bc04-86c1737c3d39",
-      "name": "Code Tool"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "WITH week_range AS (\n  SELECT \n    DATE_TRUNC('week', CURRENT_DATE AT TIME ZONE 'Asia/Bishkek') as week_start,\n    DATE_TRUNC('week', CURRENT_DATE AT TIME ZONE 'Asia/Bishkek') + INTERVAL '6 days' as week_end\n),\nincome_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total\n  FROM income\n  WHERE user_id = {{ $('Регистрация/обновление пользователя').item.json.user_id }}\n    AND date >= (SELECT week_start FROM week_range)::date\n    AND date <= (SELECT week_end FROM week_range)::date\n),\nexpense_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total\n  FROM expenses\n  WHERE user_id = {{ $('Регистрация/обновление пользователя').item.json.user_id }}\n    AND date >= (SELECT week_start FROM week_range)::date\n    AND date <= (SELECT week_end FROM week_range)::date\n),\ntop_categories AS (\n  SELECT \n    category,\n    SUM(amount) as total,\n    COUNT(*) as count\n  FROM expenses\n  WHERE user_id = {{ $('Регистрация/обновление пользователя').item.json.user_id }}\n    AND date >= (SELECT week_start FROM week_range)::date\n    AND date <= (SELECT week_end FROM week_range)::date\n  GROUP BY category\n  ORDER BY total DESC\n  LIMIT 3\n),\ntransaction_count AS (\n  SELECT \n    (SELECT COUNT(*) FROM income WHERE user_id = {{ $('Регистрация/обновление пользователя').item.json.user_id }} \n     AND date >= (SELECT week_start FROM week_range)::date\n     AND date <= (SELECT week_end FROM week_range)::date) as income_count,\n    (SELECT COUNT(*) FROM expenses WHERE user_id = {{ $('Регистрация/обновление пользователя').item.json.user_id }}\n     AND date >= (SELECT week_start FROM week_range)::date\n     AND date <= (SELECT week_end FROM week_range)::date) as expense_count\n)\nSELECT \n  TO_CHAR((SELECT week_start FROM week_range), 'DD.MM.YYYY') as week_start_formatted,\n  TO_CHAR((SELECT week_end FROM week_range), 'DD.MM.YYYY') as week_end_formatted,\n  (SELECT total FROM income_sum) as total_income,\n  (SELECT total FROM expense_sum) as total_expenses,\n  (SELECT total FROM income_sum) - (SELECT total FROM expense_sum) as profit,\n  (SELECT income_count FROM transaction_count) as income_count,\n  (SELECT expense_count FROM transaction_count) as expense_count,\n  (SELECT income_count + expense_count FROM transaction_count) as total_transactions,\n  COALESCE((SELECT JSON_AGG(JSON_BUILD_OBJECT(\n    'category', category,\n    'total', total,\n    'count', count\n  )) FROM top_categories), '[]'::json) as top_categories;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgresTool",
-      "typeVersion": 2.6,
-      "position": [
-        -1488,
-        -272
-      ],
-      "id": "f474a56f-229c-4160-99e1-d1adc70b4296",
-      "name": "Get_week_statistic",
-      "credentials": {
-        "postgres": {
-          "id": "3CGZzcUsaAWp8nrl",
-          "name": "Postgres account"
         }
       }
     },
@@ -1016,10 +1005,10 @@
       "type": "n8n-nodes-base.summarize",
       "typeVersion": 1.1,
       "position": [
-        -3024,
-        432
+        -1088,
+        1248
       ],
-      "id": "74046dbb-f83e-4c20-a742-4ad1558fa927",
+      "id": "abae57a4-79e5-4eb9-8c30-6d76cbac81d6",
       "name": "Summarize"
     },
     {
@@ -1027,14 +1016,131 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -3024,
-        -208
+        -1088,
+        608
       ],
-      "id": "700d1e69-b971-46b3-8db9-a3248eb98b2c",
+      "id": "750996e1-1af5-4d2c-ae99-088f3b537304",
       "name": "Create a row"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get many rows in Supabase for last week",
+        "operation": "getAll",
+        "tableId": "expenses",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        256,
+        688
+      ],
+      "id": "f03caf08-0868-480e-9c7d-b787898b55b4",
+      "name": "get_last_week_report",
+      "credentials": {
+        "supabaseApi": {
+          "id": "4sTmVPkkZSWPshRg",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        464
+      ],
+      "id": "832b6761-e922-4427-b0d6-b40a9d94fa10",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        464
+      ],
+      "id": "f9dbdff0-3f80-40dc-a075-17035a60f8f6",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        192
+      ],
+      "id": "07dc5571-2582-41d4-9b02-599f7d556652",
+      "name": "Send message and wait for response",
+      "webhookId": "b4d6a181-4071-49c8-9504-488e7d1b8d14",
+      "credentials": {
+        "telegramApi": {
+          "id": "SO5qHfnQFuR8HmVU",
+          "name": "UGC"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.download_url }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        464
+      ],
+      "id": "a9f364c2-b68d-4074-93a8-7f7cd8d9bbe0",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Telegram Bot Trigger').item.json.message.chat.id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        464
+      ],
+      "id": "7ba4bde6-c1d1-49d8-a5f6-61b16f1a7237",
+      "name": "Send a document",
+      "webhookId": "aacbbe26-503f-4111-bf0a-72c6df95e208",
+      "credentials": {
+        "telegramApi": {
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
+        }
+      }
     }
   ],
-  "pinData": {},
   "connections": {
     "OpenAI Chat Model": {
       "ai_languageModel": [
@@ -1070,6 +1176,13 @@
         [
           {
             "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send message and wait for response",
             "type": "main",
             "index": 0
           }
@@ -1431,6 +1544,17 @@
         ]
       ]
     },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "OpenAI Chat Model1": {
       "ai_languageModel": [
         [
@@ -1464,7 +1588,29 @@
         ]
       ]
     },
-    "AI Agent": {
+    "Create a pdf": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_last_week_report": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
       "main": [
         [
           {
@@ -1475,43 +1621,32 @@
         ]
       ]
     },
-    "Create a pdf in APITemplate.io": {
-      "ai_tool": [
-        []
-      ]
-    },
-    "Code Tool": {
-      "ai_tool": [
+    "Schedule Trigger": {
+      "main": [
         [
           {
             "node": "AI Agent",
-            "type": "ai_tool",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get_week_statistic": {
-      "ai_tool": [
+    "HTTP Request": {
+      "main": [
         [
           {
-            "node": "AI Agent",
-            "type": "ai_tool",
+            "node": "Send a document",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "452cf336-fb42-482f-a0c3-2bea20974d0e",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bcdca7003a882ee2cf9d975eab94cc02ba456a1ed2ac37511421cb2edeb80c62"
-  },
-  "id": "2a2MkaY2pl1itHZ2",
-  "tags": []
+  }
 }
