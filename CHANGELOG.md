@@ -1,5 +1,212 @@
 # 🔄 Changelog - AI Accounter
 
+## [2.4.5-hotfix] - 06.11.2025 - Исправление автоматических отчётов 📊⏰
+
+**Статус:** ✅ COMPLETE  
+**Проблема:** Daily отчёт отправлялся 2 раза + автоматически отправлялись Weekly/Monthly отчёты
+
+### 🐛 Проблемы автоматических отчётов
+
+#### **Проблема 1: Ежедневный отчёт дублировался**
+
+В 21:00 пользователь получил:
+```
+🌙 Ежедневный отчет (первый)
+🌙 Ежедневный отчет (второй - ДУБЛИКАТ)
+📊 Недельный отчет (НЕ должен был прийти!)
+📊 Месячный отчет (НЕ должен был прийти!)
+```
+
+**Причина:**  
+Daily Report Trigger в 21:00 → Get Active Users → запускал **ВСЕ ТРИ отчёта параллельно**!
+
+```json
+"Get Active Users": {
+  "main": [[
+    {"node": "Get Daily Stats"},    // ✅ нужно
+    {"node": "Get Weekly Data"},    // ❌ не нужно!
+    {"node": "Get Monthly Data"}    // ❌ не нужно!
+  ]]
+}
+```
+
+#### **Проблема 2: Месячный отчёт показывал октябрь вместо ноября**
+
+```
+📊 Месячный отчет
+📅 Период: 01.10.2025 - 31.10.2025  ← ❌ прошлый месяц!
+💸 Расходы: 0 сом
+💰 Доходы: 0 сом
+```
+
+**Причина:**  
+SQL запрос использовал `CURRENT_DATE - INTERVAL '1 month'` во всех местах (7 раз!):
+
+```sql
+-- Неправильно:
+WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+
+-- Правильно:
+WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', (NOW() AT TIME ZONE 'Asia/Bishkek')::DATE)
+```
+
+### ✅ Решение
+
+#### **Fix 1: Отключены автоматические Weekly/Monthly триггеры**
+
+**Файл:** `AnaliziFinance.json` (строка ~1595, ~1615)
+
+**Было:**
+```json
+{
+  "name": "Weekly Report Trigger",
+  "parameters": {
+    "rule": {
+      "interval": [{"expression": "0 9 * * 1"}]  // Каждый понедельник в 9:00
+    }
+  }
+}
+```
+
+**Стало:**
+```json
+{
+  "name": "Weekly Report Trigger",
+  "parameters": {
+    "rule": {
+      "interval": [{"expression": "0 0 31 2 *"}]  // 31 февраля (не существует)
+    }
+  },
+  "disabled": true  // ✅ ОТКЛЮЧЁН
+}
+```
+
+Аналогично для Monthly Report Trigger.
+
+#### **Fix 2: Разорваны connections от Get Active Users к Weekly/Monthly**
+
+**Файл:** `AnaliziFinance.json` (строка ~3010)
+
+**Было:**
+```json
+"Get Active Users": {
+  "main": [[
+    {"node": "Get Daily Stats"},
+    {"node": "Get Weekly Data"},     // ❌ удалено
+    {"node": "Get Monthly Data"}     // ❌ удалено
+  ]]
+}
+```
+
+**Стало:**
+```json
+"Get Active Users": {
+  "main": [[
+    {"node": "Get Daily Stats"}  // ✅ только daily
+  ]]
+}
+```
+
+#### **Fix 3: Месячный отчёт - текущий месяц + timezone**
+
+**Файл:** `AnaliziFinance.json` (строка ~1826)
+
+Заменены **ВСЕ 7 вхождений** `CURRENT_DATE - INTERVAL '1 month'`:
+
+1. month_expenses WHERE
+2. month_income WHERE
+3. month_summary WHERE
+4. month_income_summary WHERE
+5. category_breakdown WHERE
+6. budget_comparison WHERE + month
+7. period_start/period_end в SELECT
+
+**Было:**
+```sql
+AND DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+```
+
+**Стало:**
+```sql
+AND DATE_TRUNC('month', date) = DATE_TRUNC('month', (NOW() AT TIME ZONE 'Asia/Bishkek')::DATE)
+```
+
+### 📊 Результат работы отчётов
+
+| Отчёт | Автоматически | Вручную | Расписание |
+|-------|---------------|---------|------------|
+| **Daily** | ✅ Раз в день в 21:00 | ✅ "отчет за сегодня" | `0 21 * * *` |
+| **Weekly** | ❌ ОТКЛЮЧЁН | ✅ "недельный отчет" | `disabled: true` |
+| **Monthly** | ❌ ОТКЛЮЧЁН | ✅ "месячный отчет" | `disabled: true` |
+
+### 📝 Updated Files
+
+**Workflow:**
+- `AnaliziFinance.json` (строка ~1595) - Weekly Trigger disabled
+- `AnaliziFinance.json` (строка ~1615) - Monthly Trigger disabled
+- `AnaliziFinance.json` (строка ~3010) - убраны connections к Weekly/Monthly
+- `AnaliziFinance.json` (строка ~1826) - месячный отчёт: 7 замен даты
+
+**Documentation:**
+- `CHANGELOG.md` - эта запись v2.4.5
+
+### 🧪 Testing
+
+```
+✅ Ждём 21:00 → должен прийти ТОЛЬКО Daily отчёт
+✅ "недельный отчет" → работает вручную
+✅ "месячный отчет" → показывает ноябрь 2025, а не октябрь
+```
+
+### 🔧 Если нужно ВКЛЮЧИТЬ автоматические отчёты
+
+**Weekly (каждый понедельник в 9:00):**
+```json
+{
+  "name": "Weekly Report Trigger",
+  "parameters": {
+    "rule": {"interval": [{"expression": "0 9 * * 1"}]}
+  },
+  "disabled": false
+}
+
+// И добавить connection:
+"Get Active Users": {
+  "main": [[
+    {"node": "Get Daily Stats"},
+    {"node": "Get Weekly Data"}  // ← вернуть
+  ]]
+}
+```
+
+**Monthly (1-го числа в 10:00):**
+```json
+{
+  "name": "Monthly Report Trigger",
+  "parameters": {
+    "rule": {"interval": [{"expression": "0 10 1 * *"}]}
+  },
+  "disabled": false
+}
+
+// И добавить connection:
+"Get Active Users": {
+  "main": [[
+    {"node": "Get Daily Stats"},
+    {"node": "Get Monthly Data"}  // ← вернуть
+  ]]
+}
+```
+
+### 🔗 Related Hotfixes
+
+- v2.4.2: Date timezone fix (Add_expense, Add_income, Get Daily Stats)
+- v2.4.3: UX improvements (workspace/currency auto)
+- v2.4.4: Report patterns + workspace fix
+- v2.4.5: Auto reports fix + monthly period fix **(ТЕКУЩАЯ)**
+
+---
+
 ## [2.4.4-hotfix] - 05.11.2025 - Исправление Daily Report и команд отчётов 📊
 
 **Статус:** ✅ COMPLETE  

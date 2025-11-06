@@ -72,8 +72,8 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "your-postgres-credential-id",
-          "name": "Supabase PostgreSQL"
+          "id": "3CGZzcUsaAWp8nrl",
+          "name": "Postgres account"
         }
       }
     },
@@ -109,8 +109,8 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "your-telegram-credential-id",
-          "name": "AIAccounter"
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
         }
       }
     },
@@ -187,8 +187,8 @@
       ],
       "credentials": {
         "telegramApi": {
-          "id": "your-telegram-credential-id",
-          "name": "AIAccounter"
+          "id": "WabnlnnS7XdATC3n",
+          "name": "Alikbek Financer"
         }
       }
     }
