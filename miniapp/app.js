@@ -40,8 +40,11 @@ const config = window.MiniAppConfig || {
     }
 };
 
-// API Base URL
-const API_BASE_URL = 'http://localhost:8000';
+// API Base URL - использует конфиг из miniapp-config.js
+const API_BASE_URL = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') || 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:8000'
+        : 'https://aiaccounterbackend-production.up.railway.app');
 
 // Current state
 let currentScreen = 'home';
