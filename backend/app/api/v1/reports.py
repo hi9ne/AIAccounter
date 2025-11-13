@@ -65,11 +65,32 @@ async def fetch_report_data(
     })
     top_categories = top_cat_result.fetchall()
     
-    # Тренд баланса
+    # Тренд баланса - используем прямой запрос вместо функции
     trend_query = text("""
-        SELECT * FROM get_balance_trend(
-            :workspace_id, :start_date, :end_date
-        )
+        SELECT 
+            COALESCE(i.date, e.date) as date,
+            COALESCE(i.amount, 0) as income,
+            COALESCE(e.amount, 0) as expense,
+            COALESCE(i.amount, 0) - COALESCE(e.amount, 0) as balance
+        FROM (
+            SELECT date, SUM(amount) as amount
+            FROM income
+            WHERE workspace_id = :workspace_id
+                AND date >= :start_date
+                AND date <= :end_date
+                AND deleted_at IS NULL
+            GROUP BY date
+        ) i
+        FULL OUTER JOIN (
+            SELECT date, SUM(amount) as amount
+            FROM expenses
+            WHERE workspace_id = :workspace_id
+                AND date >= :start_date
+                AND date <= :end_date
+                AND deleted_at IS NULL
+            GROUP BY date
+        ) e ON i.date = e.date
+        ORDER BY COALESCE(i.date, e.date)
     """)
     trend_result = await db.execute(trend_query, {
         "workspace_id": workspace_id,
@@ -90,6 +111,7 @@ async def fetch_report_data(
         WHERE e.workspace_id = :workspace_id
             AND e.date >= :start_date
             AND e.date <= :end_date
+            AND e.deleted_at IS NULL
         UNION ALL
         SELECT 
             i.date,

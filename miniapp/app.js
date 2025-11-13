@@ -78,6 +78,24 @@ const categories = {
     ]
 };
 
+// =================================
+// Loading State Management
+// =================================
+
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
 // ========== NAVIGATION ==========
 
 function switchScreen(screenName) {
@@ -464,13 +482,20 @@ async function authenticateUser() {
 // ========== DASHBOARD (HOME) ==========
 
 async function loadDashboard() {
-    // Load exchange rates first
-    await loadExchangeRates();
-    
-    await loadWorkspaces();
-    await loadBalance();
-    await loadQuickStats();
-    await loadRecentTransactions();
+    showLoading();
+    try {
+        // Load exchange rates first
+        await loadExchangeRates();
+        
+        await loadWorkspaces();
+        await loadBalance();
+        await loadQuickStats();
+        await loadRecentTransactions();
+    } catch (error) {
+        console.error('❌ Error loading dashboard:', error);
+    } finally {
+        hideLoading();
+    }
 }
 
 async function loadWorkspaces() {
