@@ -395,8 +395,8 @@ async def get_spending_patterns(
     ]
 
 
-@router.get("/dashboard", response_model=Dict[str, Any])
-async def get_dashboard_data(
+@router.get("/overview-old", response_model=Dict[str, Any])
+async def get_dashboard_data_old(
     workspace_id: int = Query(..., description="ID workspace"),
     period: str = Query("month", description="Период: week, month, year"),
     start_date: Optional[date] = Query(None, description="Начальная дата"),
@@ -603,3 +603,183 @@ async def compare_periods(
             "expense_change_percent": round(((stats2[1] - stats1[1]) / stats1[1] * 100) if stats1[1] > 0 else 0, 2)
         }
     }
+
+
+@router.get("/dashboard")
+async def get_dashboard_data(
+    workspace_id: int = Query(..., description="ID workspace"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    🚀 ОПТИМИЗИРОВАННЫЙ эндпоинт - все данные для главного экрана
+    
+    Использует asyncio.gather() для параллельного выполнения независимых запросов
+    """
+    import asyncio
+    from app.models.models import Expense, Income, ExchangeRate, Workspace
+    from sqlalchemy import select, func, and_, desc
+    
+    # Даты текущего месяца
+    today = datetime.now().date()
+    start_of_month = date(today.year, today.month, 1)
+    week_ago = today - timedelta(days=7)
+    
+    try:
+        # 1. Сначала получаем workspace (нужно для проверки доступа)
+        workspace_query = select(Workspace).where(Workspace.id == workspace_id)
+        workspace_result = await db.execute(workspace_query)
+        workspace = workspace_result.scalar_one_or_none()
+        
+        if not workspace:
+            raise HTTPException(status_code=404, detail="Workspace not found")
+        
+        # 2. Создаём все запросы
+        stats_query = text("""
+            SELECT 
+                COALESCE((SELECT SUM(amount) FROM income 
+                    WHERE workspace_id = :workspace_id 
+                    AND date >= :start_date 
+                    AND date <= :end_date 
+                    AND deleted_at IS NULL), 0) as total_income,
+                COALESCE((SELECT SUM(amount) FROM expenses 
+                    WHERE workspace_id = :workspace_id 
+                    AND date >= :start_date 
+                    AND date <= :end_date 
+                    AND deleted_at IS NULL), 0) as total_expense,
+                (SELECT COUNT(*) FROM income 
+                    WHERE workspace_id = :workspace_id 
+                    AND date >= :start_date 
+                    AND date <= :end_date 
+                    AND deleted_at IS NULL) as income_count,
+                (SELECT COUNT(*) FROM expenses 
+                    WHERE workspace_id = :workspace_id 
+                    AND date >= :start_date 
+                    AND date <= :end_date 
+                    AND deleted_at IS NULL) as expense_count
+        """)
+        
+        recent_expenses_query = select(Expense).where(
+            and_(
+                Expense.workspace_id == workspace_id,
+                Expense.user_id == current_user.user_id,
+                Expense.deleted_at.is_(None),
+                Expense.date >= week_ago,
+                Expense.date <= today
+            )
+        ).order_by(desc(Expense.date), desc(Expense.created_at)).limit(5)
+        
+        recent_income_query = select(Income).where(
+            and_(
+                Income.workspace_id == workspace_id,
+                Income.user_id == current_user.user_id,
+                Income.deleted_at.is_(None),
+                Income.date >= week_ago,
+                Income.date <= today
+            )
+        ).order_by(desc(Income.date), desc(Income.created_at)).limit(3)
+        
+        rates_subquery = (
+            select(
+                ExchangeRate.from_currency,
+                ExchangeRate.to_currency,
+                func.max(ExchangeRate.date).label("max_date")
+            )
+            .group_by(ExchangeRate.from_currency, ExchangeRate.to_currency)
+            .subquery()
+        )
+        
+        rates_query = (
+            select(ExchangeRate)
+            .join(
+                rates_subquery,
+                and_(
+                    ExchangeRate.from_currency == rates_subquery.c.from_currency,
+                    ExchangeRate.to_currency == rates_subquery.c.to_currency,
+                    ExchangeRate.date == rates_subquery.c.max_date
+                )
+            )
+            .order_by(ExchangeRate.from_currency, ExchangeRate.to_currency)
+        )
+        
+        # 3. Выполняем все запросы ПАРАЛЛЕЛЬНО
+        stats_result, expenses_result, income_result, rates_result = await asyncio.gather(
+            db.execute(stats_query, {"workspace_id": workspace_id, "start_date": start_of_month, "end_date": today}),
+            db.execute(recent_expenses_query),
+            db.execute(recent_income_query),
+            db.execute(rates_query)
+        )
+        
+        # 4. Обрабатываем результаты
+        stats = stats_result.fetchone()
+        recent_expenses = expenses_result.scalars().all()
+        recent_income = income_result.scalars().all()
+        exchange_rates = rates_result.scalars().all()
+        
+        total_income = float(stats[0]) if stats else 0
+        total_expense = float(stats[1]) if stats else 0
+        balance = total_income - total_expense
+        
+        # Формируем ответ
+        return {
+            "workspace": {
+                "id": workspace.id,
+                "name": workspace.name,
+                "currency": workspace.currency,
+                "description": workspace.description
+            },
+            "balance": {
+                "total_income": total_income,
+                "total_expense": total_expense,
+                "balance": balance,
+                "income_count": int(stats[2]) if stats else 0,
+                "expense_count": int(stats[3]) if stats else 0,
+                "period": {
+                    "start": str(start_of_month),
+                    "end": str(today)
+                }
+            },
+            "recent_transactions": {
+                "expenses": [
+                    {
+                        "id": e.id,
+                        "amount": float(e.amount),
+                        "currency": e.currency,
+                        "category": e.category,
+                        "description": e.description,
+                        "date": str(e.date),
+                        "created_at": e.created_at.isoformat() if e.created_at else None
+                    }
+                    for e in recent_expenses
+                ],
+                "income": [
+                    {
+                        "id": i.id,
+                        "amount": float(i.amount),
+                        "currency": i.currency,
+                        "category": i.category,
+                        "description": i.description,
+                        "date": str(i.date),
+                        "created_at": i.created_at.isoformat() if i.created_at else None
+                    }
+                    for i in recent_income
+                ]
+            },
+            "exchange_rates": [
+                {
+                    "from_currency": rate.from_currency,
+                    "to_currency": rate.to_currency,
+                    "rate": float(rate.rate),
+                    "date": str(rate.date)
+                }
+                for rate in exchange_rates
+            ]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to load dashboard data: {str(e)}"
+        )

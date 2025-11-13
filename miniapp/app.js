@@ -535,18 +535,182 @@ async function authenticateUser() {
 async function loadDashboard() {
     showLoading();
     try {
-        // Load exchange rates first
-        await loadExchangeRates();
-        
+        // 🚀 ОПТИМИЗАЦИЯ: Сначала загружаем workspace (нужен для dashboard запроса)
         await loadWorkspaces();
-        await loadBalance();
-        await loadQuickStats();
-        await loadRecentTransactions();
+        
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace available');
+            hideLoading();
+            return;
+        }
+        
+        // 🚀 НОВЫЙ ПОДХОД: Один запрос вместо 7+
+        const cacheKey = `dashboard:${currentWorkspaceId}`;
+        const cached = frontendCache.get(cacheKey);
+        
+        if (cached) {
+            console.log('📦 Using cached dashboard data');
+            updateDashboardUI(cached);
+            hideLoading();
+            return;
+        }
+        
+        console.log('🚀 Loading dashboard data (1 request)...');
+        const startTime = performance.now();
+        
+        // Один запрос для всех данных!
+        const dashboardData = await api.getOverview({ workspace_id: currentWorkspaceId });
+        
+        const loadTime = (performance.now() - startTime).toFixed(0);
+        console.log(`✅ Dashboard loaded in ${loadTime}ms`);
+        
+        // 🐛 DEBUG: Выводим структуру ответа
+        console.log('📊 Dashboard data:', JSON.stringify(dashboardData, null, 2));
+        
+        // Кешируем на 30 секунд
+        frontendCache.set(cacheKey, dashboardData, 30);
+        
+        updateDashboardUI(dashboardData);
+        
     } catch (error) {
         console.error('❌ Error loading dashboard:', error);
+        showError('Не удалось загрузить данные');
     } finally {
         hideLoading();
     }
+}
+
+function updateDashboardUI(data) {
+    console.log('🎨 updateDashboardUI called with data:', data);
+    
+    const displayCurrency = localStorage.getItem('defaultCurrency') || data.workspace?.currency || 'KGS';
+    console.log('💰 Display currency:', displayCurrency);
+    
+    // Сохраняем курсы валют в глобальную переменную
+    if (data.exchange_rates) {
+        exchangeRates = {};
+        data.exchange_rates.forEach(rate => {
+            const key = `${rate.from_currency}_${rate.to_currency}`;
+            exchangeRates[key] = rate.rate;
+        });
+        console.log(`💱 Loaded ${data.exchange_rates.length} exchange rates`);
+    }
+    
+    // Обновляем баланс
+    if (data.balance) {
+        console.log('💵 Updating balance:', data.balance);
+        updateBalanceUIFromData(data.balance, displayCurrency);
+    } else {
+        console.warn('⚠️ No balance data');
+    }
+    
+    // Обновляем статистику
+    if (data.balance) {
+        console.log('📊 Updating stats:', data.balance);
+        updateQuickStatsUIFromData(data.balance, displayCurrency);
+    } else {
+        console.warn('⚠️ No stats data');
+    }
+    
+    // Обновляем последние транзакции
+    if (data.recent_transactions) {
+        console.log('📝 Updating transactions:', data.recent_transactions);
+        updateRecentTransactionsUI(data.recent_transactions, displayCurrency);
+    } else {
+        console.warn('⚠️ No recent transactions');
+    }
+}
+
+function updateBalanceUIFromData(balanceData, currency) {
+    const balanceEl = document.querySelector('.balance-amount');
+    console.log('🔍 Balance element:', balanceEl);
+    
+    if (balanceEl) {
+        const formatted = formatCurrency(balanceData.balance, currency);
+        console.log(`💵 Setting balance to: ${formatted}`);
+        balanceEl.textContent = formatted;
+    } else {
+        console.error('❌ Balance element not found!');
+    }
+    if (balanceEl) {
+        balanceEl.textContent = formatCurrency(balanceData.balance, currency);
+    }
+    
+    const changeEl = document.querySelector('.balance-change');
+    if (changeEl && changeEl.querySelector('span')) {
+        // TODO: Calculate proper change percentage
+        changeEl.querySelector('span').textContent = '+0.0%';
+    }
+}
+
+function updateQuickStatsUIFromData(balanceData, currency) {
+    console.log('📈 updateQuickStatsUIFromData called');
+    const incomeEl = document.querySelector('.stat-item.income .stat-value');
+    const expenseEl = document.querySelector('.stat-item.expense .stat-value');
+    
+    console.log('🔍 Income element:', incomeEl);
+    console.log('🔍 Expense element:', expenseEl);
+    
+    if (incomeEl) {
+        const formatted = formatCurrency(balanceData.total_income, currency);
+        console.log(`💚 Setting income to: ${formatted}`);
+        incomeEl.textContent = formatted;
+    } else {
+        console.error('❌ Income element not found!');
+    }
+    
+    if (expenseEl) {
+        const formatted = formatCurrency(balanceData.total_expense, currency);
+        console.log(`❤️ Setting expense to: ${formatted}`);
+        expenseEl.textContent = formatted;
+    } else {
+        console.error('❌ Expense element not found!');
+    }
+}
+
+function updateRecentTransactionsUI(transactions, displayCurrency) {
+    const container = document.querySelector('.transactions-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    // Объединяем и сортируем транзакции
+    const allTransactions = [
+        ...transactions.expenses.map(e => ({ ...e, type: 'expense' })),
+        ...transactions.income.map(i => ({ ...i, type: 'income' }))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    
+    if (allTransactions.length === 0) {
+        container.innerHTML = '<div class="empty-state">Нет транзакций за последнюю неделю</div>';
+        return;
+    }
+    
+    allTransactions.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        item.onclick = () => openTransactionDetails(t.id, t.type);
+        
+        // Конвертируем если нужно
+        let displayAmount = t.amount;
+        if (t.currency !== displayCurrency && exchangeRates[`${t.currency}_${displayCurrency}`]) {
+            displayAmount = t.amount * exchangeRates[`${t.currency}_${displayCurrency}`];
+        }
+        
+        item.innerHTML = `
+            <div class="transaction-icon ${t.type}">
+                <i class="fa-solid fa-${t.type === 'expense' ? 'arrow-up' : 'arrow-down'}"></i>
+            </div>
+            <div class="transaction-details">
+                <div class="transaction-title">${t.category}</div>
+                <div class="transaction-description">${t.description || ''}</div>
+            </div>
+            <div class="transaction-amount ${t.type}">
+                ${t.type === 'expense' ? '-' : '+'}${formatCurrency(displayAmount, displayCurrency)}
+            </div>
+        `;
+        
+        container.appendChild(item);
+    });
 }
 
 async function loadWorkspaces() {

@@ -17,12 +17,22 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS middleware - разрешаем все Telegram origins
-logger.info(f"🔧 Configured ALLOWED_ORIGINS: {settings.ALLOWED_ORIGINS}")
+# CORS middleware - разрешаем все origins для разработки
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173", 
+    "http://localhost:5500",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5500",
+    "https://aiaccounter.pages.dev",
+    "*"  # Временно разрешаем все для отладки
+]
+
+logger.info(f"🔧 Configured ALLOWED_ORIGINS: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS if settings.ALLOWED_ORIGINS else ["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],

@@ -2,19 +2,18 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from .config import settings
 
-# Создаём асинхронный движок
+# 🚀 ФИНАЛЬНОЕ РЕШЕНИЕ SUPABASE PGBOUNCER + ВЫСОКАЯ ПРОИЗВОДИТЕЛЬНОСТЬ
+# 
+# Session mode pooler (port 5432) + обычный connection pool = идеально
+# NullPool был нужен только для transaction mode, но убивал производительность
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    future=True,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    # Отключаем prepared statements для pgbouncer (Supabase)
-    connect_args={
-        "statement_cache_size": 0,
-        "prepared_statement_cache_size": 0
-    }
+    pool_size=10,          # Пул из 10 соединений
+    max_overflow=20,       # До 30 соединений в пике
+    pool_pre_ping=True,    # Проверка соединений перед использованием
+    pool_recycle=3600      # Обновление соединений каждый час
 )
 
 # Создаём фабрику сессий

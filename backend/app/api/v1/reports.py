@@ -12,22 +12,26 @@ import httpx
 import os
 import io
 import csv
+import logging
 
 from app.database import get_db
-from app.models.models import User
+from app.models.models import User, SavedReport
 from app.schemas.report import ReportRequest, ReportResponse, ReportType
 from app.utils.auth import get_current_user
+from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# APITemplate.io настройки
-APITEMPLATE_API_KEY = os.getenv("APITEMPLATE_API_KEY", "")
+# APITemplate.io настройки (из config)
+APITEMPLATE_API_KEY = settings.APITEMPLATE_API_KEY
 APITEMPLATE_BASE_URL = "https://rest.apitemplate.io/v2"
 
-# Template IDs (настроить в .env или здесь)
-WEEKLY_TEMPLATE_ID = os.getenv("WEEKLY_TEMPLATE_ID", "")
-MONTHLY_TEMPLATE_ID = os.getenv("MONTHLY_TEMPLATE_ID", "")
-PERIOD_TEMPLATE_ID = os.getenv("PERIOD_TEMPLATE_ID", "")
+# Template IDs (из config)
+WEEKLY_TEMPLATE_ID = settings.WEEKLY_TEMPLATE_ID
+MONTHLY_TEMPLATE_ID = settings.MONTHLY_TEMPLATE_ID
+PERIOD_TEMPLATE_ID = settings.PERIOD_TEMPLATE_ID
 
 
 async def fetch_report_data(
@@ -191,36 +195,44 @@ async def generate_pdf_via_apitemplate(
             detail="Template ID not configured"
         )
     
-    url = f"{APITEMPLATE_BASE_URL}/create"
+    # APITemplate.io uses /create-pdf endpoint with template_id in query string
+    url = f"{APITEMPLATE_BASE_URL}/create-pdf?template_id={template_id}"
     
     headers = {
         "X-API-KEY": APITEMPLATE_API_KEY,
         "Content-Type": "application/json"
     }
     
-    payload = {
-        "template_id": template_id,
-        "data": data,
-        "settings": {
-            "output_format": "pdf"
-        }
-    }
+    payload = data  # Send data directly as payload
+    
+    logger.info(f"📄 Sending request to APITemplate.io")
+    logger.info(f"   URL: {url}")
+    logger.info(f"   Data keys: {list(data.keys())}")
     
     async with httpx.AsyncClient(timeout=60.0) as client:
         try:
             response = await client.post(url, json=payload, headers=headers)
+            
+            # Логируем ответ для отладки
+            logger.info(f"   Response status: {response.status_code}")
+            if response.status_code != 200:
+                logger.error(f"   Response body: {response.text}")
+            
             response.raise_for_status()
             
             result = response.json()
             
             if result.get("status") == "success":
-                return result.get("download_url", "")
+                download_url = result.get("download_url") or result.get("download_url_pdf", "")
+                logger.info(f"✅ PDF generated: {download_url}")
+                return download_url
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"PDF generation failed: {result.get('message', 'Unknown error')}"
                 )
         except httpx.HTTPError as e:
+            logger.error(f"❌ APITemplate.io error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"APITemplate.io request failed: {str(e)}"
@@ -391,13 +403,31 @@ async def generate_period_report(
     # Генерация PDF
     pdf_url = await generate_pdf_via_apitemplate(PERIOD_TEMPLATE_ID, template_data)
     
+    # Сохраняем отчет в базу
+    saved_report = SavedReport(
+        user_id=current_user.user_id,
+        workspace_id=report_request.workspace_id,
+        report_type="period",
+        title=f"Отчет за {report_request.start_date.strftime('%d.%m.%Y')} - {report_request.end_date.strftime('%d.%m.%Y')}",
+        period_start=report_request.start_date,
+        period_end=report_request.end_date,
+        pdf_url=pdf_url,
+        format="pdf",
+        report_data=template_data,
+        expires_at=datetime.now() + timedelta(days=5)  # APITemplate.io хранит 5 дней
+    )
+    db.add(saved_report)
+    await db.commit()
+    await db.refresh(saved_report)
+    
     return {
         "report_type": "period",
         "workspace_id": report_request.workspace_id,
         "start_date": report_request.start_date,
         "end_date": report_request.end_date,
         "pdf_url": pdf_url,
-        "generated_at": datetime.now()
+        "generated_at": datetime.now(),
+        "report_id": saved_report.id
     }
 
 
@@ -410,13 +440,34 @@ async def get_report_history(
 ):
     """
     История сгенерированных отчётов
-    (Требует таблицу report_history в БД)
     """
-    # TODO: Создать таблицу report_history для хранения истории
-    # Пока возвращаем заглушку
+    from sqlalchemy import select, desc
+    
+    # Получаем сохраненные отчеты
+    query = select(SavedReport).where(
+        SavedReport.user_id == current_user.user_id,
+        SavedReport.workspace_id == workspace_id
+    ).order_by(desc(SavedReport.created_at)).limit(limit)
+    
+    result = await db.execute(query)
+    reports = result.scalars().all()
+    
     return {
-        "message": "Report history feature coming soon",
-        "workspace_id": workspace_id
+        "workspace_id": workspace_id,
+        "reports": [
+            {
+                "id": report.id,
+                "report_type": report.report_type,
+                "title": report.title,
+                "period_start": report.period_start.isoformat(),
+                "period_end": report.period_end.isoformat(),
+                "pdf_url": report.pdf_url,
+                "format": report.format,
+                "created_at": report.created_at.isoformat(),
+                "expires_at": report.expires_at.isoformat() if report.expires_at else None
+            }
+            for report in reports
+        ]
     }
 
 
