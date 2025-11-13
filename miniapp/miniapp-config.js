@@ -7,7 +7,7 @@ const MINIAPP_CONFIG = {
         // Автоматически определяем URL на основе окружения
         baseUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:8000/api/v1'
-            : 'https://your-railway-app.up.railway.app/api/v1', // Замените после деплоя на Railway
+            : 'https://aiaccounterbackend-production.up.railway.app/api/v1',
         enabled: true
     },
     
