@@ -57,6 +57,57 @@ let isAuthenticated = false;
 // Currency rates cache
 let exchangeRates = {};
 
+// ✅ Batch конвертация транзакций
+async function convertTransactionsBatch(transactions, displayCurrency) {
+    if (!transactions || transactions.length === 0) {
+        return [];
+    }
+    
+    // Проверяем кеш
+    const cacheKey = `batch_conv:${transactions.map(t => t.id).join(',')}:${displayCurrency}`;
+    const cached = frontendCache.get(cacheKey);
+    if (cached) {
+        return cached;
+    }
+    
+    console.log(`💱 Batch converting ${transactions.length} transactions to ${displayCurrency}`);
+    
+    // Подготавливаем запросы на конвертацию
+    const conversions = transactions.map(t => ({
+        amount: t.amount,
+        from_currency: t.currency || 'KGS',
+        to_currency: displayCurrency
+    }));
+    
+    try {
+        const response = await api.convertAmountBatch(conversions);
+        
+        if (response && response.results) {
+            const convertedTransactions = transactions.map((t, i) => {
+                const result = response.results[i];
+                return {
+                    ...t,
+                    convertedAmount: result ? result.converted_amount : t.amount
+                };
+            });
+            
+            // Кешируем на 5 минут
+            frontendCache.set(cacheKey, convertedTransactions, 300);
+            
+            console.log(`✅ Batch conversion complete: ${response.successful_conversions}/${response.total_conversions}`);
+            return convertedTransactions;
+        }
+    } catch (error) {
+        console.warn('⚠️ Batch conversion failed, falling back to original amounts:', error);
+    }
+    
+    // Fallback: возвращаем оригинальные суммы
+    return transactions.map(t => ({
+        ...t,
+        convertedAmount: t.amount
+    }));
+}
+
 // Categories with icons
 const categories = {
     expense: [
@@ -533,12 +584,21 @@ async function loadBalance() {
         
         const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
         
+        // Проверяем кеш
+        const cacheKey = `balance:${currentWorkspaceId}:${displayCurrency}`;
+        const cached = frontendCache.get(cacheKey);
+        if (cached) {
+            console.log('📦 Using cached balance');
+            updateBalanceUI(cached, displayCurrency);
+            return;
+        }
+        
         // Получаем данные за текущий месяц
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const endDate = today.toISOString().split('T')[0];
         
-        // Получаем все транзакции для правильного подсчета с конвертацией
+        // Получаем все транзакции
         const [expenses, income] = await Promise.all([
             api.getExpenses({
                 workspace_id: currentWorkspaceId,
@@ -554,42 +614,40 @@ async function loadBalance() {
             })
         ]);
         
-        // Конвертируем и суммируем
-        let totalIncome = 0;
-        let totalExpense = 0;
+        // ✅ Batch конвертация вместо цикла
+        const [convertedExpenses, convertedIncome] = await Promise.all([
+            convertTransactionsBatch(expenses, displayCurrency),
+            convertTransactionsBatch(income, displayCurrency)
+        ]);
         
-        for (const item of income) {
-            const itemCurrency = item.currency || 'KGS';
-            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
-            totalIncome += converted;
-        }
-        
-        for (const item of expenses) {
-            const itemCurrency = item.currency || 'KGS';
-            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
-            totalExpense += converted;
-        }
-        
+        const totalIncome = convertedIncome.reduce((sum, t) => sum + t.convertedAmount, 0);
+        const totalExpense = convertedExpenses.reduce((sum, t) => sum + t.convertedAmount, 0);
         const balance = totalIncome - totalExpense;
         
-        console.log('💰 Calculated balance:', balance, displayCurrency);
+        const balanceData = { totalIncome, totalExpense, balance };
         
-        const balanceEl = document.querySelector('.balance-amount');
-        if (balanceEl) {
-            balanceEl.textContent = formatCurrency(balance, displayCurrency);
-        }
+        // Кешируем на 1 минуту
+        frontendCache.set(cacheKey, balanceData, 60);
         
-        // TODO: Calculate change percent properly with converted amounts
-        const changeEl = document.querySelector('.balance-change');
-        if (changeEl && changeEl.querySelector('span')) {
-            // Пока оставляем без изменений или скрываем
-            changeEl.querySelector('span').textContent = '+0.0%';
-        }
+        updateBalanceUI(balanceData, displayCurrency);
         
         console.log('✅ Balance loaded:', balance);
     } catch (error) {
         console.error('❌ Failed to load balance:', error);
         document.querySelector('.balance-amount').textContent = '0 с';
+    }
+}
+
+function updateBalanceUI(balanceData, currency) {
+    const balanceEl = document.querySelector('.balance-amount');
+    if (balanceEl) {
+        balanceEl.textContent = formatCurrency(balanceData.balance, currency);
+    }
+    
+    // TODO: Calculate change percent properly
+    const changeEl = document.querySelector('.balance-change');
+    if (changeEl && changeEl.querySelector('span')) {
+        changeEl.querySelector('span').textContent = '+0.0%';
     }
 }
 
@@ -604,17 +662,26 @@ async function loadQuickStats() {
         
         const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
         
+        // Проверяем кеш
+        const cacheKey = `quickstats:${currentWorkspaceId}:${displayCurrency}`;
+        const cached = frontendCache.get(cacheKey);
+        if (cached) {
+            console.log('📦 Using cached stats');
+            updateQuickStatsUI(cached, displayCurrency);
+            return;
+        }
+        
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const endDate = today.toISOString().split('T')[0];
         
-        // Получаем все транзакции с их валютами
+        // Получаем все транзакции
         const [expenses, income] = await Promise.all([
             api.getExpenses({
                 workspace_id: currentWorkspaceId,
                 start_date: startDate,
                 end_date: endDate,
-                limit: 1000 // Получаем все транзакции
+                limit: 1000
             }),
             api.getIncome({
                 workspace_id: currentWorkspaceId,
@@ -624,40 +691,35 @@ async function loadQuickStats() {
             })
         ]);
         
-        // Конвертируем каждую транзакцию и суммируем
-        let totalIncome = 0;
-        let totalExpense = 0;
+        // ✅ Batch конвертация
+        const [convertedExpenses, convertedIncome] = await Promise.all([
+            convertTransactionsBatch(expenses, displayCurrency),
+            convertTransactionsBatch(income, displayCurrency)
+        ]);
         
-        for (const item of income) {
-            const itemCurrency = item.currency || 'KGS';
-            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
-            totalIncome += converted;
-        }
+        const totalIncome = convertedIncome.reduce((sum, t) => sum + t.convertedAmount, 0);
+        const totalExpense = convertedExpenses.reduce((sum, t) => sum + t.convertedAmount, 0);
         
-        for (const item of expenses) {
-            const itemCurrency = item.currency || 'KGS';
-            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
-            totalExpense += converted;
-        }
+        const statsData = { totalIncome, totalExpense };
         
-        console.log('💰 Quick stats calculated:', {
-            income: totalIncome,
-            expense: totalExpense,
-            currency: displayCurrency
-        });
+        // Кешируем на 1 минуту
+        frontendCache.set(cacheKey, statsData, 60);
         
-        document.querySelector('.stat-item.income .stat-value').textContent = 
-            formatCurrency(totalIncome, displayCurrency);
-        document.querySelector('.stat-item.expense .stat-value').textContent = 
-            formatCurrency(totalExpense, displayCurrency);
+        updateQuickStatsUI(statsData, displayCurrency);
         
         console.log('✅ Quick stats loaded');
     } catch (error) {
         console.warn('⚠️ Не удалось загрузить статистику:', error);
         const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-        document.querySelector('.stat-item.income .stat-value').textContent = formatCurrency(0, displayCurrency);
-        document.querySelector('.stat-item.expense .stat-value').textContent = formatCurrency(0, displayCurrency);
+        updateQuickStatsUI({ totalIncome: 0, totalExpense: 0 }, displayCurrency);
     }
+}
+
+function updateQuickStatsUI(statsData, currency) {
+    document.querySelector('.stat-item.income .stat-value').textContent = 
+        formatCurrency(statsData.totalIncome, currency);
+    document.querySelector('.stat-item.expense .stat-value').textContent = 
+        formatCurrency(statsData.totalExpense, currency);
 }
 
 async function loadRecentTransactions() {

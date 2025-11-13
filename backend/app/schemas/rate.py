@@ -2,7 +2,7 @@
 Pydantic schemas for Exchange Rates
 """
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import date as date_type, datetime
 
 
@@ -42,3 +42,21 @@ class ConversionResponse(BaseModel):
     converted_amount: float
     rate: float
     date: date_type
+
+
+class BatchConversionRequest(BaseModel):
+    """Batch currency conversion request - оптимизация для множественных конвертаций"""
+    conversions: List[ConversionRequest] = Field(
+        ..., 
+        min_length=1, 
+        max_length=1000, 
+        description="Список конвертаций (макс 1000 за раз)"
+    )
+
+
+class BatchConversionResponse(BaseModel):
+    """Результат batch конвертации"""
+    results: List[Optional[ConversionResponse]]
+    total_conversions: int
+    successful_conversions: int
+    failed_conversions: int

@@ -207,6 +207,10 @@ class APIHelper {
     async convertAmount(data) {
         return this.post('/rates/convert', data);
     }
+    
+    async convertAmountBatch(conversions) {
+        return this.post('/rates/convert/batch', { conversions });
+    }
 
     async refreshRates() {
         return this.post('/rates/refresh');

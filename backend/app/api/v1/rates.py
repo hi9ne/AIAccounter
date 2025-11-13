@@ -10,8 +10,16 @@ from datetime import date, datetime
 
 from app.database import get_db
 from app.models.models import User, ExchangeRate
-from app.schemas.rate import ExchangeRateSchema, ExchangeRateCreate, ConversionRequest, ConversionResponse
+from app.schemas.rate import (
+    ExchangeRateSchema, 
+    ExchangeRateCreate, 
+    ConversionRequest, 
+    ConversionResponse,
+    BatchConversionRequest,
+    BatchConversionResponse
+)
 from app.utils.auth import get_current_user
+from app.services.currency import CurrencyService
 
 router = APIRouter()
 
@@ -201,6 +209,85 @@ async def convert_currency(
         "converted_amount": converted_amount,
         "rate": rate,
         "date": rate_date
+    }
+
+
+@router.post("/convert/batch", response_model=BatchConversionResponse)
+async def convert_currency_batch(
+    batch_request: BatchConversionRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Batch конвертация валют - оптимизация для множественных конвертаций
+    
+    Вместо 100+ отдельных запросов делаем 1 запрос
+    Идеально для dashboard где нужно конвертировать много транзакций
+    
+    Example:
+        POST /api/v1/rates/convert/batch
+        {
+            "conversions": [
+                {"from_currency": "USD", "to_currency": "KGS", "amount": 100},
+                {"from_currency": "EUR", "to_currency": "KGS", "amount": 50},
+                ...
+            ]
+        }
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"🔄 Batch conversion: {len(batch_request.conversions)} requests")
+    
+    # Извлекаем данные для batch обработки
+    conversions_data = [
+        (conv.amount, conv.from_currency, conv.to_currency) 
+        for conv in batch_request.conversions
+    ]
+    
+    # Получаем уникальные пары валют
+    pairs = list(set((conv.from_currency.upper(), conv.to_currency.upper()) 
+                     for conv in batch_request.conversions))
+    
+    # Загружаем все курсы одним запросом
+    rates_dict = await CurrencyService.get_rates_for_pairs(db, pairs)
+    
+    # Конвертируем все суммы
+    results = []
+    successful = 0
+    failed = 0
+    today = datetime.now().date()
+    
+    for conv in batch_request.conversions:
+        from_curr = conv.from_currency.upper()
+        to_curr = conv.to_currency.upper()
+        pair = (from_curr, to_curr)
+        
+        rate = rates_dict.get(pair)
+        
+        if rate is not None:
+            converted_amount = round(conv.amount * rate, 2)
+            results.append({
+                "from_currency": from_curr,
+                "to_currency": to_curr,
+                "amount": conv.amount,
+                "converted_amount": converted_amount,
+                "rate": rate,
+                "date": today
+            })
+            successful += 1
+        else:
+            logger.warning(f"⚠️ No rate for {from_curr}/{to_curr}")
+            results.append(None)
+            failed += 1
+    
+    logger.info(f"✅ Batch conversion complete: {successful} success, {failed} failed")
+    
+    return {
+        "results": results,
+        "total_conversions": len(batch_request.conversions),
+        "successful_conversions": successful,
+        "failed_conversions": failed
     }
 
 
