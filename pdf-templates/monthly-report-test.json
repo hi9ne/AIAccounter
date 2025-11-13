@@ -5,29 +5,29 @@
   "period": "01.10.2025 - 31.10.2025",
   "generated_date": "04.11.2025",
   "total_expenses": 185600,
-  "total_expenses_formatted": "185600 ₸",
+  "total_expenses_formatted": "185600 ",
   "total_income": 350000,
-  "total_income_formatted": "350000 ₸",
+  "total_income_formatted": "350000 ",
   "balance": 164400,
-  "balance_formatted": "164400 ₸",
+  "balance_formatted": "164400 ",
   "transaction_count": 156,
   "expense_count": 124,
   "income_count": 32,
   "budget_amount": 200000,
-  "budget_amount_formatted": "200000 ₸",
-  "budget_currency": "₸",
-  "currency_symbol": "₸",
+  "budget_amount_formatted": "200000 ",
+  "budget_currency": "",
+  "currency_symbol": "",
   "budget_used": 185600,
-  "budget_used_formatted": "185600 ₸",
+  "budget_used_formatted": "185600 ",
   "budget_used_percent": 93,
   "budget_remaining": 14400,
-  "budget_remaining_formatted": "14400 ₸",
+  "budget_remaining_formatted": "14400 ",
   "budget_status": "⚡ Близко к лимиту",
   "budget_status_color": "#FF9800",
   "avg_daily_expense": 5987,
-  "avg_daily_expense_formatted": "5987 ₸",
+  "avg_daily_expense_formatted": "5987 ",
   "avg_daily_income": 11290,
-  "avg_daily_income_formatted": "11290 ₸",
+  "avg_daily_income_formatted": "11290 ",
   "avg_transaction_expense": 1497,
   "top_3_categories": [
     {
@@ -178,57 +178,57 @@
     {
       "category": "Продукты",
       "amount": 62400,
-      "amount_formatted": "62400 ₸",
+      "amount_formatted": "62400 ",
       "percentage": 33.6,
       "count": 45
     },
     {
       "category": "Аренда офиса",
       "amount": 35000,
-      "amount_formatted": "35000 ₸",
+      "amount_formatted": "35000 ",
       "percentage": 18.9,
       "count": 1
     },
     {
       "category": "Транспорт",
       "amount": 28900,
-      "amount_formatted": "28900 ₸",
+      "amount_formatted": "28900 ",
       "percentage": 15.6,
       "count": 38
     },
     {
       "category": "Кафе/рестораны",
       "amount": 24800,
-      "amount_formatted": "24800 ₸",
+      "amount_formatted": "24800 ",
       "percentage": 13.4,
       "count": 22
     },
     {
       "category": "Развлечения",
       "amount": 18500,
-      "amount_formatted": "18500 ₸",
+      "amount_formatted": "18500 ",
       "percentage": 10.0,
       "count": 12
     },
     {
       "category": "Коммунальные",
       "amount": 8500,
-      "amount_formatted": "8500 ₸",
+      "amount_formatted": "8500 ",
       "percentage": 4.6,
       "count": 3
     },
     {
       "category": "Прочее",
       "amount": 7500,
-      "amount_formatted": "7500 ₸",
+      "amount_formatted": "7500 ",
       "percentage": 4.0,
       "count": 3
     }
   ],
   "forecast_expense": 192000,
-  "forecast_expense_formatted": "192000 ₸",
+  "forecast_expense_formatted": "192000 ",
   "forecast_income": 365000,
-  "forecast_income_formatted": "365000 ₸",
+  "forecast_income_formatted": "365000 ",
   "forecast_balance": 173000,
-  "forecast_balance_formatted": "173000 ₸"
+  "forecast_balance_formatted": "173000 "
 }

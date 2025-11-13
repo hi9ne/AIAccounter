@@ -3,22 +3,22 @@
   "period_start": "15.10.2025",
   "period_end": "25.10.2025",
   "period_days": 11,
-  "currency_symbol": "₸",
+  "currency_symbol": "",
   "total_expenses": 58900,
-  "total_expenses_formatted": "58900 ₸",
+  "total_expenses_formatted": "58900 ",
   "total_income": 125000,
-  "total_income_formatted": "125000 ₸",
+  "total_income_formatted": "125000 ",
   "balance": 66100,
-  "balance_formatted": "66100 ₸",
+  "balance_formatted": "66100 ",
   "transaction_count": 52,
   "expense_count": 41,
   "income_count": 11,
   "avg_expense_per_day": 5354,
-  "avg_expense_per_day_formatted": "5354 ₸",
+  "avg_expense_per_day_formatted": "5354 ",
   "avg_income_per_day": 11364,
-  "avg_income_per_day_formatted": "11364 ₸",
+  "avg_income_per_day_formatted": "11364 ",
   "max_expense": 8200,
-  "max_expense_formatted": "8200 ₸",
+  "max_expense_formatted": "8200 ",
   "daily_data": [
     {
       "date": "15.10",
@@ -80,31 +80,31 @@
     {
       "category": "Продукты",
       "category_total": 24500,
-      "category_total_formatted": "24500 ₸",
+      "category_total_formatted": "24500 ",
       "percentage": 41.6
     },
     {
       "category": "Транспорт",
       "category_total": 12800,
-      "category_total_formatted": "12800 ₸",
+      "category_total_formatted": "12800 ",
       "percentage": 21.7
     },
     {
       "category": "Кафе/рестораны",
       "category_total": 9600,
-      "category_total_formatted": "9600 ₸",
+      "category_total_formatted": "9600 ",
       "percentage": 16.3
     },
     {
       "category": "Развлечения",
       "category_total": 6500,
-      "category_total_formatted": "6500 ₸",
+      "category_total_formatted": "6500 ",
       "percentage": 11.0
     },
     {
       "category": "Прочее",
       "category_total": 5500,
-      "category_total_formatted": "5500 ₸",
+      "category_total_formatted": "5500 ",
       "percentage": 9.3
     }
   ],
@@ -192,7 +192,7 @@
       "description": "Основная зарплата",
       "type": "income",
       "amount": 50000,
-      "amount_formatted": "50000 ₸"
+      "amount_formatted": "50000 "
     },
     {
       "date": "25.10",
@@ -200,7 +200,7 @@
       "description": "Глобус супермаркет",
       "type": "expense",
       "amount": 900,
-      "amount_formatted": "900 ₸"
+      "amount_formatted": "900 "
     },
     {
       "date": "24.10",
@@ -208,7 +208,7 @@
       "description": "Ужин в ресторане",
       "type": "expense",
       "amount": 3800,
-      "amount_formatted": "3800 ₸"
+      "amount_formatted": "3800 "
     },
     {
       "date": "24.10",
@@ -216,7 +216,7 @@
       "description": "Магнум",
       "type": "expense",
       "amount": 4400,
-      "amount_formatted": "4400 ₸"
+      "amount_formatted": "4400 "
     },
     {
       "date": "23.10",
@@ -224,7 +224,7 @@
       "description": "Кинотеатр",
       "type": "expense",
       "amount": 6500,
-      "amount_formatted": "6500 ₸"
+      "amount_formatted": "6500 "
     },
     {
       "date": "22.10",
@@ -232,7 +232,7 @@
       "description": "Такси",
       "type": "expense",
       "amount": 2100,
-      "amount_formatted": "2100 ₸"
+      "amount_formatted": "2100 "
     },
     {
       "date": "22.10",
@@ -240,7 +240,7 @@
       "description": "Рынок",
       "type": "expense",
       "amount": 3900,
-      "amount_formatted": "3900 ₸"
+      "amount_formatted": "3900 "
     },
     {
       "date": "20.10",
@@ -248,7 +248,7 @@
       "description": "Продажа товаров",
       "type": "income",
       "amount": 45000,
-      "amount_formatted": "45000 ₸"
+      "amount_formatted": "45000 "
     },
     {
       "date": "20.10",
@@ -256,7 +256,7 @@
       "description": "Заправка",
       "type": "expense",
       "amount": 7200,
-      "amount_formatted": "7200 ₸"
+      "amount_formatted": "7200 "
     },
     {
       "date": "18.10",
@@ -264,7 +264,7 @@
       "description": "Консультация",
       "type": "income",
       "amount": 15000,
-      "amount_formatted": "15000 ₸"
+      "amount_formatted": "15000 "
     },
     {
       "date": "16.10",
@@ -272,7 +272,7 @@
       "description": "Продажа услуг",
       "type": "income",
       "amount": 15000,
-      "amount_formatted": "15000 ₸"
+      "amount_formatted": "15000 "
     }
   ]
 }
