@@ -4,7 +4,10 @@
 const MINIAPP_CONFIG = {
     // FastAPI Backend настройки
     api: {
-        baseUrl: 'http://localhost:8000/api/v1',
+        // Автоматически определяем URL на основе окружения
+        baseUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000/api/v1'
+            : 'https://your-railway-app.up.railway.app/api/v1', // Замените после деплоя на Railway
         enabled: true
     },
     

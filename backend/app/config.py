@@ -26,7 +26,6 @@ class Settings(BaseSettings):
     
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
-    TELEGRAM_WEBHOOK_URL: str = ""
     
     # APITemplate.io (для генерации PDF отчётов)
     APITEMPLATE_API_KEY: str = ""

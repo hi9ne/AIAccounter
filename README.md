@@ -2,16 +2,38 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-production-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Telegram-blue.svg)
 
 **Умный финансовый помощник для Telegram с AI-агентом и автоматизацией**
 
-[Возможности](#-возможности) • [Быстрый старт](#-быстрый-старт) • [Документация](#-документация) • [Релизы](#-релизы)
+[Возможности](#-возможности) • [Деплой](#-деплой) • [Быстрый старт](#-быстрый-старт) • [Документация](#-документация)
 
 </div>
+
+---
+
+## 🚀 Деплой
+
+### Production Setup
+- **Frontend**: Cloudflare Pages (бесплатно, CDN)
+- **Backend**: Railway (бесплатно 500 часов/месяц)
+- **База данных**: Supabase PostgreSQL (бесплатно)
+
+📖 Полная инструкция: [DEPLOY.md](DEPLOY.md)
+
+**Быстрый старт:**
+```bash
+# 1. Backend на Railway
+railway.app → New Project → GitHub → backend/
+
+# 2. Frontend на Cloudflare Pages
+dash.cloudflare.com → Pages → GitHub → miniapp/
+
+# 3. Обновите miniapp-config.js с URL от Railway
+```
 
 ---
 
