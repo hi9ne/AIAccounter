@@ -4,14 +4,10 @@
 const MINIAPP_CONFIG = {
     // FastAPI Backend настройки
     api: {
-        // Временно используем продакшн URL для тестирования оптимизаций
-        // Раскомментируйте строку ниже для локальной разработки (нужен запущенный backend)
-        baseUrl: 'https://aiaccounterbackend-production.up.railway.app/api/v1',
-        
-        // Для локальной разработки (если backend запущен):
-        // baseUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        //     ? 'http://localhost:8000/api/v1'
-        //     : 'https://aiaccounterbackend-production.up.railway.app/api/v1',
+        // Автоматическое определение окружения
+        baseUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000/api/v1'
+            : 'https://aiaccounterbackend-production.up.railway.app/api/v1',
         enabled: true
     },
     

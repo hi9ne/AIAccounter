@@ -1254,16 +1254,30 @@ async function generateReport(event) {
             hideLoading();
             showSuccess('Excel файл скачан');
         } else {
-            // PDF отчет
-            result = await api.generateReportPDF(currentWorkspaceId, startDate, endDate, 'period');
-            hideLoading();
-            
-            if (result && result.pdf_url) {
-                // Открываем PDF в новой вкладке
-                window.open(result.pdf_url, '_blank');
-                showSuccess('PDF отчет сгенерирован');
-            } else {
-                showSuccess('Отчет будет доступен в ближайшее время');
+            // PDF отчет - пробуем, если не работает, предлагаем CSV
+            try {
+                result = await api.generateReportPDF(currentWorkspaceId, startDate, endDate, 'period');
+                hideLoading();
+                
+                if (result && result.pdf_url) {
+                    window.open(result.pdf_url, '_blank');
+                    showSuccess('PDF отчет сгенерирован');
+                } else {
+                    showSuccess('Отчет будет доступен в ближайшее время');
+                }
+            } catch (pdfError) {
+                console.warn('⚠️ PDF generation failed, offering CSV fallback:', pdfError);
+                hideLoading();
+                
+                // Предлагаем альтернативу
+                if (confirm('PDF генерация недоступна. Скачать отчет в CSV формате?')) {
+                    showLoading('Экспорт CSV...');
+                    result = await api.exportCSV(currentWorkspaceId, startDate, endDate);
+                    hideLoading();
+                    showSuccess('CSV отчет скачан');
+                } else {
+                    showError('PDF генерация требует настройки APITemplate.io в .env файле');
+                }
             }
         }
         
@@ -1271,12 +1285,7 @@ async function generateReport(event) {
     } catch (error) {
         hideLoading();
         console.error('❌ Report generation failed:', error);
-        
-        if (format === 'pdf') {
-            showError('Для генерации PDF отчетов необходимо настроить APITemplate.io');
-        } else {
-            showError('Ошибка генерации отчета: ' + error.message);
-        }
+        showError('Ошибка генерации отчета: ' + error.message);
     }
 }
 
