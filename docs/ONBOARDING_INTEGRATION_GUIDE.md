@@ -239,8 +239,7 @@
 {
   "keyboard": [
     ["🇰🇬 Сом (KGS)", "💵 Доллар (USD)"],
-    ["💶 Евро (EUR)", "₽ Рубль (RUB)"],
-    ["🇰🇿 Тенге (KZT)"]
+    ["💶 Евро (EUR)", "₽ Рубль (RUB)"]
   ],
   "resize_keyboard": true,
   "one_time_keyboard": true
@@ -302,7 +301,6 @@ switch(step) {
     else if (text.includes('Доллар') || text.includes('USD')) parsedValue = 'USD';
     else if (text.includes('Евро') || text.includes('EUR')) parsedValue = 'EUR';
     else if (text.includes('Рубль') || text.includes('RUB')) parsedValue = 'RUB';
-    else if (text.includes('Тенге') || text.includes('KZT')) parsedValue = 'KZT';
     break;
     
   case 2: // monthly_budget
@@ -481,8 +479,7 @@ SELECT * FROM save_onboarding_answer(
                     { label: "🇰🇬 Сом (KGS)", value: "KGS" },
                     { label: "💵 Доллар (USD)", value: "USD" },
                     { label: "💶 Евро (EUR)", value: "EUR" },
-                    { label: "₽ Рубль (RUB)", value: "RUB" },
-                    { label: "🇰🇿 Тенге (KZT)", value: "KZT" }
+                    { label: "₽ Рубль (RUB)", value: "RUB" }
                 ]
             },
             // ... остальные вопросы

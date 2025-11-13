@@ -10,7 +10,7 @@ class WorkspaceCreate(BaseModel):
     """Создание нового workspace"""
     name: str = Field(..., min_length=1, max_length=100, description="Название workspace")
     description: Optional[str] = Field(None, max_length=500, description="Описание")
-    currency: str = Field(default="KGS", description="Валюта по умолчанию (KGS, USD, EUR, RUB, KZT)")
+    currency: str = Field(default="KGS", description="Валюта по умолчанию (KGS, USD, EUR, RUB)")
 
 
 class WorkspaceUpdate(BaseModel):

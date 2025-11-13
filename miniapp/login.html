@@ -255,20 +255,33 @@
 
                 console.log('🔐 Authenticating...', authData);
 
-                const response = await api.authTelegram(authData);
+                // Добавляем таймаут 10 секунд
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-                if (response && response.access_token) {
-                    // Сохраняем токен
-                    api.setToken(response.access_token);
-                    
-                    showSuccess('✅ Вход выполнен! Перенаправление...');
-                    
-                    // Перенаправляем на главную
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1000);
-                } else {
-                    throw new Error('Не получен токен');
+                try {
+                    const response = await api.authTelegram(authData);
+                    clearTimeout(timeoutId);
+
+                    if (response && response.access_token) {
+                        // Сохраняем токен
+                        api.setToken(response.access_token);
+                        
+                        showSuccess('✅ Вход выполнен! Перенаправление...');
+                        
+                        // Перенаправляем на главную
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    } else {
+                        throw new Error('Не получен токен');
+                    }
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    if (fetchError.name === 'AbortError') {
+                        throw new Error('Таймаут: сервер не отвечает. Проверьте, запущен ли бэкенд.');
+                    }
+                    throw fetchError;
                 }
             } catch (error) {
                 console.error('❌ Login error:', error);

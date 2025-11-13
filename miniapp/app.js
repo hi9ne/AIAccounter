@@ -40,6 +40,9 @@ const config = window.MiniAppConfig || {
     }
 };
 
+// API Base URL
+const API_BASE_URL = 'http://localhost:8000';
+
 // Current state
 let currentScreen = 'home';
 let currentWorkspaceId = null;
@@ -48,17 +51,27 @@ let selectedCurrency = 'KGS';
 let transactionType = 'expense';
 let isAuthenticated = false;
 
-// Categories
+// Currency rates cache
+let exchangeRates = {};
+
+// Categories with icons
 const categories = {
-    income: [
-        'Зарплата', 'Продажи товаров', 'Продажи услуг', 'Подработка',
-        'Дивиденды', 'Возврат налогов', 'Кэшбек', 'Фриланс', 'Аренда'
-    ],
     expense: [
-        'Продукты', 'Транспорт', 'Аренда', 'Зарплата',
-        'Реклама', 'Налоги', 'Канцелярия', 'Связь',
-        'Обучение', 'Страхование', 'Банк', 'Кафе',
-        'Медицина', 'Одежда', 'Развлечения'
+        { name: 'Продукты', icon: 'fa-shopping-cart' },
+        { name: 'Транспорт', icon: 'fa-car' },
+        { name: 'Кафе', icon: 'fa-coffee' },
+        { name: 'Одежда', icon: 'fa-tshirt' },
+        { name: 'Развлечения', icon: 'fa-gamepad' },
+        { name: 'Здоровье', icon: 'fa-heartbeat' },
+        { name: 'Дом', icon: 'fa-home' },
+        { name: 'Связь', icon: 'fa-phone' }
+    ],
+    income: [
+        { name: 'Зарплата', icon: 'fa-money-bill-wave' },
+        { name: 'Фриланс', icon: 'fa-laptop' },
+        { name: 'Продажа', icon: 'fa-tag' },
+        { name: 'Инвестиции', icon: 'fa-chart-line' },
+        { name: 'Подарок', icon: 'fa-gift' }
     ]
 };
 
@@ -100,7 +113,7 @@ function loadScreenData(screenName) {
             loadTeam();
             break;
         case 'reports':
-            // Reports don't need auto-loading
+            initReportsScreen();
             break;
         case 'settings':
             loadSettings();
@@ -130,7 +143,12 @@ function openAddTransaction(type) {
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const modal = document.getElementById(modalId);
+    modal.style.animation = 'modalFadeOut 0.2s ease';
+    setTimeout(() => {
+        modal.classList.remove('active');
+        modal.style.animation = '';
+    }, 200);
 }
 
 function resetTransactionForm() {
@@ -164,10 +182,13 @@ function toggleTransactionType(type) {
     });
     event.target.classList.add('active');
     
-    // Update category pills
+    // Update category pills with icons
     const categoryContainer = document.querySelector('.category-pills');
     categoryContainer.innerHTML = categories[type].map(cat => 
-        `<div class="category-pill" onclick="selectCategory('${cat}')">${cat}</div>`
+        `<div class="category-pill" onclick="selectCategory('${cat.name}')">
+            <i class="fas ${cat.icon}"></i>
+            <span>${cat.name}</span>
+        </div>`
     ).join('');
 }
 
@@ -175,10 +196,129 @@ function selectCategory(category) {
     document.querySelectorAll('.category-pill').forEach(pill => {
         pill.classList.remove('active');
     });
-    event.target.classList.add('active');
+    // Находим родительский элемент category-pill
+    const pillElement = event.target.closest('.category-pill');
+    if (pillElement) {
+        pillElement.classList.add('active');
+    }
 }
 
 // ========== API CALLS ==========
+
+// Currency conversion functions
+async function loadExchangeRates() {
+    try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            console.warn('⚠️ No auth token for loading rates');
+            return;
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/v1/rates/latest`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const rates = await response.json();
+            console.log('📊 Raw rates from API:', rates);
+            
+            // Build rates lookup object
+            exchangeRates = {};
+            
+            if (Array.isArray(rates)) {
+                rates.forEach(rate => {
+                    const key = `${rate.from_currency}_${rate.to_currency}`;
+                    exchangeRates[key] = rate.rate;
+                });
+            }
+            
+            console.log('✅ Exchange rates loaded:', Object.keys(exchangeRates).length, 'pairs');
+            console.log('📋 Available rates:', Object.keys(exchangeRates));
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Failed to load exchange rates:', response.status, errorText);
+        }
+    } catch (error) {
+        console.error('❌ Error loading exchange rates:', error);
+    }
+}
+
+async function convertCurrency(amount, fromCurrency, toCurrency) {
+    // Same currency - no conversion needed
+    if (fromCurrency === toCurrency) {
+        return amount;
+    }
+
+    console.log(`🔄 Converting ${amount} from ${fromCurrency} to ${toCurrency}`);
+    console.log(`📊 Available rates:`, Object.keys(exchangeRates).filter(k => 
+        k.includes(fromCurrency) || k.includes(toCurrency)
+    ));
+
+    // Direct rate lookup
+    const directKey = `${fromCurrency}_${toCurrency}`;
+    if (exchangeRates[directKey]) {
+        const result = amount * parseFloat(exchangeRates[directKey]);
+        console.log(`✅ Direct rate: ${exchangeRates[directKey]} → ${result}`);
+        return result;
+    }
+
+    // Reverse rate lookup
+    const reverseKey = `${toCurrency}_${fromCurrency}`;
+    if (exchangeRates[reverseKey]) {
+        const result = amount / parseFloat(exchangeRates[reverseKey]);
+        console.log(`✅ Reverse rate: ${exchangeRates[reverseKey]} → ${result}`);
+        return result;
+    }
+
+    // Cross-rate through USD
+    const toUsdKey = `${fromCurrency}_USD`;
+    const fromUsdKey = `USD_${toCurrency}`;
+    
+    if (exchangeRates[toUsdKey] && exchangeRates[fromUsdKey]) {
+        const usdAmount = amount * parseFloat(exchangeRates[toUsdKey]);
+        const result = usdAmount * parseFloat(exchangeRates[fromUsdKey]);
+        console.log(`✅ Cross-rate via USD: ${result}`);
+        return result;
+    }
+
+    // Try reverse cross-rate
+    const fromUsdKeyReverse = `${fromCurrency}_USD`;
+    const toUsdKeyReverse = `USD_${toCurrency}`;
+    
+    if (exchangeRates[fromUsdKeyReverse] && exchangeRates[toUsdKeyReverse]) {
+        const usdAmount = amount * parseFloat(exchangeRates[fromUsdKeyReverse]);
+        const result = usdAmount * parseFloat(exchangeRates[toUsdKeyReverse]);
+        console.log(`✅ Reverse cross-rate via USD: ${result}`);
+        return result;
+    }
+
+    // If no rate found, return original amount
+    console.warn(`⚠️ No exchange rate found for ${fromCurrency} -> ${toCurrency}, returning original amount`);
+    return amount;
+}
+
+function formatCurrency(amount, currency) {
+    const symbols = {
+        'KGS': 'с',
+        'USD': '$',
+        'EUR': '€',
+        'RUB': '₽'
+    };
+    
+    const symbol = symbols[currency] || currency;
+    const formatted = Math.abs(amount).toFixed(2);
+    
+    // Для KGS и RUB символ идет после числа, для USD и EUR - перед
+    if (currency === 'KGS' || currency === 'RUB') {
+        return `${formatted} ${symbol}`;
+    } else {
+        return `${symbol}${formatted}`;
+    }
+}
 
 function getUserId() {
     if (currentUserId) return currentUserId;
@@ -321,6 +461,9 @@ async function authenticateUser() {
 // ========== DASHBOARD (HOME) ==========
 
 async function loadDashboard() {
+    // Load exchange rates first
+    await loadExchangeRates();
+    
     await loadWorkspaces();
     await loadBalance();
     await loadQuickStats();
@@ -360,39 +503,59 @@ async function loadBalance() {
             return;
         }
         
+        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
+        
         // Получаем данные за текущий месяц
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const endDate = today.toISOString().split('T')[0];
         
-        const stats = await api.getOverview({
-            workspace_id: currentWorkspaceId,
-            start_date: startDate,
-            end_date: endDate
-        });
+        // Получаем все транзакции для правильного подсчета с конвертацией
+        const [expenses, income] = await Promise.all([
+            api.getExpenses({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                limit: 1000
+            }),
+            api.getIncome({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                limit: 1000
+            })
+        ]);
         
-        console.log('📊 Stats received:', stats);
+        // Конвертируем и суммируем
+        let totalIncome = 0;
+        let totalExpense = 0;
         
-        // Use balance from API or calculate
-        const balance = stats.balance !== undefined ? stats.balance : 
-                       ((stats.total_income || 0) - (stats.total_expense || 0));
-        const change = stats.change_percent || 0;
+        for (const item of income) {
+            const itemCurrency = item.currency || 'KGS';
+            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
+            totalIncome += converted;
+        }
         
-        console.log('💰 Calculated balance:', balance, 'Change:', change + '%');
+        for (const item of expenses) {
+            const itemCurrency = item.currency || 'KGS';
+            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
+            totalExpense += converted;
+        }
+        
+        const balance = totalIncome - totalExpense;
+        
+        console.log('💰 Calculated balance:', balance, displayCurrency);
         
         const balanceEl = document.querySelector('.balance-amount');
         if (balanceEl) {
-            balanceEl.textContent = formatCurrency(balance);
+            balanceEl.textContent = formatCurrency(balance, displayCurrency);
         }
         
+        // TODO: Calculate change percent properly with converted amounts
         const changeEl = document.querySelector('.balance-change');
-        if (changeEl) {
-            const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
-            const changeSpan = changeEl.querySelector('span');
-            if (changeSpan) {
-                changeSpan.className = changeClass;
-                changeSpan.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-            }
+        if (changeEl && changeEl.querySelector('span')) {
+            // Пока оставляем без изменений или скрываем
+            changeEl.querySelector('span').textContent = '+0.0%';
         }
         
         console.log('✅ Balance loaded:', balance);
@@ -411,26 +574,61 @@ async function loadQuickStats() {
             return;
         }
         
+        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
+        
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const endDate = today.toISOString().split('T')[0];
         
-        const stats = await api.getIncomeExpenseStats({
-            workspace_id: currentWorkspaceId,
-            start_date: startDate,
-            end_date: endDate
+        // Получаем все транзакции с их валютами
+        const [expenses, income] = await Promise.all([
+            api.getExpenses({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                limit: 1000 // Получаем все транзакции
+            }),
+            api.getIncome({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                limit: 1000
+            })
+        ]);
+        
+        // Конвертируем каждую транзакцию и суммируем
+        let totalIncome = 0;
+        let totalExpense = 0;
+        
+        for (const item of income) {
+            const itemCurrency = item.currency || 'KGS';
+            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
+            totalIncome += converted;
+        }
+        
+        for (const item of expenses) {
+            const itemCurrency = item.currency || 'KGS';
+            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
+            totalExpense += converted;
+        }
+        
+        console.log('💰 Quick stats calculated:', {
+            income: totalIncome,
+            expense: totalExpense,
+            currency: displayCurrency
         });
         
         document.querySelector('.stat-item.income .stat-value').textContent = 
-            formatCurrency(stats.total_income || 0);
+            formatCurrency(totalIncome, displayCurrency);
         document.querySelector('.stat-item.expense .stat-value').textContent = 
-            formatCurrency(stats.total_expense || 0);
+            formatCurrency(totalExpense, displayCurrency);
         
         console.log('✅ Quick stats loaded');
     } catch (error) {
         console.warn('⚠️ Не удалось загрузить статистику:', error);
-        document.querySelector('.stat-item.income .stat-value').textContent = '0 с';
-        document.querySelector('.stat-item.expense .stat-value').textContent = '0 с';
+        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
+        document.querySelector('.stat-item.income .stat-value').textContent = formatCurrency(0, displayCurrency);
+        document.querySelector('.stat-item.expense .stat-value').textContent = formatCurrency(0, displayCurrency);
     }
 }
 
@@ -466,15 +664,16 @@ async function loadRecentTransactions() {
             ...income.map(i => ({ ...i, type: 'income' }))
         ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
         
-        displayRecentTransactions(transactions);
+        await displayRecentTransactions(transactions);
         console.log('✅ Recent transactions loaded:', transactions.length);
     } catch (error) {
         console.warn('⚠️ Не удалось загрузить транзакции:', error);
     }
 }
 
-function displayRecentTransactions(transactions) {
+async function displayRecentTransactions(transactions) {
     const container = document.querySelector('.transactions-list');
+    const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
     
     if (!transactions || transactions.length === 0) {
         container.innerHTML = `
@@ -486,8 +685,16 @@ function displayRecentTransactions(transactions) {
         return;
     }
     
-    container.innerHTML = transactions.map(t => `
-        <div class="transaction-item">
+    container.innerHTML = '';
+    
+    // Convert and display each transaction - используем for...of вместо forEach
+    for (const t of transactions) {
+        const transactionCurrency = t.currency || 'KGS';
+        const convertedAmount = await convertCurrency(t.amount, transactionCurrency, displayCurrency);
+        
+        const item = document.createElement('div');
+        item.className = 'transaction-item';
+        item.innerHTML = `
             <div class="transaction-icon ${t.type}">
                 <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
             </div>
@@ -496,10 +703,11 @@ function displayRecentTransactions(transactions) {
                 <div class="transaction-description">${t.description || '-'}</div>
             </div>
             <div class="transaction-amount ${t.type}">
-                ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+                ${t.type === 'income' ? '+' : '-'}${formatCurrency(convertedAmount, displayCurrency)}
             </div>
-        </div>
-    `).join('');
+        `;
+        container.appendChild(item);
+    }
 }
 
 // ========== ANALYTICS ==========
@@ -541,24 +749,50 @@ async function loadMetrics(period) {
             startDate = new Date(today.getFullYear(), today.getMonth(), 1);
         }
         
-        const result = await api.getIncomeExpenseStats({
-            workspace_id: currentWorkspaceId,
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: today.toISOString().split('T')[0]
-        });
+        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
         
-        if (result) {
-            document.querySelectorAll('.metric-value')[0].textContent = formatCurrency(result.total_income || 0);
-            document.querySelectorAll('.metric-value')[1].textContent = formatCurrency(result.total_expense || 0);
-            
-            const balance = (result.total_income || 0) - (result.total_expense || 0);
-            document.querySelectorAll('.metric-value')[2].textContent = formatCurrency(balance);
-            
-            const savingsRate = result.total_income > 0 
-                ? ((balance / result.total_income) * 100).toFixed(0)
-                : 0;
-            document.querySelectorAll('.metric-value')[3].textContent = `${savingsRate}%`;
+        // Получаем все транзакции для правильного подсчета
+        const [expenses, income] = await Promise.all([
+            api.getExpenses({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate.toISOString().split('T')[0],
+                end_date: today.toISOString().split('T')[0],
+                limit: 1000
+            }),
+            api.getIncome({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate.toISOString().split('T')[0],
+                end_date: today.toISOString().split('T')[0],
+                limit: 1000
+            })
+        ]);
+        
+        // Конвертируем и суммируем
+        let totalIncome = 0;
+        let totalExpense = 0;
+        
+        for (const item of income) {
+            const itemCurrency = item.currency || 'KGS';
+            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
+            totalIncome += converted;
         }
+        
+        for (const item of expenses) {
+            const itemCurrency = item.currency || 'KGS';
+            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
+            totalExpense += converted;
+        }
+        
+        const balance = totalIncome - totalExpense;
+        
+        document.querySelectorAll('.metric-value')[0].textContent = formatCurrency(totalIncome, displayCurrency);
+        document.querySelectorAll('.metric-value')[1].textContent = formatCurrency(totalExpense, displayCurrency);
+        document.querySelectorAll('.metric-value')[2].textContent = formatCurrency(balance, displayCurrency);
+        
+        const savingsRate = totalIncome > 0 
+            ? ((balance / totalIncome) * 100).toFixed(0)
+            : 0;
+        document.querySelectorAll('.metric-value')[3].textContent = `${savingsRate}%`;
     } catch (error) {
         console.error('❌ Failed to load metrics:', error);
     }
@@ -831,7 +1065,68 @@ async function generateInvite() {
 
 // ========== REPORTS ==========
 
-async function generateReport() {
+// ========== REPORTS ==========
+
+function initReportsScreen() {
+    console.log('📊 Initializing reports screen...');
+    
+    // Установить дефолтные даты (текущий месяц)
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    const startDateInput = document.getElementById('report-start-date');
+    const endDateInput = document.getElementById('report-end-date');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.value = firstDay.toISOString().split('T')[0];
+        endDateInput.value = today.toISOString().split('T')[0];
+    }
+    
+    // Добавить обработчики на кнопки формата
+    document.querySelectorAll('.format-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    console.log('✅ Reports screen initialized');
+}
+
+function setReportPeriod(period) {
+    const today = new Date();
+    let startDate, endDate = today;
+    
+    switch(period) {
+        case 'today':
+            startDate = today;
+            break;
+        case 'week':
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - 7);
+            break;
+        case 'month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            break;
+        case 'year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            break;
+        default:
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+    
+    const startDateInput = document.getElementById('report-start-date');
+    const endDateInput = document.getElementById('report-end-date');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.value = startDate.toISOString().split('T')[0];
+        endDateInput.value = endDate.toISOString().split('T')[0];
+    }
+}
+
+async function generateReport(event) {
+    if (event) event.preventDefault();
+    
     const reportType = document.getElementById('report-type').value;
     const startDate = document.getElementById('report-start-date').value;
     const endDate = document.getElementById('report-end-date').value;
@@ -847,38 +1142,52 @@ async function generateReport() {
         return;
     }
     
+    // Проверка дат
+    if (new Date(startDate) > new Date(endDate)) {
+        showError('Начальная дата не может быть позже конечной');
+        return;
+    }
+    
     showLoading('Генерация отчета...');
     
     try {
-        // TODO: Implement reports API endpoint
-        const result = await api.generateReport({
-            workspace_id: currentWorkspaceId,
-            report_type: reportType,
-            start_date: startDate,
-            end_date: endDate,
-            format: format
-        });
+        let result;
         
-        hideLoading();
-        
-        if (result && result.download_url) {
-            window.open(result.download_url, '_blank');
-            showSuccess('Отчет сгенерирован');
+        if (format === 'csv') {
+            // CSV экспорт
+            result = await api.exportCSV(currentWorkspaceId, startDate, endDate);
+            hideLoading();
+            showSuccess('CSV файл скачан');
+        } else if (format === 'excel') {
+            // Excel экспорт
+            result = await api.exportExcel(currentWorkspaceId, startDate, endDate);
+            hideLoading();
+            showSuccess('Excel файл скачан');
         } else {
-            showSuccess('Отчет будет доступен в ближайшее время');
+            // PDF отчет
+            result = await api.generateReportPDF(currentWorkspaceId, startDate, endDate, 'period');
+            hideLoading();
+            
+            if (result && result.pdf_url) {
+                // Открываем PDF в новой вкладке
+                window.open(result.pdf_url, '_blank');
+                showSuccess('PDF отчет сгенерирован');
+            } else {
+                showSuccess('Отчет будет доступен в ближайшее время');
+            }
         }
+        
+        console.log('✅ Report generated:', format, result);
     } catch (error) {
         hideLoading();
-        showError('Функция генерации отчетов в разработке');
         console.error('❌ Report generation failed:', error);
+        
+        if (format === 'pdf') {
+            showError('Для генерации PDF отчетов необходимо настроить APITemplate.io');
+        } else {
+            showError('Ошибка генерации отчета: ' + error.message);
+        }
     }
-}
-
-function selectFormat(format) {
-    document.querySelectorAll('.format-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.closest('.format-btn').classList.add('active');
 }
 
 // ========== SETTINGS ==========
@@ -936,6 +1245,11 @@ function changeCurrency(currency) {
     localStorage.setItem('defaultCurrency', currency);
     console.log('💰 Currency changed to:', currency);
     showSuccess('Валюта изменена на ' + currency);
+    
+    // Reload dashboard to show converted amounts
+    if (currentScreen === 'home') {
+        loadDashboard();
+    }
 }
 
 function changeTheme(theme) {
@@ -1020,9 +1334,19 @@ async function loadHistory() {
         const container = document.querySelector('#history-screen .transactions-list');
         if (!container) return;
         
+        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
+        
         if (transactions.length > 0) {
-            container.innerHTML = transactions.map(t => `
-                <div class="transaction-item">
+            // Конвертируем все транзакции
+            container.innerHTML = '';
+            
+            for (const t of transactions) {
+                const transactionCurrency = t.currency || 'KGS';
+                const convertedAmount = await convertCurrency(t.amount, transactionCurrency, displayCurrency);
+                
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+                item.innerHTML = `
                     <div class="transaction-icon ${t.type}">
                         <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
                     </div>
@@ -1032,10 +1356,11 @@ async function loadHistory() {
                         <div class="transaction-date">${formatDate(t.date)}</div>
                     </div>
                     <div class="transaction-amount ${t.type}">
-                        ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+                        ${t.type === 'income' ? '+' : '-'}${formatCurrency(convertedAmount, displayCurrency)}
                     </div>
-                </div>
-            `).join('');
+                `;
+                container.appendChild(item);
+            }
         } else {
             container.innerHTML = `
                 <div class="empty-state">
@@ -1102,11 +1427,6 @@ async function submitTransaction() {
 }
 
 // ========== UTILITY FUNCTIONS ==========
-
-function formatCurrency(amount, currency = 'KGS') {
-    const symbols = { KGS: 'с', USD: '$', EUR: '€', RUB: '₽' };
-    return `${Math.abs(amount).toFixed(0)} ${symbols[currency] || 'с'}`;
-}
 
 function formatDate(dateString) {
     const date = new Date(dateString);

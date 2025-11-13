@@ -4,7 +4,7 @@ Exchange Rates API endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, desc
+from sqlalchemy import select, and_, desc, func
 from typing import List, Optional
 from datetime import date, datetime
 
@@ -32,7 +32,7 @@ async def get_latest_rates(
         select(
             ExchangeRate.from_currency,
             ExchangeRate.to_currency,
-            desc(ExchangeRate.rate_date).label('max_date')
+            func.max(ExchangeRate.date).label('max_date')
         )
         .group_by(ExchangeRate.from_currency, ExchangeRate.to_currency)
         .subquery()
@@ -44,7 +44,7 @@ async def get_latest_rates(
         and_(
             ExchangeRate.from_currency == subquery.c.from_currency,
             ExchangeRate.to_currency == subquery.c.to_currency,
-            ExchangeRate.rate_date == subquery.c.max_date
+            ExchangeRate.date == subquery.c.max_date
         )
     )
     
@@ -82,11 +82,11 @@ async def get_rates_history(
     )
     
     if start_date:
-        query = query.where(ExchangeRate.rate_date >= start_date)
+        query = query.where(ExchangeRate.date >= start_date)
     if end_date:
-        query = query.where(ExchangeRate.rate_date <= end_date)
+        query = query.where(ExchangeRate.date <= end_date)
     
-    query = query.order_by(desc(ExchangeRate.rate_date))
+    query = query.order_by(desc(ExchangeRate.date))
     
     result = await db.execute(query)
     rates = result.scalars().all()
@@ -119,9 +119,9 @@ async def get_rate(
     )
     
     if rate_date:
-        query = query.where(ExchangeRate.rate_date == rate_date)
+        query = query.where(ExchangeRate.date == rate_date)
     
-    query = query.order_by(desc(ExchangeRate.rate_date)).limit(1)
+    query = query.order_by(desc(ExchangeRate.date)).limit(1)
     
     result = await db.execute(query)
     rate = result.scalar_one_or_none()
@@ -153,7 +153,7 @@ async def convert_currency(
             "amount": conversion.amount,
             "converted_amount": conversion.amount,
             "rate": 1.0,
-            "rate_date": datetime.now().date()
+            "date": datetime.now().date()
         }
     
     # Получаем курс
@@ -162,7 +162,7 @@ async def convert_currency(
             ExchangeRate.from_currency == conversion.from_currency.upper(),
             ExchangeRate.to_currency == conversion.to_currency.upper()
         )
-    ).order_by(desc(ExchangeRate.rate_date)).limit(1)
+    ).order_by(desc(ExchangeRate.date)).limit(1)
     
     result = await db.execute(query)
     rate_obj = result.scalar_one_or_none()
@@ -174,7 +174,7 @@ async def convert_currency(
                 ExchangeRate.from_currency == conversion.to_currency.upper(),
                 ExchangeRate.to_currency == conversion.from_currency.upper()
             )
-        ).order_by(desc(ExchangeRate.rate_date)).limit(1)
+        ).order_by(desc(ExchangeRate.date)).limit(1)
         
         result_reverse = await db.execute(query_reverse)
         rate_obj_reverse = result_reverse.scalar_one_or_none()
@@ -187,10 +187,10 @@ async def convert_currency(
         
         # Используем обратный курс
         rate = 1.0 / rate_obj_reverse.rate
-        rate_date = rate_obj_reverse.rate_date
+        rate_date = rate_obj_reverse.date
     else:
         rate = rate_obj.rate
-        rate_date = rate_obj.rate_date
+        rate_date = rate_obj.date
     
     converted_amount = round(conversion.amount * rate, 2)
     
@@ -200,7 +200,7 @@ async def convert_currency(
         "amount": conversion.amount,
         "converted_amount": converted_amount,
         "rate": rate,
-        "rate_date": rate_date
+        "date": rate_date
     }
 
 
@@ -218,7 +218,7 @@ async def create_rate(
         and_(
             ExchangeRate.from_currency == rate_data.from_currency.upper(),
             ExchangeRate.to_currency == rate_data.to_currency.upper(),
-            ExchangeRate.rate_date == rate_data.rate_date
+            ExchangeRate.date == rate_data.date
         )
     )
     
@@ -235,8 +235,7 @@ async def create_rate(
         from_currency=rate_data.from_currency.upper(),
         to_currency=rate_data.to_currency.upper(),
         rate=rate_data.rate,
-        rate_date=rate_data.rate_date,
-        source=rate_data.source
+        date=rate_data.date
     )
     
     db.add(rate)
@@ -260,7 +259,7 @@ async def get_supported_currencies(
     currencies = [row[0] for row in result.fetchall()]
     
     # Добавляем стандартные валюты, если их нет
-    standard_currencies = ["KGS", "USD", "EUR", "RUB", "KZT"]
+    standard_currencies = ["KGS", "USD", "EUR", "RUB"]
     for currency in standard_currencies:
         if currency not in currencies:
             currencies.append(currency)

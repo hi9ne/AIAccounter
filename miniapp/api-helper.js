@@ -248,16 +248,105 @@ class APIHelper {
         return this.get('/reports', params);
     }
 
-    async generateReport(data) {
-        return this.post('/reports/generate', data);
+    // ===== REPORTS =====
+    
+    async generateReportPDF(workspaceId, startDate, endDate, reportType = 'period') {
+        const params = new URLSearchParams({
+            workspace_id: workspaceId,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        if (reportType === 'weekly') {
+            return this.post(`/reports/weekly?${params}`);
+        } else if (reportType === 'monthly') {
+            // Extract year and month from startDate
+            const date = new Date(startDate);
+            const yearMonth = new URLSearchParams({
+                workspace_id: workspaceId,
+                year: date.getFullYear(),
+                month: date.getMonth() + 1
+            });
+            return this.post(`/reports/monthly?${yearMonth}`);
+        } else {
+            // Period report
+            return this.post('/reports/period', {
+                workspace_id: workspaceId,
+                start_date: startDate,
+                end_date: endDate,
+                include_transactions: true
+            });
+        }
     }
-
-    async getReport(id) {
-        return this.get(`/reports/${id}`);
+    
+    async exportCSV(workspaceId, startDate, endDate) {
+        const params = new URLSearchParams({
+            workspace_id: workspaceId,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        // Для скачивания файла используем прямой URL
+        const url = `${this.baseUrl}/reports/export/csv?${params}`;
+        const token = localStorage.getItem('auth_token');
+        
+        // Скачиваем файл через fetch с blob
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to export CSV');
+        }
+        
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `transactions_${startDate}_${endDate}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+        
+        return { success: true };
     }
-
-    async downloadReport(id) {
-        return this.get(`/reports/${id}/download`);
+    
+    async exportExcel(workspaceId, startDate, endDate) {
+        const params = new URLSearchParams({
+            workspace_id: workspaceId,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        const url = `${this.baseUrl}/reports/export/excel?${params}`;
+        const token = localStorage.getItem('auth_token');
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to export Excel');
+        }
+        
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `report_${startDate}_${endDate}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+        
+        return { success: true };
     }
 
     // ===== USER =====

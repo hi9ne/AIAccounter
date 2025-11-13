@@ -2923,7 +2923,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=WITH latest_date AS (\n  SELECT MAX(date) as max_date FROM exchange_rates\n)\nSELECT \n  er.date,\n  er.to_currency as target_currency,\n  er.rate,\n  TO_CHAR(er.date, 'DD.MM.YYYY') as formatted_date\nFROM exchange_rates er\nCROSS JOIN latest_date ld\nWHERE er.date = ld.max_date\nORDER BY \n  CASE er.to_currency\n    WHEN 'USD' THEN 1\n    WHEN 'EUR' THEN 2\n    WHEN 'RUB' THEN 3\n    WHEN 'KZT' THEN 4\n    ELSE 5\n  END;",
+        "query": "=WITH latest_date AS (\n  SELECT MAX(date) as max_date FROM exchange_rates\n)\nSELECT \n  er.date,\n  er.to_currency as target_currency,\n  er.rate,\n  TO_CHAR(er.date, 'DD.MM.YYYY') as formatted_date\nFROM exchange_rates er\nCROSS JOIN latest_date ld\nWHERE er.date = ld.max_date\nORDER BY \n  CASE er.to_currency\n    WHEN 'USD' THEN 1\n    WHEN 'EUR' THEN 2\n    WHEN 'RUB' THEN 3\n    ELSE 4\n  END;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -2944,7 +2944,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Telegram Bot Trigger').first().json.message.chat.id || $('Telegram Bot Trigger').first().json.callback_query.message.chat.id }}",
-        "text": "=💱 *Курсы валют*\n📅 На {{ $first($json).formatted_date }}\n\n{{ $json.map(rate => {\n  const flags = {USD: '🇺🇸', EUR: '🇪🇺', RUB: '🇷🇺', KZT: '🇰🇿'};\n  const names = {USD: 'Доллар США', EUR: 'Евро', RUB: 'Российский рубль', KZT: 'Казахстанский тенге'};\n  return `${flags[rate.target_currency] || '💰'} *${names[rate.target_currency] || rate.target_currency}*\\n   1 ${rate.target_currency} = ${rate.rate} KGS`;\n}).join('\\n\\n') }}\n\n💡 Курсы обновляются ежедневно в 10:00",
+        "text": "=💱 *Курсы валют*\n📅 На {{ $first($json).formatted_date }}\n\n{{ $json.map(rate => {\n  const flags = {USD: '🇺🇸', EUR: '🇪🇺', RUB: '🇷🇺'};\n  const names = {USD: 'Доллар США', EUR: 'Евро', RUB: 'Российский рубль'};\n  return `${flags[rate.target_currency] || '💰'} *${names[rate.target_currency] || rate.target_currency}*\\n   1 ${rate.target_currency} = ${rate.rate} KGS`;\n}).join('\\n\\n') }}\n\n💡 Курсы обновляются ежедневно в 10:00",
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
           "rows": [

@@ -60,7 +60,7 @@
 **Файл:** `app/api/v1/categories.py`
 - [x] GET `/expenses` - 35 категорий расходов с эмодзи
 - [x] GET `/income` - 15 категорий доходов с эмодзи
-- [x] GET `/currencies` - 5 валют (KGS, USD, EUR, RUB, KZT)
+- [x] GET `/currencies` - 4 валюты (KGS, USD, EUR, RUB)
 - [x] GET `/all` - все категории + валюты
 - [x] Интегрирован в главный роутер
 

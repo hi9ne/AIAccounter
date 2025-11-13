@@ -1,14 +1,17 @@
 """
 Reports API endpoints
-Генерация PDF отчётов через APITemplate.io
+Генерация PDF отчётов через APITemplate.io и CSV/Excel экспорт
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from typing import Optional, Dict, Any
 from datetime import date, datetime, timedelta
 import httpx
 import os
+import io
+import csv
 
 from app.database import get_db
 from app.models.models import User
@@ -393,3 +396,192 @@ async def get_report_history(
         "message": "Report history feature coming soon",
         "workspace_id": workspace_id
     }
+
+
+@router.get("/export/csv")
+async def export_transactions_csv(
+    workspace_id: int = Query(..., description="ID workspace"),
+    start_date: date = Query(..., description="Начальная дата"),
+    end_date: date = Query(..., description="Конечная дата"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Экспорт транзакций в CSV
+    """
+    # Получаем все транзакции
+    transactions_query = text("""
+        SELECT 
+            e.date,
+            'Расход' as type,
+            e.category,
+            e.description,
+            e.amount,
+            e.currency
+        FROM expenses e
+        WHERE e.workspace_id = :workspace_id
+            AND e.date >= :start_date
+            AND e.date <= :end_date
+            AND e.deleted_at IS NULL
+        UNION ALL
+        SELECT 
+            i.date,
+            'Доход' as type,
+            i.category,
+            i.description,
+            i.amount,
+            i.currency
+        FROM income i
+        WHERE i.workspace_id = :workspace_id
+            AND i.date >= :start_date
+            AND i.date <= :end_date
+            AND i.deleted_at IS NULL
+        ORDER BY date DESC
+    """)
+    
+    result = await db.execute(transactions_query, {
+        "workspace_id": workspace_id,
+        "start_date": start_date,
+        "end_date": end_date
+    })
+    transactions = result.fetchall()
+    
+    # Создаем CSV в памяти
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Заголовки
+    writer.writerow(['Дата', 'Тип', 'Категория', 'Описание', 'Сумма', 'Валюта'])
+    
+    # Данные
+    for t in transactions:
+        writer.writerow([
+            t[0].strftime('%Y-%m-%d'),
+            t[1],
+            t[2],
+            t[3] or '',
+            f"{t[4]:.2f}",
+            t[5] or 'KGS'
+        ])
+    
+    # Возвращаем CSV
+    output.seek(0)
+    filename = f"transactions_{start_date}_{end_date}.csv"
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8-sig')),  # utf-8-sig для правильного отображения в Excel
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+
+
+@router.get("/export/excel")
+async def export_transactions_excel(
+    workspace_id: int = Query(..., description="ID workspace"),
+    start_date: date = Query(..., description="Начальная дата"),
+    end_date: date = Query(..., description="Конечная дата"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Экспорт транзакций в Excel
+    Требует установки: pip install openpyxl
+    """
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="openpyxl library not installed. Please install it with: pip install openpyxl"
+        )
+    
+    # Получаем данные
+    report_data = await fetch_report_data(workspace_id, start_date, end_date, db)
+    
+    # Создаем Excel файл
+    wb = Workbook()
+    
+    # Лист 1: Сводка
+    ws_summary = wb.active
+    ws_summary.title = "Сводка"
+    
+    # Заголовок
+    ws_summary['A1'] = f"Отчет за период {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}"
+    ws_summary['A1'].font = Font(size=14, bold=True)
+    
+    # Статистика
+    ws_summary['A3'] = "Показатель"
+    ws_summary['B3'] = "Значение"
+    ws_summary['A3'].font = Font(bold=True)
+    ws_summary['B3'].font = Font(bold=True)
+    
+    stats = report_data['stats']
+    ws_summary['A4'] = "Доходы"
+    ws_summary['B4'] = stats['total_income']
+    ws_summary['A5'] = "Расходы"
+    ws_summary['B5'] = stats['total_expense']
+    ws_summary['A6'] = "Баланс"
+    ws_summary['B6'] = stats['balance']
+    ws_summary['A7'] = "Количество доходов"
+    ws_summary['B7'] = stats['income_count']
+    ws_summary['A8'] = "Количество расходов"
+    ws_summary['B8'] = stats['expense_count']
+    
+    # Лист 2: Транзакции
+    ws_trans = wb.create_sheet("Транзакции")
+    
+    # Заголовки
+    headers = ['Дата', 'Тип', 'Категория', 'Описание', 'Сумма']
+    ws_trans.append(headers)
+    
+    # Стилизация заголовков
+    for cell in ws_trans[1]:
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Данные
+    for t in report_data['transactions']:
+        ws_trans.append([
+            t['date'],
+            'Доход' if t['type'] == 'income' else 'Расход',
+            t['category'],
+            t['description'] or '',
+            t['amount']
+        ])
+    
+    # Лист 3: Топ категории
+    ws_cat = wb.create_sheet("Категории")
+    
+    headers_cat = ['Категория', 'Сумма', 'Количество', 'Процент']
+    ws_cat.append(headers_cat)
+    
+    for cell in ws_cat[1]:
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+    
+    for cat in report_data['top_categories']:
+        ws_cat.append([
+            cat['category'],
+            cat['total_amount'],
+            cat['transaction_count'],
+            f"{cat['percentage']}%"
+        ])
+    
+    # Сохраняем в память
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"report_{start_date}_{end_date}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )

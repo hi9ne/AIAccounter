@@ -31,7 +31,7 @@
 
 **Расписание:** Каждый день в 09:00 (Bishkek time)
 
-**Валюты:** USD, EUR, RUB, KZT
+**Валюты:** USD, EUR, RUB
 
 **Источник:** National Bank of Kyrgyzstan API
 

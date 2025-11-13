@@ -253,6 +253,16 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label>Быстрый выбор периода</label>
+                            <div class="period-quick-buttons">
+                                <button type="button" class="btn-outline small" onclick="setReportPeriod('today')">Сегодня</button>
+                                <button type="button" class="btn-outline small" onclick="setReportPeriod('week')">Неделя</button>
+                                <button type="button" class="btn-outline small" onclick="setReportPeriod('month')">Месяц</button>
+                                <button type="button" class="btn-outline small" onclick="setReportPeriod('year')">Год</button>
+                            </div>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>С</label>
@@ -475,11 +485,26 @@
                     <div class="form-group">
                         <label>Категория</label>
                         <div class="category-pills" id="category-pills">
-                            <div class="category-pill" onclick="selectCategory('Продукты')">Продукты</div>
-                            <div class="category-pill" onclick="selectCategory('Транспорт')">Транспорт</div>
-                            <div class="category-pill" onclick="selectCategory('Кафе')">Кафе</div>
-                            <div class="category-pill" onclick="selectCategory('Одежда')">Одежда</div>
-                            <div class="category-pill" onclick="selectCategory('Развлечения')">Развлечения</div>
+                            <div class="category-pill" onclick="selectCategory('Продукты')">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span>Продукты</span>
+                            </div>
+                            <div class="category-pill" onclick="selectCategory('Транспорт')">
+                                <i class="fas fa-car"></i>
+                                <span>Транспорт</span>
+                            </div>
+                            <div class="category-pill" onclick="selectCategory('Кафе')">
+                                <i class="fas fa-coffee"></i>
+                                <span>Кафе</span>
+                            </div>
+                            <div class="category-pill" onclick="selectCategory('Одежда')">
+                                <i class="fas fa-tshirt"></i>
+                                <span>Одежда</span>
+                            </div>
+                            <div class="category-pill" onclick="selectCategory('Развлечения')">
+                                <i class="fas fa-gamepad"></i>
+                                <span>Развлечения</span>
+                            </div>
                         </div>
                     </div>
 
@@ -496,14 +521,15 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-full primary">
-                        <i class="fas fa-check"></i>
-                        Сохранить
-                    </button>
+                    <div class="form-group" style="margin-top: 24px;">
+                        <button type="submit" class="btn-full primary">
+                            <i class="fas fa-check-circle"></i>
+                            Сохранить транзакцию
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
-
     </div>
 
     <!-- Config & App Logic -->

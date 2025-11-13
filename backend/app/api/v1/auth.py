@@ -19,78 +19,77 @@ async def telegram_auth(
 ):
     """
     Аутентификация через Telegram Mini App
-    
-    Автоматически создаёт пользователя если его нет.
-    Возвращает JWT токен для дальнейших запросов.
-    
-    Как использовать в Telegram Mini App:
-    ```javascript
-    const initData = window.Telegram.WebApp.initData;
-    const user = window.Telegram.WebApp.initDataUnsafe.user;
-    
-    const response = await fetch('/api/v1/auth/telegram', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            telegram_chat_id: user.id.toString(),
-            username: user.username,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            language_code: user.language_code || 'ru'
-        })
-    });
-    
-    const { access_token } = await response.json();
-    // Сохранить токен и использовать для всех запросов
-    localStorage.setItem('token', access_token);
-    ```
     """
-    # Ищем пользователя по telegram_chat_id
-    query = select(User).where(User.telegram_chat_id == int(auth_data.telegram_chat_id))
-    result = await db.execute(query)
-    user = result.scalar_one_or_none()
+    print(f"🔐 [AUTH] Received auth request for telegram_chat_id: {auth_data.telegram_chat_id}")
     
-    # Если пользователя нет - создаём автоматически
-    if not user:
-        user = User(
-            telegram_chat_id=int(auth_data.telegram_chat_id),
-            username=auth_data.username,
-            first_name=auth_data.first_name,
-            last_name=auth_data.last_name,
-            language_code=auth_data.language_code,
-            is_active=True,
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    else:
-        # Обновляем данные пользователя если изменились
-        updated = False
-        if auth_data.username and auth_data.username != user.username:
-            user.username = auth_data.username
-            updated = True
-        if auth_data.first_name and auth_data.first_name != user.first_name:
-            user.first_name = auth_data.first_name
-            updated = True
-        if auth_data.last_name and auth_data.last_name != user.last_name:
-            user.last_name = auth_data.last_name
-            updated = True
+    try:
+        # Ищем пользователя по telegram_chat_id
+        print(f"🔍 [AUTH] Searching for user in database...")
+        query = select(User).where(User.telegram_chat_id == int(auth_data.telegram_chat_id))
+        result = await db.execute(query)
+        user = result.scalar_one_or_none()
         
-        if updated:
+        print(f"👤 [AUTH] User found: {user is not None}")
+        
+        # Если пользователя нет - создаём автоматически
+        if not user:
+            print(f"✨ [AUTH] Creating new user...")
+            user = User(
+                telegram_chat_id=int(auth_data.telegram_chat_id),
+                username=auth_data.username,
+                first_name=auth_data.first_name,
+                last_name=auth_data.last_name,
+                language_code=auth_data.language_code,
+                is_active=True,
+            )
+            db.add(user)
+            print(f"💾 [AUTH] Committing new user to database...")
             await db.commit()
-    
-    # Создаём JWT токен
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.user_id)},
-        expires_delta=access_token_expires
-    )
-    
-    return Token(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # в секундах
-    )
+            await db.refresh(user)
+            print(f"✅ [AUTH] New user created with ID: {user.user_id}")
+        else:
+            print(f"📝 [AUTH] Updating existing user data...")
+            # Обновляем данные пользователя если изменились
+            updated = False
+            if auth_data.username and auth_data.username != user.username:
+                user.username = auth_data.username
+                updated = True
+            if auth_data.first_name and auth_data.first_name != user.first_name:
+                user.first_name = auth_data.first_name
+                updated = True
+            if auth_data.last_name and auth_data.last_name != user.last_name:
+                user.last_name = auth_data.last_name
+                updated = True
+            
+            if updated:
+                print(f"💾 [AUTH] Committing user updates...")
+                await db.commit()
+                print(f"✅ [AUTH] User data updated")
+        
+        print(f"🔑 [AUTH] Generating JWT token...")
+        # Создаём JWT токен
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.user_id)},
+            expires_delta=access_token_expires
+        )
+        
+        print(f"✅ [AUTH] Authentication successful for user_id: {user.user_id}")
+        
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # в секундах
+        )
+    except Exception as e:
+        print(f"❌ [AUTH] Error during authentication: {str(e)}")
+        print(f"❌ [AUTH] Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Authentication error: {str(e)}"
+        )
 
 
 @router.get("/me")
