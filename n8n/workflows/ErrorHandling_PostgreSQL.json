@@ -1,0 +1,519 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "validate-transaction",
+        "options": {}
+      },
+      "id": "ed852bb0-ea09-49e6-88aa-a0876a1cca30",
+      "name": "Webhook - Validate Data",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        256
+      ],
+      "webhookId": "validate-transaction"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.amount }}",
+                    "rightValue": "0",
+                    "operator": {
+                      "type": "number",
+                      "operation": "lte"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid Amount"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.amount }}",
+                    "rightValue": "10000000",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Amount Too Large"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ !$json.date || !$json.date.match(/^\\d{4}-\\d{2}-\\d{2}$/) }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Invalid Date Format"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ !$json.category || $json.category === '' }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Missing Category"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "single"
+        }
+      },
+      "id": "c6669bf4-3fcf-44b9-8f0c-97d62aa9d6cb",
+      "name": "Validation Rules",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        128,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM expenses \nWHERE user_id = {{ $json.user_id }}\n  AND date = '{{ $json.date }}'\n  AND amount = {{ $json.amount }}\n  AND category = '{{ $json.category }}'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -96,
+        832
+      ],
+      "id": "d86fadbc-9f69-43b5-9e74-33346c48eaef",
+      "name": "Check for Duplicates",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        128,
+        832
+      ],
+      "id": "dfb1f72b-7481-4e57-8ab3-7bfaec546834",
+      "name": "Is Duplicate?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_logs (error_type, user_id, data, message, severity)\nVALUES (\n  '{{ $json.error_type }}',\n  {{ $json.user_id || 'NULL' }},\n  '{{ JSON.stringify($json) }}',\n  '{{ $json.error_message }}',\n  'error'\n)\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        576,
+        352
+      ],
+      "id": "71728676-e0bf-4659-b63e-d7fa4401e6ef",
+      "name": "Log Error to Database",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error_type",
+              "name": "error_type",
+              "value": "=Invalid Amount",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "=Сумма должна быть больше 0 и меньше 10 млн сомов",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        160
+      ],
+      "id": "71711361-6ecd-4d04-b613-151ebe8588db",
+      "name": "Set Error - Invalid Amount"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error_type",
+              "name": "error_type",
+              "value": "=Duplicate Transaction",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "=Транзакция с такими параметрами уже существует",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        736
+      ],
+      "id": "963518af-1918-4c1a-9197-1cded51d1466",
+      "name": "Set Error - Duplicate"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": $json.error_message, \"error_type\": $json.error_type } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        352
+      ],
+      "id": "044ae475-c968-49a5-8e31-1aec5286dada",
+      "name": "Respond with Error"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Данные прошли валидацию\", \"data\": $json } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        928
+      ],
+      "id": "2394abeb-d9d4-4d20-abb6-c4ea51cbec06",
+      "name": "Respond Success"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error_type",
+              "name": "error_type",
+              "value": "=Invalid Date",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "=Неверный формат даты. Используйте YYYY-MM-DD",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        352
+      ],
+      "id": "6576095e-1fc4-40f6-8d6b-f1ef2b0c1ad6",
+      "name": "Set Error - Invalid Date"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error_type",
+              "name": "error_type",
+              "value": "=Missing Category",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "=Категория обязательна для заполнения",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        544
+      ],
+      "id": "749a7766-d8f7-4e1a-b791-09e17ba15889",
+      "name": "Set Error - Missing Category"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error_type",
+              "name": "error_type",
+              "value": "=Amount Too Large",
+              "type": "string"
+            },
+            {
+              "id": "error_message",
+              "name": "error_message",
+              "value": "=Сумма слишком большая. Максимум 10 млн сомов",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        -32
+      ],
+      "id": "10b6ed7f-b151-4caa-a0e5-44f1edb1c991",
+      "name": "Set Error - Amount Too Large"
+    }
+  ],
+  "connections": {
+    "Webhook - Validate Data": {
+      "main": [
+        [
+          {
+            "node": "Validation Rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Rules": {
+      "main": [
+        [
+          {
+            "node": "Set Error - Invalid Amount",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error - Amount Too Large",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error - Invalid Date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Error - Missing Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Set Error - Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error to Database": {
+      "main": [
+        [
+          {
+            "node": "Respond with Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error - Invalid Amount": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error - Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error - Invalid Date": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error - Missing Category": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Error - Amount Too Large": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
+}

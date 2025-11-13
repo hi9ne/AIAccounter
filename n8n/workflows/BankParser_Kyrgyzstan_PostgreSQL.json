@@ -1,0 +1,265 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "forceReconnect": 1
+        }
+      },
+      "id": "f426c2b1-12f9-4cb2-8dd5-9bc8a5e3426f",
+      "name": "Email Trigger (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        -1360,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.from.value[0].address }}",
+              "operation": "contains",
+              "value2": "@kicb.kg"
+            }
+          ]
+        }
+      },
+      "id": "35535bce-eec4-4fbe-80d9-ac0dcffca6d4",
+      "name": "Фильтр: Банки КР",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const emailBody = $json.text || $json.html || '';\nconst subject = $json.subject || '';\nconst fullText = subject + ' ' + emailBody;\n\nlet parsed = {\n  bank: 'unknown',\n  type: 'расход',\n  amount: 0,\n  merchant: 'Неизвестно',\n  date: new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek', day: '2-digit', month: '2-digit', year: 'numeric' }),\n  raw_text: fullText\n};\n\n// KICB Bank\nif (fullText.includes('KICB') || $json.from.value[0].address.includes('@kicb.kg')) {\n  parsed.bank = 'KICB';\n  \n  // Покупка\n  const purchaseMatch = fullText.match(/покупка[\\s\\S]*?(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (purchaseMatch) {\n    parsed.amount = parseFloat(purchaseMatch[1].replace(/[\\s,]/g, ''));\n    parsed.type = 'расход';\n  }\n  \n  // Пополнение\n  const incomeMatch = fullText.match(/пополнение[\\s\\S]*?(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (incomeMatch) {\n    parsed.amount = parseFloat(incomeMatch[1].replace(/[\\s,]/g, ''));\n    parsed.type = 'доход';\n  }\n  \n  // Merchant\n  const merchantMatch = fullText.match(/(?:покупка|оплата)[\\s]+(?:в|у)[\\s]+([A-Za-zА-Яа-я0-9\\s]+)/i);\n  if (merchantMatch) {\n    parsed.merchant = merchantMatch[1].trim();\n  }\n}\n\n// Optima Bank\nif (fullText.includes('Optima') || $json.from.value[0].address.includes('@optimabank.kg')) {\n  parsed.bank = 'Optima Bank';\n  \n  const amountMatch = fullText.match(/(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (amountMatch) {\n    parsed.amount = parseFloat(amountMatch[1].replace(/[\\s,]/g, ''));\n  }\n  \n  if (fullText.match(/списан[ои]|покупка|оплата/i)) {\n    parsed.type = 'расход';\n  } else if (fullText.match(/зачислен[ои]|пополнение|поступление/i)) {\n    parsed.type = 'доход';\n  }\n}\n\n// Bakai Bank\nif (fullText.includes('Bakai') || fullText.includes('Бакай')) {\n  parsed.bank = 'Бакай Банк';\n  \n  const amountMatch = fullText.match(/(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (amountMatch) {\n    parsed.amount = parseFloat(amountMatch[1].replace(/[\\s,]/g, ''));\n  }\n  \n  if (fullText.match(/расход|списан|покупка/i)) {\n    parsed.type = 'расход';\n  } else if (fullText.match(/доход|зачислен|поступил/i)) {\n    parsed.type = 'доход';\n  }\n}\n\n// Dos-Kredobank\nif (fullText.includes('Dos-Kredobank') || fullText.includes('ДосКредо')) {\n  parsed.bank = 'Дос-Кредобанк';\n  \n  const amountMatch = fullText.match(/(\\d+[\\s,]?\\d*\\.?\\d*)[\\s]?(?:сом|KGS)/i);\n  if (amountMatch) {\n    parsed.amount = parseFloat(amountMatch[1].replace(/[\\s,]/g, ''));\n  }\n  \n  if (fullText.match(/операция списания|покупка/i)) {\n    parsed.type = 'расход';\n  } else if (fullText.match(/поступление|зачисление/i)) {\n    parsed.type = 'доход';\n  }\n}\n\nreturn { json: parsed };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -912,
+        80
+      ],
+      "id": "9adda70d-caf4-4f66-8885-1a40fd28a7ac",
+      "name": "Парсинг SMS/Email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.amount }}",
+              "operation": "larger"
+            }
+          ]
+        }
+      },
+      "id": "d1263acc-90a7-406a-a555-08e7c298ce62",
+      "name": "Проверка суммы",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $json;\nconst aiCategory = $('AI категоризация').first()?.json?.category || 'Прочее';\n\nlet category = aiCategory;\n\n// Простая логика категоризации на основе merchant\nconst merchant = (parsed.merchant || '').toLowerCase();\n\nif (merchant.includes('bazaar') || merchant.includes('базар')) category = 'продукты питания';\nelse if (merchant.includes('taxi') || merchant.includes('такси')) category = 'транспорт';\nelse if (merchant.includes('cafe') || merchant.includes('кафе')) category = 'кафе и рестораны';\nelse if (merchant.includes('market') || merchant.includes('магазин')) category = 'продукты питания';\nelse if (merchant.includes('gas') || merchant.includes('газ')) category = 'транспорт';\nelse if (merchant.includes('pharmacy') || merchant.includes('аптека')) category = 'здоровье и красота';\n\n// Преобразование даты ДД.ММ.ГГГГ -> YYYY-MM-DD\nconst dateStr = parsed.date;\nlet sqlDate;\nif (dateStr.includes('.')) {\n  const [day, month, year] = dateStr.split('.');\n  sqlDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;\n} else {\n  sqlDate = new Date().toISOString().split('T')[0];\n}\n\nreturn {\n  json: {\n    date: sqlDate,\n    category: category,\n    amount: parsed.amount,\n    description: `${parsed.bank}: ${parsed.merchant}`,\n    operation_type: parsed.type,\n    source: 'bank_parser',\n    bank: parsed.bank,\n    merchant: parsed.merchant\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        80
+      ],
+      "id": "bc504f31-82a2-498c-828f-74c2dce3f695",
+      "name": "Рассчитать категорию"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO expenses (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  1,\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'расход',\n  'bank_parser'\n)\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        -16
+      ],
+      "id": "4fec9157-0099-4245-9f2b-4787bd283c92",
+      "name": "Сохранить расход",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO income (user_id, date, category, amount, description, operation_type, source)\nVALUES (\n  1,\n  '{{ $json.date }}',\n  '{{ $json.category }}',\n  {{ $json.amount }},\n  '{{ $json.description }}',\n  'доход',\n  'bank_parser'\n)\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        176
+      ],
+      "id": "dcb00ad8-f968-4270-ac54-7220c9e69a80",
+      "name": "Сохранить доход",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.operation_type }}",
+              "value2": "расход"
+            }
+          ]
+        }
+      },
+      "id": "9d0b247d-5501-4f5a-830f-4fdf564ca1ed",
+      "name": "Тип операции",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Ты - помощник для категоризации банковских транзакций. Определи категорию на основе названия магазина/места. Категории: продукты питания, транспорт, кафе и рестораны, здоровье и красота, развлечения, одежда и обувь, коммунальные услуги, связь и интернет, образование, прочее. Верни только название категории.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Магазин: {{ $json.merchant }}, Сумма: {{ $json.amount }} сом, Банк: {{ $json.bank }}\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"max_tokens\": 50\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -464,
+        80
+      ],
+      "id": "85e34cd8-fb56-49ee-96bf-d4f7aebfb438",
+      "name": "AI категоризация",
+      "credentials": {
+        "openAiApi": {
+          "id": "YWdBHhtpkxTSXDR7",
+          "name": "AIAccounter"
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "Фильтр: Банки КР",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Фильтр: Банки КР": {
+      "main": [
+        [
+          {
+            "node": "Парсинг SMS/Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Парсинг SMS/Email": {
+      "main": [
+        [
+          {
+            "node": "Проверка суммы",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверка суммы": {
+      "main": [
+        [
+          {
+            "node": "AI категоризация",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Рассчитать категорию": {
+      "main": [
+        [
+          {
+            "node": "Тип операции",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Тип операции": {
+      "main": [
+        [
+          {
+            "node": "Сохранить расход",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Сохранить доход",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI категоризация": {
+      "main": [
+        [
+          {
+            "node": "Рассчитать категорию",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
+}

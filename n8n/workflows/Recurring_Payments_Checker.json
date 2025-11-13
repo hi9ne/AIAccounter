@@ -1,0 +1,296 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule: Daily 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        424
+      ],
+      "id": "d5c00de5-66b4-4bb1-bca5-ea8c92a347e0"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_pending_reminders();",
+        "options": {}
+      },
+      "name": "Get Pending Reminders",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -80,
+        424
+      ],
+      "id": "96c91675-6dba-4e72-8fb5-b3eea7619eb9",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.length }}",
+              "operation": "larger"
+            }
+          ]
+        }
+      },
+      "name": "Есть напоминания?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        144,
+        424
+      ],
+      "id": "682e9fe1-89bc-41b0-a717-d1a5a44021bd"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        368,
+        328
+      ],
+      "id": "127a33fe-32f3-44a5-a7fa-ccb61bbc4c36"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// Форматирование сообщения\nconst daysUntil = item.days_until_payment;\nconst amount = parseFloat(item.amount).toLocaleString('ru-RU');\nconst currency = item.currency;\n\n// Иконки валют\nconst currencySymbols = {\n  'KGS': 'с',\n  'USD': '$',\n  'EUR': '€',\n  'RUB': '₽'\n};\n\nconst symbol = currencySymbols[currency] || currency;\n\n// Формирование текста в зависимости от дней\nlet dateText;\nlet urgencyIcon;\nif (daysUntil === 0) {\n  dateText = 'СЕГОДНЯ';\n  urgencyIcon = '🚨';\n} else if (daysUntil === 1) {\n  dateText = 'ЗАВТРА';\n  urgencyIcon = '⚠️';\n} else {\n  dateText = `через ${daysUntil} дн.`;\n  urgencyIcon = '🔔';\n}\n\nconst message = `${urgencyIcon} Напоминание о платеже\\n\\n` +\n  `💰 ${item.title}\\n` +\n  `💵 Сумма: ${amount} ${symbol}\\n` +\n  `📂 Категория: ${item.category}\\n` +\n  `📅 Оплатить: ${dateText}\\n\\n` +\n  (item.auto_create ? '⚡ Автоплатеж включен\\n\\n' : '') +\n  `ID подписки: #${item.recurring_id}`;\n\nreturn {\n  json: {\n    user_id: item.user_id,\n    recurring_id: item.recurring_id,\n    message: message,\n    days_until: daysUntil\n  }\n};"
+      },
+      "name": "Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        256
+      ],
+      "id": "eab382bc-af7e-40a1-938d-f499f720192f"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.user_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        256
+      ],
+      "id": "1f4fb0d2-ccec-4d77-9fa6-645176c29c69",
+      "webhookId": "7f42e3f5-175a-4a1b-9638-4bdde53e0093",
+      "credentials": {
+        "telegramApi": {
+          "id": "KYHLugYerbTJeC9p",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT mark_reminder_sent({{ $json.recurring_id }});",
+        "options": {}
+      },
+      "name": "Mark Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1040,
+        328
+      ],
+      "id": "23da5120-528e-4ac4-9600-2178e044fc38",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "No Data",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        368,
+        568
+      ],
+      "id": "8965a4e4-ad86-4df1-ab81-ebfc9fb4cd92",
+      "notes": "Нет напоминаний на сегодня"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Статистика выполнения\nconst items = $input.all();\nconst totalSent = items.length;\n\nconst summary = `✅ Проверка recurring payments завершена\\n\\n` +\n  `📊 Отправлено напоминаний: ${totalSent}\\n` +\n  `⏰ Время: ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek' })}`;\n\nreturn {\n  json: {\n    total_sent: totalSent,\n    timestamp: new Date().toISOString(),\n    summary: summary\n  }\n};"
+      },
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        568
+      ],
+      "id": "e66b6000-5d90-4e0a-a60a-1119ad8fbfda"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notifications (user_id, notification_type, title, message, priority, is_sent, sent_at)\\nVALUES (\\n  1109421300, -- admin user_id\\n  'custom',\\n  '🔔 Recurring Payments Check',\\n  '{{ $json.summary }}',\\n  'low',\\n  TRUE,\\n  NOW()\\n);",
+        "options": {}
+      },
+      "name": "Log to DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        816,
+        568
+      ],
+      "id": "49f1c2c3-1151-41cd-8897-a17789443799",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      },
+      "notes": "Логирование для мониторинга"
+    }
+  ],
+  "connections": {
+    "Schedule: Daily 09:00": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Reminders": {
+      "main": [
+        [
+          {
+            "node": "Есть напоминания?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть напоминания?": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram": {
+      "main": [
+        [
+          {
+            "node": "Mark Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Sent": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Data": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary": {
+      "main": [
+        [
+          {
+            "node": "Log to DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "tax-calc-kg",
+        "options": {}
+      },
+      "id": "3c1a0299-25c7-42c5-bba4-7ee88348a8c7",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        288
+      ],
+      "webhookId": "tax-calc-kg"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tax_type }}",
+                    "rightValue": "vat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "VAT"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tax_type }}",
+                    "rightValue": "income",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Income Tax"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tax_type }}",
+                    "rightValue": "social",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Social Fund"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.tax_type }}",
+                    "rightValue": "patent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Patent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9b183314-5dec-47dc-afd8-1afb1e5b93e4",
+      "name": "Тип налога",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -224,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const totalIncome = parseFloat($json.total_income) || 0;\nconst vatRate = 0.12;\nconst vatAmount = totalIncome * vatRate;\nconst amountWithoutVAT = totalIncome / (1 + vatRate);\n\nreturn {\n  json: {\n    tax_type: 'НДС',\n    total_with_vat: totalIncome,\n    vat_rate: '12%',\n    vat_amount: Math.round(vatAmount * 100) / 100,\n    amount_without_vat: Math.round(amountWithoutVAT * 100) / 100,\n    message: `📊 Расчёт НДС (Кыргызстан)\\n\\n💰 Сумма с НДС: ${totalIncome.toLocaleString('ru-RU')} сом\\n📉 Сумма без НДС: ${Math.round(amountWithoutVAT).toLocaleString('ru-RU')} сом\\n💸 НДС (12%): ${Math.round(vatAmount).toLocaleString('ru-RU')} сом\\n\\n✅ К уплате в бюджет: ${Math.round(vatAmount).toLocaleString('ru-RU')} сом`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "43e1ae70-c5c5-4f8c-ab85-2dc0d70f0d7e",
+      "name": "Расчёт НДС 12%"
+    },
+    {
+      "parameters": {
+        "jsCode": "const income = parseFloat($json.total_income) || 0;\nconst expenses = parseFloat($json.total_expenses) || 0;\nconst taxableIncome = Math.max(income - expenses, 0);\n\nlet taxRate = 0;\nlet taxAmount = 0;\n\nif (taxableIncome <= 0) {\n  taxRate = 0;\n  taxAmount = 0;\n} else if (taxableIncome <= 300000) {\n  taxRate = 0.10;\n  taxAmount = taxableIncome * taxRate;\n} else {\n  const firstBracket = 300000 * 0.10;\n  const secondBracket = (taxableIncome - 300000) * 0.15;\n  taxAmount = firstBracket + secondBracket;\n  taxRate = (taxAmount / taxableIncome);\n}\n\nreturn {\n  json: {\n    tax_type: 'Подоходный налог',\n    total_income: income,\n    total_expenses: expenses,\n    taxable_income: taxableIncome,\n    tax_amount: Math.round(taxAmount * 100) / 100,\n    effective_rate: Math.round(taxRate * 1000) / 10 + '%',\n    message: `📊 Расчёт подоходного налога (КР)\\n\\n💰 Доходы: ${income.toLocaleString('ru-RU')} сом\\n💸 Расходы: ${expenses.toLocaleString('ru-RU')} сом\\n📈 Налогооблагаемый доход: ${taxableIncome.toLocaleString('ru-RU')} сом\\n\\n💵 Ставка:\\n  До 300,000 сом: 10%\\n  Свыше 300,000: 15%\\n\\n✅ Налог к уплате: ${Math.round(taxAmount).toLocaleString('ru-RU')} сом\\n📊 Эффективная ставка: ${Math.round(taxRate * 1000) / 10}%`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        192
+      ],
+      "id": "c292f12e-660c-40bf-b306-97c8546a42bd",
+      "name": "Расчёт подоходного"
+    },
+    {
+      "parameters": {
+        "jsCode": "const salary = parseFloat($json.salary) || 0;\nconst socialFundRate = 0.125;\nconst socialFundAmount = salary * socialFundRate;\n\nreturn {\n  json: {\n    tax_type: 'Социальный фонд',\n    salary: salary,\n    rate: '12.5%',\n    social_fund_amount: Math.round(socialFundAmount * 100) / 100,\n    message: `📊 Расчёт отчислений в Соцфонд (КР)\\n\\n💰 Зарплата: ${salary.toLocaleString('ru-RU')} сом\\n📊 Ставка: 12.5%\\n\\n✅ Отчисления в Соцфонд: ${Math.round(socialFundAmount).toLocaleString('ru-RU')} сом\\n\\n💡 Отчисления производятся работодателем`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        384
+      ],
+      "id": "ac265121-7902-46a1-b40d-ecc35c0f93be",
+      "name": "Расчёт Соцфонда"
+    },
+    {
+      "parameters": {
+        "jsCode": "const patentTypes = {\n  retail: { name: 'Розничная торговля', amount: 7000 },\n  services: { name: 'Бытовые услуги', amount: 5000 },\n  transport: { name: 'Пассажирские перевозки', amount: 8000 },\n  cafe: { name: 'Общественное питание', amount: 10000 },\n  other: { name: 'Прочие виды', amount: 6000 }\n};\n\nconst patentType = $json.patent_type || 'other';\nconst patent = patentTypes[patentType] || patentTypes.other;\nconst monthlyAmount = patent.amount;\nconst annualAmount = monthlyAmount * 12;\n\nreturn {\n  json: {\n    tax_type: 'Патент ИП',\n    patent_name: patent.name,\n    monthly_payment: monthlyAmount,\n    annual_payment: annualAmount,\n    message: `📊 Расчёт патента для ИП (КР)\\n\\n📋 Вид деятельности: ${patent.name}\\n\\n💰 Ежемесячный платёж: ${monthlyAmount.toLocaleString('ru-RU')} сом\\n💵 Годовой платёж: ${annualAmount.toLocaleString('ru-RU')} сом\\n\\n💡 Патент освобождает от:\\n  • Подоходного налога\\n  • НДС\\n  • Отчётности\\n\\n⚠️ Ограничение по обороту: 10 млн сом/год`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        576
+      ],
+      "id": "9d7cac1e-40e4-4f50-a7f3-e0fb403c2858",
+      "name": "Расчёт патента"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        288
+      ],
+      "id": "59dad19a-8d4d-4e9b-a0fe-6112306f8eeb",
+      "name": "Ответ"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Тип налога",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Тип налога": {
+      "main": [
+        [
+          {
+            "node": "Расчёт НДС 12%",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Расчёт подоходного",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Расчёт Соцфонда",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Расчёт патента",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расчёт НДС 12%": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расчёт подоходного": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расчёт Соцфонда": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Расчёт патента": {
+      "main": [
+        [
+          {
+            "node": "Ответ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
+}

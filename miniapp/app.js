@@ -46,6 +46,7 @@ let currentWorkspaceId = null;
 let currentUserId = null;
 let selectedCurrency = 'KGS';
 let transactionType = 'expense';
+let isAuthenticated = false;
 
 // Categories
 const categories = {
@@ -117,6 +118,17 @@ function openAddTransactionModal() {
     resetTransactionForm();
 }
 
+// Alias for HTML onclick
+function openAddTransaction(type) {
+    openAddTransactionModal();
+    if (type) {
+        currentTransactionType = type;
+        document.querySelectorAll('.transaction-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+    }
+}
+
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
 }
@@ -128,6 +140,13 @@ function resetTransactionForm() {
         pill.classList.remove('active');
     });
     setCurrentDateTime();
+    
+    // Set default currency from settings
+    const savedCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
+    const currencySelect = document.getElementById('transaction-currency-select');
+    if (currencySelect) {
+        currencySelect.value = savedCurrency;
+    }
 }
 
 function setCurrentDateTime() {
@@ -231,6 +250,74 @@ async function apiCall(endpoint, action, data = {}) {
     }
 }
 
+// ========== AUTHENTICATION ==========
+
+async function authenticateUser() {
+    console.log('🔐 Starting authentication...');
+    
+    // Check if token already exists and validate it
+    const existingToken = localStorage.getItem('auth_token');
+    if (existingToken) {
+        api.setToken(existingToken);
+        
+        // Try to validate token
+        try {
+            await api.getWorkspaces();
+            console.log('✅ Using existing token');
+            isAuthenticated = true;
+            return;
+        } catch (error) {
+            console.warn('⚠️ Token expired or invalid, re-authenticating...');
+            localStorage.removeItem('auth_token');
+        }
+    }
+
+    // Get Telegram user data
+    const telegramUser = tg.initDataUnsafe?.user;
+    
+    // Если НЕ в Telegram и нет токена - перенаправляем на страницу входа
+    if (!telegramUser || !telegramUser.id) {
+        console.warn('⚠️ No Telegram user data and no token');
+        // Перенаправляем на логин, если не там уже
+        if (!window.location.pathname.includes('login.html')) {
+            console.log('🔄 Redirecting to login page...');
+            window.location.href = 'login.html';
+        }
+        isAuthenticated = false;
+        return;
+    }
+    
+    try {
+        console.log('📱 Authenticating with user:', telegramUser.id, telegramUser.first_name);
+        
+        // Prepare auth data matching backend schema
+        const authData = {
+            telegram_chat_id: telegramUser.id.toString(),
+            username: telegramUser.username || null,
+            first_name: telegramUser.first_name || null,
+            last_name: telegramUser.last_name || null,
+            language_code: telegramUser.language_code || 'ru'
+        };
+        
+        // Authenticate via API
+        const response = await api.authTelegram(authData);
+        
+        if (response && response.access_token) {
+            // Save token
+            api.setToken(response.access_token);
+            currentUserId = telegramUser.id;
+            isAuthenticated = true;
+            console.log('✅ Authentication successful, token saved');
+        } else {
+            throw new Error('No access token received');
+        }
+    } catch (error) {
+        console.error('❌ Authentication failed:', error);
+        showError('Ошибка авторизации. Пожалуйста, перезапустите приложение.');
+        isAuthenticated = false;
+    }
+}
+
 // ========== DASHBOARD (HOME) ==========
 
 async function loadDashboard() {
@@ -241,120 +328,181 @@ async function loadDashboard() {
 }
 
 async function loadWorkspaces() {
-    const result = await apiCall('workspace', 'get_user_workspaces');
-    if (result && result.workspaces && result.workspaces.length > 0) {
-        currentWorkspaceId = result.workspaces[0].id;
-    } else {
-        // Create default workspace
-        const createResult = await apiCall('workspace', 'create_workspace', {
-            name: 'Мой кошелек',
-            description: 'Личный кошелёк',
-            currency: selectedCurrency
-        });
-        if (createResult) {
-            currentWorkspaceId = createResult.workspace_id;
+    try {
+        const workspaces = await api.getWorkspaces();
+        
+        if (workspaces && workspaces.length > 0) {
+            currentWorkspaceId = workspaces[0].workspace_id;
+            console.log('✅ Workspace loaded:', currentWorkspaceId);
+        } else {
+            // Create default workspace
+            const workspace = await api.createWorkspace({
+                name: 'Мой кошелек',
+                description: 'Личный кошелёк',
+                currency: selectedCurrency
+            });
+            currentWorkspaceId = workspace.workspace_id;
+            console.log('✅ Workspace created:', currentWorkspaceId);
         }
+    } catch (error) {
+        console.warn('⚠️ Не удалось загрузить workspace:', error);
+        // Продолжаем работу без workspace
     }
 }
 
 async function loadBalance() {
     console.log('📊 Loading balance...');
-    const result = await apiCall('miniapp', 'get_stats', {
-        period: 'month'
-    });
     
-    if (!result || !result.success) {
-        console.warn('⚠️ Не удалось загрузить баланс:', result?.error || 'Unknown error');
-        // Показываем заглушку вместо ошибки
-        document.querySelector('.balance-amount').textContent = '0 с';
+    try {
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace selected');
+            document.querySelector('.balance-amount').textContent = '0 с';
+            return;
+        }
+        
+        // Получаем данные за текущий месяц
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        const endDate = today.toISOString().split('T')[0];
+        
+        const stats = await api.getOverview({
+            workspace_id: currentWorkspaceId,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        console.log('📊 Stats received:', stats);
+        
+        // Use balance from API or calculate
+        const balance = stats.balance !== undefined ? stats.balance : 
+                       ((stats.total_income || 0) - (stats.total_expense || 0));
+        const change = stats.change_percent || 0;
+        
+        console.log('💰 Calculated balance:', balance, 'Change:', change + '%');
+        
+        const balanceEl = document.querySelector('.balance-amount');
+        if (balanceEl) {
+            balanceEl.textContent = formatCurrency(balance);
+        }
+        
         const changeEl = document.querySelector('.balance-change');
-        changeEl.querySelector('span').className = 'change-neutral';
-        changeEl.querySelector('span').textContent = '0%';
-        return;
+        if (changeEl) {
+            const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
+            const changeSpan = changeEl.querySelector('span');
+            if (changeSpan) {
+                changeSpan.className = changeClass;
+                changeSpan.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+            }
+        }
+        
+        console.log('✅ Balance loaded:', balance);
+    } catch (error) {
+        console.error('❌ Failed to load balance:', error);
+        document.querySelector('.balance-amount').textContent = '0 с';
     }
-    
-    const balance = result.balance || 0;
-    const change = result.change || 0;
-    const changePercent = result.change_percent || 0;
-    
-    document.querySelector('.balance-amount').textContent = formatCurrency(balance);
-    
-    const changeEl = document.querySelector('.balance-change');
-    const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
-    changeEl.querySelector('span').className = changeClass;
-    changeEl.querySelector('span').textContent = `${change >= 0 ? '+' : ''}${changePercent.toFixed(1)}%`;
 }
 
 async function loadQuickStats() {
     console.log('📈 Loading quick stats...');
-    // Calculate date range for current month
-    const today = new Date();
-    const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
     
-    const result = await apiCall('analytics', 'get_income_expense_stats', {
-        start_date: startDate,
-        end_date: endDate
-    });
-    
-    if (!result || !result.success) {
-        console.warn('⚠️ Не удалось загрузить статистику:', result?.error || 'Unknown error');
-        // Показываем заглушки
+    try {
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace selected');
+            return;
+        }
+        
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        const endDate = today.toISOString().split('T')[0];
+        
+        const stats = await api.getIncomeExpenseStats({
+            workspace_id: currentWorkspaceId,
+            start_date: startDate,
+            end_date: endDate
+        });
+        
+        document.querySelector('.stat-item.income .stat-value').textContent = 
+            formatCurrency(stats.total_income || 0);
+        document.querySelector('.stat-item.expense .stat-value').textContent = 
+            formatCurrency(stats.total_expense || 0);
+        
+        console.log('✅ Quick stats loaded');
+    } catch (error) {
+        console.warn('⚠️ Не удалось загрузить статистику:', error);
         document.querySelector('.stat-item.income .stat-value').textContent = '0 с';
         document.querySelector('.stat-item.expense .stat-value').textContent = '0 с';
-        return;
     }
-    
-    document.querySelector('.stat-item.income .stat-value').textContent = 
-        formatCurrency(result.total_income || 0);
-    document.querySelector('.stat-item.expense .stat-value').textContent = 
-        formatCurrency(result.total_expenses || 0);
 }
 
 async function loadRecentTransactions() {
-    const result = await apiCall('miniapp', 'get_history', {
-        filter: 'all',
-        period: 'week',
-        limit: 5
-    });
-    
+    try {
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace selected');
+            return;
+        }
+        
+        const today = new Date();
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        // Получаем последние расходы и доходы
+        const [expenses, income] = await Promise.all([
+            api.getExpenses({
+                workspace_id: currentWorkspaceId,
+                start_date: weekAgo.toISOString().split('T')[0],
+                end_date: today.toISOString().split('T')[0],
+                limit: 3
+            }),
+            api.getIncome({
+                workspace_id: currentWorkspaceId,
+                start_date: weekAgo.toISOString().split('T')[0],
+                end_date: today.toISOString().split('T')[0],
+                limit: 2
+            })
+        ]);
+        
+        // Объединяем и сортируем по дате
+        const transactions = [
+            ...expenses.map(e => ({ ...e, type: 'expense' })),
+            ...income.map(i => ({ ...i, type: 'income' }))
+        ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+        
+        displayRecentTransactions(transactions);
+        console.log('✅ Recent transactions loaded:', transactions.length);
+    } catch (error) {
+        console.warn('⚠️ Не удалось загрузить транзакции:', error);
+    }
+}
+
+function displayRecentTransactions(transactions) {
     const container = document.querySelector('.transactions-list');
     
-    if (!result) {
-        console.warn('⚠️ Не удалось загрузить транзакции');
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fa-solid fa-exclamation-circle"></i>
-                <p>Не удалось загрузить данные</p>
-            </div>
-        `;
-        return;
-    }
-    
-    if (result && result.transactions && result.transactions.length > 0) {
-        container.innerHTML = result.transactions.map(t => `
-            <div class="transaction-item">
-                <div class="transaction-icon ${t.type}">
-                    <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
-                </div>
-                <div class="transaction-info">
-                    <div class="transaction-category">${t.category}</div>
-                    <div class="transaction-description">${t.description || '-'}</div>
-                </div>
-                <div class="transaction-amount ${t.type}">
-                    ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
-                </div>
-            </div>
-        `).join('');
-    } else {
+    if (!transactions || transactions.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-inbox"></i>
                 <p>Нет транзакций</p>
             </div>
         `;
+        return;
     }
+    
+    container.innerHTML = transactions.map(t => `
+        <div class="transaction-item">
+            <div class="transaction-icon ${t.type}">
+                <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+            </div>
+            <div class="transaction-info">
+                <div class="transaction-category">${t.category}</div>
+                <div class="transaction-description">${t.description || '-'}</div>
+            </div>
+            <div class="transaction-amount ${t.type}">
+                ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+            </div>
+        </div>
+    `).join('');
 }
+
+// ========== ANALYTICS ==========
 
 // ========== ANALYTICS ==========
 
@@ -365,7 +513,12 @@ let charts = {
 };
 
 async function loadAnalytics() {
-    const period = document.querySelector('.period-select').value || 'month';
+    if (!currentWorkspaceId) {
+        console.warn('⚠️ No workspace selected');
+        return;
+    }
+    
+    const period = document.querySelector('.period-select')?.value || 'month';
     
     await Promise.all([
         loadMetrics(period),
@@ -374,46 +527,89 @@ async function loadAnalytics() {
 }
 
 async function loadMetrics(period) {
-    const result = await apiCall('analytics', 'get_income_expense_stats', { period });
-    
-    if (result) {
-        document.querySelectorAll('.metric-value')[0].textContent = formatCurrency(result.total_income || 0);
-        document.querySelectorAll('.metric-value')[1].textContent = formatCurrency(result.total_expenses || 0);
-        document.querySelectorAll('.metric-value')[2].textContent = formatCurrency(result.balance || 0);
+    try {
+        const today = new Date();
+        let startDate;
         
-        const savingsRate = result.total_income > 0 
-            ? ((result.balance / result.total_income) * 100).toFixed(0)
-            : 0;
-        document.querySelectorAll('.metric-value')[3].textContent = `${savingsRate}%`;
+        if (period === 'week') {
+            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        } else if (period === 'month') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        } else if (period === 'year') {
+            startDate = new Date(today.getFullYear(), 0, 1);
+        } else {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        }
+        
+        const result = await api.getIncomeExpenseStats({
+            workspace_id: currentWorkspaceId,
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: today.toISOString().split('T')[0]
+        });
+        
+        if (result) {
+            document.querySelectorAll('.metric-value')[0].textContent = formatCurrency(result.total_income || 0);
+            document.querySelectorAll('.metric-value')[1].textContent = formatCurrency(result.total_expense || 0);
+            
+            const balance = (result.total_income || 0) - (result.total_expense || 0);
+            document.querySelectorAll('.metric-value')[2].textContent = formatCurrency(balance);
+            
+            const savingsRate = result.total_income > 0 
+                ? ((balance / result.total_income) * 100).toFixed(0)
+                : 0;
+            document.querySelectorAll('.metric-value')[3].textContent = `${savingsRate}%`;
+        }
+    } catch (error) {
+        console.error('❌ Failed to load metrics:', error);
     }
 }
 
 async function loadCharts(period) {
-    // Income vs Expense Chart
-    const incomeExpenseData = await apiCall('analytics', 'get_chart_data', { 
-        period,
-        chart_type: 'income_expense'
-    });
-    
-    if (incomeExpenseData) {
-        renderIncomeExpenseChart(incomeExpenseData);
-    }
-    
-    // Category Pie Chart
-    const categoryData = await apiCall('analytics', 'get_top_categories', { 
-        period,
-        limit: 10
-    });
-    
-    if (categoryData) {
-        renderCategoryPieChart(categoryData);
-    }
-    
-    // Balance Trend Chart
-    const trendData = await apiCall('analytics', 'get_balance_trend', { period });
-    
-    if (trendData) {
-        renderBalanceTrendChart(trendData);
+    try {
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace selected');
+            return;
+        }
+        
+        const today = new Date();
+        let startDate;
+        
+        if (period === 'week') {
+            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        } else if (period === 'month') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        } else if (period === 'year') {
+            startDate = new Date(today.getFullYear(), 0, 1);
+        } else {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        }
+        
+        // Top categories
+        const categoryData = await api.getCategoryAnalytics({
+            workspace_id: currentWorkspaceId,
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: today.toISOString().split('T')[0],
+            limit: 10
+        });
+        
+        if (categoryData && categoryData.length > 0) {
+            renderCategoryPieChart(categoryData);
+        }
+        
+        // Balance trend
+        const trendData = await api.getTrends({
+            workspace_id: currentWorkspaceId,
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: today.toISOString().split('T')[0]
+        });
+        
+        if (trendData && trendData.length > 0) {
+            renderBalanceTrendChart(trendData);
+        }
+        
+        console.log('✅ Charts loaded');
+    } catch (error) {
+        console.error('❌ Failed to load charts:', error);
     }
 }
 
@@ -527,37 +723,50 @@ async function loadTeam() {
 }
 
 async function loadWorkspacesList() {
-    const result = await apiCall('workspace', 'get_user_workspaces');
-    
-    if (result && result.workspaces) {
-        const select = document.querySelector('.workspace-select');
-        select.innerHTML = result.workspaces.map(ws => 
-            `<option value="${ws.id}" ${ws.id === currentWorkspaceId ? 'selected' : ''}>
-                ${ws.name}
-            </option>`
-        ).join('');
+    try {
+        const workspaces = await api.getWorkspaces();
         
-        select.onchange = async function() {
-            currentWorkspaceId = this.value;
-            await loadMembers();
-            await loadDashboard();
-        };
+        if (workspaces && workspaces.length > 0) {
+            const select = document.querySelector('.workspace-select');
+            if (select) {
+                select.innerHTML = workspaces.map(ws => 
+                    `<option value="${ws.workspace_id}" ${ws.workspace_id === currentWorkspaceId ? 'selected' : ''}>
+                        ${ws.name}
+                    </option>`
+                ).join('');
+                
+                select.onchange = async function() {
+                    currentWorkspaceId = parseInt(this.value);
+                    await loadMembers();
+                    await loadDashboard();
+                };
+            }
+        }
+    } catch (error) {
+        console.error('❌ Failed to load workspaces:', error);
     }
 }
 
 async function loadMembers() {
-    const result = await apiCall('workspace', 'get_workspace_members');
-    
-    const container = document.querySelector('.members-list');
-    
-    if (result && result.members && result.members.length > 0) {
-        container.innerHTML = result.members.map(member => {
-            const initials = member.name ? member.name.slice(0, 2).toUpperCase() : 'U';
-            return `
-                <div class="member-item">
-                    <div class="member-avatar">${initials}</div>
-                    <div class="member-info">
-                        <div class="member-name">${member.name || 'User'}</div>
+    try {
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace selected');
+            return;
+        }
+        
+        const members = await api.getWorkspaceMembers(currentWorkspaceId);
+        
+        const container = document.querySelector('.members-list');
+        if (!container) return;
+        
+        if (members && members.length > 0) {
+            container.innerHTML = members.map(member => {
+                const initials = member.user_name ? member.user_name.slice(0, 2).toUpperCase() : 'U';
+                return `
+                    <div class="member-item">
+                        <div class="member-avatar">${initials}</div>
+                        <div class="member-info">
+                        <div class="member-name">${member.user_name || 'User'}</div>
                         <span class="member-role ${member.role}">${getRoleLabel(member.role)}</span>
                     </div>
                 </div>
@@ -571,6 +780,9 @@ async function loadMembers() {
             </div>
         `;
     }
+    } catch (error) {
+        console.error('❌ Failed to load members:', error);
+    }
 }
 
 function getRoleLabel(role) {
@@ -581,6 +793,40 @@ function getRoleLabel(role) {
         viewer: 'Наблюдатель'
     };
     return labels[role] || role;
+}
+
+function openInviteModal() {
+    // Simple implementation - directly generate invite
+    generateInvite();
+}
+
+async function generateInvite() {
+    try {
+        if (!currentWorkspaceId) {
+            showError('Workspace не выбран');
+            return;
+        }
+        
+        const result = await api.createInvite(currentWorkspaceId, {
+            role: 'member',
+            expires_in_days: 7
+        });
+        
+        if (result && result.invite_code) {
+            const inviteLink = `https://t.me/your_bot?start=invite_${result.invite_code}`;
+            
+            // Copy to clipboard
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(inviteLink);
+                showSuccess('Ссылка приглашения скопирована');
+            } else {
+                showSuccess(`Код приглашения: ${result.invite_code}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Failed to generate invite:', error);
+        showError('Не удалось создать приглашение');
+    }
 }
 
 // ========== REPORTS ==========
@@ -596,23 +842,35 @@ async function generateReport() {
         return;
     }
     
+    if (!currentWorkspaceId) {
+        showError('Workspace не выбран');
+        return;
+    }
+    
     showLoading('Генерация отчета...');
     
-    const result = await apiCall('reports', 'generate_report', {
-        report_type: reportType,
-        start_date: startDate,
-        end_date: endDate,
-        format: format,
-        language: 'ru'
-    });
-    
-    hideLoading();
-    
-    if (result && result.download_url) {
-        window.open(result.download_url, '_blank');
-        showSuccess('Отчет сгенерирован');
-    } else {
-        showError('Ошибка генерации отчета');
+    try {
+        // TODO: Implement reports API endpoint
+        const result = await api.generateReport({
+            workspace_id: currentWorkspaceId,
+            report_type: reportType,
+            start_date: startDate,
+            end_date: endDate,
+            format: format
+        });
+        
+        hideLoading();
+        
+        if (result && result.download_url) {
+            window.open(result.download_url, '_blank');
+            showSuccess('Отчет сгенерирован');
+        } else {
+            showSuccess('Отчет будет доступен в ближайшее время');
+        }
+    } catch (error) {
+        hideLoading();
+        showError('Функция генерации отчетов в разработке');
+        console.error('❌ Report generation failed:', error);
     }
 }
 
@@ -626,71 +884,168 @@ function selectFormat(format) {
 // ========== SETTINGS ==========
 
 function loadSettings() {
+    console.log('⚙️ Loading settings...');
+    
     // Load current settings
     const savedCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
     const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedLanguage = localStorage.getItem('language') || 'ru';
     const savedNotifications = localStorage.getItem('notifications') !== 'false';
+    const savedSubscriptions = localStorage.getItem('subscriptions') !== 'false';
     
-    document.getElementById('default-currency').value = savedCurrency;
-    document.querySelector('[data-theme-toggle]').checked = savedTheme === 'dark';
-    document.querySelector('[data-notifications-toggle]').checked = savedNotifications;
+    // Set currency select
+    const currencyEl = document.getElementById('currency-select');
+    if (currencyEl) {
+        currencyEl.value = savedCurrency;
+        console.log('💰 Currency set to:', savedCurrency);
+    }
+    
+    // Set theme select
+    const themeEl = document.getElementById('theme-select');
+    if (themeEl) {
+        themeEl.value = savedTheme;
+        console.log('🎨 Theme set to:', savedTheme);
+    }
+    
+    // Set language select
+    const languageEl = document.getElementById('language-select');
+    if (languageEl) {
+        languageEl.value = savedLanguage;
+        console.log('🌐 Language set to:', savedLanguage);
+    }
+    
+    // Set notifications toggle
+    const notifToggle = document.getElementById('notifications-toggle');
+    if (notifToggle) {
+        notifToggle.checked = savedNotifications;
+        console.log('🔔 Notifications:', savedNotifications);
+    }
+    
+    // Set subscriptions toggle
+    const subsToggle = document.getElementById('subscriptions-toggle');
+    if (subsToggle) {
+        subsToggle.checked = savedSubscriptions;
+        console.log('📅 Subscriptions:', savedSubscriptions);
+    }
+    
+    console.log('✅ Settings loaded');
 }
 
 function changeCurrency(currency) {
     selectedCurrency = currency;
     localStorage.setItem('defaultCurrency', currency);
-    showSuccess('Валюта изменена');
+    console.log('💰 Currency changed to:', currency);
+    showSuccess('Валюта изменена на ' + currency);
+}
+
+function changeTheme(theme) {
+    if (!theme) {
+        // Called from select onchange
+        theme = document.getElementById('theme-select')?.value || 'light';
+    }
+    
+    console.log('🎨 Changing theme to:', theme);
+    
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+    
+    console.log('✅ Theme changed to:', theme);
+    showSuccess('Тема изменена на ' + (theme === 'dark' ? 'тёмную' : theme === 'light' ? 'светлую' : 'авто'));
 }
 
 function toggleTheme() {
     const isDark = event.target.checked;
     const theme = isDark ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    changeTheme(theme);
 }
 
 function toggleNotifications() {
     const enabled = event.target.checked;
     localStorage.setItem('notifications', enabled);
+    console.log('🔔 Notifications toggled:', enabled);
+    showSuccess(enabled ? 'Уведомления включены' : 'Уведомления выключены');
 }
 
 // ========== HISTORY ==========
 
 async function loadHistory() {
-    const filter = document.getElementById('history-filter')?.value || 'all';
-    const period = document.getElementById('history-period')?.value || 'month';
-    
-    const result = await apiCall('miniapp', 'get_history', {
-        filter: filter,
-        period: period,
-        limit: 50
-    });
-    
-    const container = document.querySelector('#history-screen .transactions-list');
-    
-    if (result && result.transactions && result.transactions.length > 0) {
-        container.innerHTML = result.transactions.map(t => `
-            <div class="transaction-item">
-                <div class="transaction-icon ${t.type}">
-                    <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+    try {
+        if (!currentWorkspaceId) {
+            console.warn('⚠️ No workspace selected');
+            return;
+        }
+        
+        const filter = document.getElementById('history-filter')?.value || 'all';
+        const period = document.getElementById('history-period')?.value || 'month';
+        
+        const today = new Date();
+        let startDate;
+        
+        if (period === 'week') {
+            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        } else if (period === 'month') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        } else if (period === 'year') {
+            startDate = new Date(today.getFullYear(), 0, 1);
+        } else {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        }
+        
+        // Get expenses and income based on filter
+        let transactions = [];
+        
+        if (filter === 'all' || filter === 'expense') {
+            const expenses = await api.getExpenses({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate.toISOString().split('T')[0],
+                end_date: today.toISOString().split('T')[0],
+                limit: 50
+            });
+            transactions = transactions.concat(expenses.map(e => ({ ...e, type: 'expense' })));
+        }
+        
+        if (filter === 'all' || filter === 'income') {
+            const income = await api.getIncome({
+                workspace_id: currentWorkspaceId,
+                start_date: startDate.toISOString().split('T')[0],
+                end_date: today.toISOString().split('T')[0],
+                limit: 50
+            });
+            transactions = transactions.concat(income.map(i => ({ ...i, type: 'income' })));
+        }
+        
+        // Sort by date
+        transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        const container = document.querySelector('#history-screen .transactions-list');
+        if (!container) return;
+        
+        if (transactions.length > 0) {
+            container.innerHTML = transactions.map(t => `
+                <div class="transaction-item">
+                    <div class="transaction-icon ${t.type}">
+                        <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+                    </div>
+                    <div class="transaction-info">
+                        <div class="transaction-category">${t.category || 'Без категории'}</div>
+                        <div class="transaction-description">${t.description || '-'}</div>
+                        <div class="transaction-date">${formatDate(t.date)}</div>
+                    </div>
+                    <div class="transaction-amount ${t.type}">
+                        ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+                    </div>
                 </div>
-                <div class="transaction-info">
-                    <div class="transaction-category">${t.category}</div>
-                    <div class="transaction-description">${t.description || '-'}</div>
-                    <div class="transaction-date">${formatDate(t.created_at)}</div>
+            `).join('');
+        } else {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-inbox"></i>
+                    <p>Нет транзакций</p>
                 </div>
-                <div class="transaction-amount ${t.type}">
-                    ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
-                </div>
-            </div>
-        `).join('');
-    } else {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fa-solid fa-inbox"></i>
-                <p>Нет транзакций</p>
-            </div>
         `;
+    }
+    } catch (error) {
+        console.error('❌ Failed to load history:', error);
     }
 }
 
@@ -702,7 +1057,7 @@ async function submitTransaction() {
     const category = document.querySelector('.category-pill.active')?.textContent;
     const date = document.getElementById('transaction-date').value;
     const time = document.getElementById('transaction-time').value;
-    const currency = document.getElementById('currency-select').value;
+    const currency = document.getElementById('transaction-currency-select').value;
     
     if (!amount || amount <= 0) {
         showError('Введите сумму');
@@ -716,23 +1071,33 @@ async function submitTransaction() {
     
     showLoading('Сохранение...');
     
-    const result = await apiCall('miniapp', 'add_transaction', {
-        type: transactionType,
-        amount: amount,
-        currency: currency,
-        category: category,
-        description: description,
-        date: `${date}T${time}:00`
-    });
-    
-    hideLoading();
-    
-    if (result && result.success) {
+    try {
+        const transactionData = {
+            amount: amount,
+            currency: currency,
+            category: category,
+            description: description,
+            date: `${date}T${time}:00`,
+            workspace_id: currentWorkspaceId
+        };
+        
+        // Создаём расход или доход через API
+        if (transactionType === 'expense') {
+            await api.createExpense(transactionData);
+        } else {
+            await api.createIncome(transactionData);
+        }
+        
+        hideLoading();
         closeModal('add-transaction-modal');
         showSuccess('Транзакция добавлена');
         await loadDashboard();
-    } else {
-        showError('Ошибка сохранения');
+        
+        console.log('✅ Transaction created successfully');
+    } catch (error) {
+        hideLoading();
+        console.error('❌ Failed to create transaction:', error);
+        showError('Ошибка сохранения: ' + error.message);
     }
 }
 
@@ -785,7 +1150,10 @@ function showError(message) {
 
 // ========== EVENT LISTENERS ==========
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Authenticate first
+    await authenticateUser();
+    
     // Initialize
     switchScreen('home');
     
@@ -829,22 +1197,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Settings toggles
-    const themeToggle = document.querySelector('[data-theme-toggle]');
-    if (themeToggle) {
-        themeToggle.addEventListener('change', toggleTheme);
+    // Settings toggles and selects
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', function() {
+            changeTheme(this.value);
+        });
     }
     
-    const notificationsToggle = document.querySelector('[data-notifications-toggle]');
+    const notificationsToggle = document.getElementById('notifications-toggle');
     if (notificationsToggle) {
         notificationsToggle.addEventListener('change', toggleNotifications);
     }
     
+    const subscriptionsToggle = document.getElementById('subscriptions-toggle');
+    if (subscriptionsToggle) {
+        subscriptionsToggle.addEventListener('change', function() {
+            const enabled = this.checked;
+            localStorage.setItem('subscriptions', enabled);
+            showSuccess(enabled ? 'Напоминания включены' : 'Напоминания выключены');
+        });
+    }
+    
     // Currency change
-    const currencySelect = document.getElementById('default-currency');
+    const currencySelect = document.getElementById('currency-select');
     if (currencySelect) {
         currencySelect.addEventListener('change', function() {
             changeCurrency(this.value);
+        });
+    }
+    
+    // Language change
+    const languageSelect = document.getElementById('language-select');
+    if (languageSelect) {
+        languageSelect.addEventListener('change', function() {
+            const lang = this.value;
+            localStorage.setItem('language', lang);
+            console.log('🌐 Language changed to:', lang);
+            showSuccess('Язык изменён на ' + (lang === 'ru' ? 'русский' : lang === 'en' ? 'English' : 'кыргызча'));
+            // TODO: Implement i18n translations
         });
     }
     
