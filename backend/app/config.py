@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Union
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -16,13 +17,21 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # CORS
-    ALLOWED_ORIGINS: List[str] = [
+    # CORS - поддерживает как JSON массив, так и строку с запятыми
+    ALLOWED_ORIGINS: Union[List[str], str] = [
         "http://localhost:3000", 
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5500"
     ]
+    
+    @field_validator('ALLOWED_ORIGINS', mode='before')
+    @classmethod
+    def parse_origins(cls, v):
+        if isinstance(v, str):
+            # Если строка с запятыми, разбиваем
+            return [origin.strip() for origin in v.split(',')]
+        return v
     
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
