@@ -209,11 +209,11 @@ function showError(message) {
     }, 3000);
 }
 
-// Обработка ошибок с перенаправлением на логин
+// Обработка ошибок
 function handleError(error, customMessage = 'Произошла ошибка') {
     console.error('❌ Error:', error);
     
-    // Если ошибка 401 - просто удаляем токен и показываем ошибку
+    // Если ошибка 401 - токен истёк, перезапускаем авторизацию
     if (error.message && (
         error.message.includes('Not authenticated') || 
         error.message.includes('Could not validate credentials') ||
@@ -221,7 +221,16 @@ function handleError(error, customMessage = 'Произошла ошибка') {
         error.message.includes('Unauthorized')
     )) {
         localStorage.removeItem('auth_token');
-        showError('Необходима авторизация. Перезапустите приложение');
+        showError('Авторизация обновляется...');
+        // Автоматически перезапускаем авторизацию
+        setTimeout(() => {
+            authenticate().then(success => {
+                if (success) {
+                    showSuccess('Авторизация успешна');
+                    loadDashboard();
+                }
+            });
+        }, 1000);
         return;
     }
     
@@ -282,9 +291,19 @@ async function authenticate() {
     // Проверяем наличие токена
     const existingToken = localStorage.getItem('auth_token');
     if (existingToken) {
-        console.log('✅ Token found');
+        console.log('✅ Token found, setting...');
         api.setToken(existingToken);
-        return true;
+        
+        // Проверим валидность токена простым запросом
+        try {
+            await api.getOverview({ period: 'week' });
+            console.log('✅ Token is valid');
+            return true;
+        } catch (e) {
+            console.warn('⚠️ Token invalid, re-authenticating...');
+            localStorage.removeItem('auth_token');
+            // Продолжаем к новой авторизации ниже
+        }
     }
     
     try {
@@ -298,6 +317,8 @@ async function authenticate() {
             return false;
         }
         
+        console.log('🔄 Authenticating with Telegram...');
+        
         const response = await api.authTelegram({
             telegram_chat_id: String(userId),
             first_name: telegramData?.user?.first_name || 'Пользователь',
@@ -308,6 +329,7 @@ async function authenticate() {
         
         if (response.access_token) {
             localStorage.setItem('auth_token', response.access_token);
+            api.setToken(response.access_token);
             state.userId = userId;
             state.userName = telegramData?.user?.first_name || 'Пользователь';
             
