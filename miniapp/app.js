@@ -310,22 +310,31 @@ async function authenticate() {
         const telegramData = tg.initDataUnsafe;
         const userId = telegramData?.user?.id;
         
-        // Если нет userId - показываем ошибку, но НЕ редиректим
+        // Если нет userId - показываем ошибку
         if (!userId) {
             console.warn('⚠️ No Telegram user ID');
-            showError('Запустите приложение через Telegram бота');
+            const errorMsg = window.Telegram?.WebApp 
+                ? 'Не удалось получить данные из Telegram' 
+                : 'Откройте приложение через Telegram бота';
+            showError(errorMsg);
             return false;
         }
         
-        console.log('🔄 Authenticating with Telegram...');
+        console.log('🔄 Authenticating with Telegram ID:', userId);
         
-        const response = await api.authTelegram({
+        const authData = {
             telegram_chat_id: String(userId),
             first_name: telegramData?.user?.first_name || 'Пользователь',
             username: telegramData?.user?.username || null,
             last_name: telegramData?.user?.last_name || null,
             language_code: telegramData?.user?.language_code || 'ru'
-        });
+        };
+        
+        console.log('Auth data:', authData);
+        
+        const response = await api.authTelegram(authData);
+        
+        console.log('Auth response:', response);
         
         if (response.access_token) {
             localStorage.setItem('auth_token', response.access_token);
@@ -336,10 +345,18 @@ async function authenticate() {
             console.log('✅ Authentication successful');
             switchScreen('home');
             return true;
+        } else {
+            console.error('❌ No access token in response');
+            showError('Сервер не вернул токен авторизации');
+            return false;
         }
     } catch (error) {
         console.error('❌ Authentication failed:', error);
-        showError('Ошибка авторизации. Попробуйте позже');
+        console.error('Error message:', error.message);
+        
+        // Показываем конкретную ошибку от сервера
+        const errorMsg = error.message || 'Ошибка авторизации';
+        showError(errorMsg);
         return false;
     }
 }
