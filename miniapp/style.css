@@ -75,6 +75,10 @@
     --text-secondary: #D1D5DB;
     --text-tertiary: #9CA3AF;
     --border-color: #374151;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* ===== RESET & BASE ===== */
@@ -94,9 +98,11 @@ body {
     background: var(--bg-secondary);
     color: var(--text-primary);
     line-height: 1.6;
+    letter-spacing: -0.01em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 button {
@@ -190,12 +196,19 @@ input, select, textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--transition-fast);
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
 }
 
 .icon-btn:hover {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+    transform: scale(1.05);
+    border-color: var(--border-color);
+}
+
+.icon-btn:active {
+    transform: scale(0.95);
 }
 
 .icon-btn.loading i {
@@ -275,16 +288,25 @@ input, select, textarea {
     font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
-    transition: var(--transition-fast);
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
 }
 
 .period-btn:hover {
     background: var(--bg-tertiary);
+    transform: translateY(-1px);
+    border-color: var(--border-color);
 }
 
 .period-btn.active {
     background: var(--primary);
     color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+.period-btn:active {
+    transform: translateY(0);
 }
 
 /* ===== BALANCE SECTION ===== */
@@ -298,7 +320,21 @@ input, select, textarea {
     padding: var(--spacing-lg);
     border-radius: var(--radius-xl);
     margin-bottom: var(--spacing-md);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.1) inset;
+    position: relative;
+    overflow: hidden;
+}
+
+.main-balance::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .balance-header {
@@ -350,14 +386,29 @@ input, select, textarea {
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-md);
+    transition: all var(--transition-base);
+    border: 1px solid var(--border-color);
+}
+
+.balance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .income-card {
     border-left: 4px solid var(--success);
 }
 
+.income-card:hover {
+    border-left-width: 6px;
+}
+
 .expense-card {
     border-left: 4px solid var(--danger);
+}
+
+.expense-card:hover {
+    border-left-width: 6px;
 }
 
 .card-icon {
@@ -420,10 +471,23 @@ input, select, textarea {
     white-space: nowrap;
     color: var(--text-secondary);
     box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-base);
+}
+
+.stat-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
 }
 
 .stat-pill i {
     color: var(--primary);
+    transition: transform var(--transition-base);
+}
+
+.stat-pill:hover i {
+    transform: scale(1.2);
 }
 
 /* ===== SECTION ===== */
@@ -458,11 +522,19 @@ input, select, textarea {
     display: flex;
     align-items: center;
     gap: 4px;
-    transition: var(--transition-fast);
+    transition: all var(--transition-base);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
 }
 
 .link-btn:hover {
     color: var(--primary-hover);
+    background: var(--primary-light);
+    transform: translateX(2px);
+}
+
+.link-btn:active {
+    transform: translateX(0);
 }
 
 /* ===== TRANSACTIONS LIST ===== */
@@ -480,12 +552,20 @@ input, select, textarea {
     align-items: center;
     gap: var(--spacing-md);
     box-shadow: var(--shadow-sm);
-    transition: var(--transition-fast);
+    transition: all var(--transition-base);
+    cursor: pointer;
+    border: 1px solid transparent;
 }
 
 .transaction-item:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
+    border-color: var(--border-color);
+}
+
+.transaction-item:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
 }
 
 .transaction-icon {
@@ -634,6 +714,17 @@ input, select, textarea {
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.kpi-card:active {
+    transform: translateY(-2px);
 }
 
 .kpi-card::before {
@@ -691,6 +782,13 @@ input, select, textarea {
     border-radius: var(--radius-xl);
     padding: var(--spacing-lg);
     box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-base);
+}
+
+.chart-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
 }
 
 .chart-header {
@@ -1089,6 +1187,19 @@ input, select, textarea {
     align-items: center;
     gap: var(--spacing-md);
     box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.report-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateX(4px);
+    border-color: var(--danger);
+}
+
+.report-item:active {
+    transform: translateX(2px);
 }
 
 .report-icon {
@@ -1127,14 +1238,21 @@ input, select, textarea {
 /* ===== EMPTY STATE ===== */
 .empty-state {
     text-align: center;
-    padding: var(--spacing-xl);
+    padding: var(--spacing-xl) var(--spacing-md);
     color: var(--text-tertiary);
+    animation: fadeIn 0.5s ease;
 }
 
 .empty-state i {
     font-size: 48px;
     margin-bottom: var(--spacing-md);
-    opacity: 0.5;
+    opacity: 0.3;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
 }
 
 .empty-state h3 {
@@ -1161,6 +1279,7 @@ input, select, textarea {
     background-size: 200% 100%;
     border-radius: var(--radius-lg);
     animation: shimmer 1.5s infinite;
+    opacity: 0.6;
 }
 
 @keyframes shimmer {
@@ -1269,20 +1388,43 @@ input, select, textarea {
     gap: 4px;
     padding: var(--spacing-sm);
     color: var(--text-tertiary);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
-    transition: var(--transition-fast);
+    transition: all var(--transition-base);
     border: none;
     background: none;
     cursor: pointer;
+    position: relative;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 24px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 0 0 3px 3px;
+    transition: transform var(--transition-base);
+}
+
+.nav-item.active::before {
+    transform: translateX(-50%) scaleX(1);
 }
 
 .nav-item i {
-    font-size: 20px;
+    font-size: 22px;
+    transition: all var(--transition-base);
 }
 
 .nav-item:hover {
     color: var(--text-secondary);
+}
+
+.nav-item:hover i {
+    transform: scale(1.1);
 }
 
 .nav-item.active {
@@ -1290,7 +1432,11 @@ input, select, textarea {
 }
 
 .nav-item.active i {
-    transform: scale(1.1);
+    transform: scale(1.15);
+}
+
+.nav-item:active i {
+    transform: scale(0.95);
 }
 
 /* ===== PERIOD SELECT ===== */
@@ -1355,13 +1501,22 @@ input, select, textarea {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    background: var(--bg-secondary);
+    background: var(--bg-primary);
     border-radius: var(--radius-md);
-    transition: transform 0.2s;
+    transition: all var(--transition-base);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.top-category-compact:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateX(4px);
+    border-color: var(--primary);
 }
 
 .top-category-compact:active {
-    transform: scale(0.98);
+    transform: translateX(2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .category-indicator {
@@ -1369,6 +1524,12 @@ input, select, textarea {
     height: 40px;
     border-radius: 2px;
     flex-shrink: 0;
+    transition: all var(--transition-base);
+}
+
+.top-category-compact:hover .category-indicator {
+    width: 6px;
+    box-shadow: 0 0 8px currentColor;
 }
 
 .category-compact-info {

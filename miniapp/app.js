@@ -281,25 +281,47 @@ function loadScreenData(screenName) {
 // ===== AUTHENTICATION =====
 async function authenticate() {
     console.log('🔐 Authenticating...');
+    console.log('Telegram WebApp available:', !!window.Telegram?.WebApp);
+    console.log('Telegram initDataUnsafe:', tg.initDataUnsafe);
     
     // Проверяем наличие токена
     const existingToken = localStorage.getItem('auth_token');
     if (existingToken) {
-        console.log('✅ Token found');
+        console.log('✅ Token found, verifying...');
         api.setToken(existingToken);
-        return true;
+        
+        // Проверим валидность токена
+        try {
+            await api.getOverview({ period: 'week' });
+            console.log('✅ Token is valid');
+            return true;
+        } catch (e) {
+            console.warn('⚠️ Token invalid, will re-authenticate');
+            localStorage.removeItem('auth_token');
+        }
     }
     
     try {
         const telegramData = tg.initDataUnsafe;
         const userId = telegramData?.user?.id;
         
-        // Если нет userId - перенаправляем на логин
+        console.log('Telegram user ID:', userId);
+        console.log('Running inside Telegram:', !!window.Telegram?.WebApp);
+        
+        // Если нет userId и мы НЕ в Telegram - перенаправляем на логин
         if (!userId) {
-            console.warn('⚠️ No Telegram user ID, redirecting to login...');
-            window.location.href = 'login.html';
-            return false;
+            if (!window.Telegram?.WebApp) {
+                console.warn('⚠️ Not running in Telegram, redirecting to login...');
+                window.location.href = 'login.html';
+                return false;
+            } else {
+                console.error('❌ No user ID in Telegram WebApp');
+                showError('Не удалось получить данные пользователя из Telegram');
+                return false;
+            }
         }
+        
+        console.log('🔄 Authenticating with Telegram ID:', userId);
         
         const response = await api.authTelegram({
             telegram_chat_id: String(userId), // Конвертируем в строку
@@ -314,22 +336,29 @@ async function authenticate() {
             state.userId = userId;
             state.userName = telegramData?.user?.first_name || 'Пользователь';
             
-            document.getElementById('user-name').textContent = state.userName;
+            const userNameEl = document.getElementById('user-name');
+            if (userNameEl) userNameEl.textContent = state.userName;
             
             console.log('✅ Authentication successful');
             
             // Переключаемся на главный экран (он сам загрузит данные)
             switchScreen('home');
             return true;
+        } else {
+            console.error('❌ No access token in response');
+            showError('Не удалось получить токен авторизации');
+            return false;
         }
     } catch (error) {
         console.error('❌ Authentication failed:', error);
-        showError('Ошибка авторизации');
+        console.error('Error details:', {
+            message: error.message,
+            response: error.response,
+            stack: error.stack
+        });
         
-        // Перенаправляем на логин при ошибке
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 2000);
+        // Не перенаправляем на логин при ошибке API, только показываем ошибку
+        showError('Ошибка авторизации. Проверьте подключение к интернету');
         
         return false;
     }
