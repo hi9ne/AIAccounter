@@ -213,7 +213,7 @@ function showError(message) {
 function handleError(error, customMessage = 'Произошла ошибка') {
     console.error('❌ Error:', error);
     
-    // Если ошибка 401 - перенаправляем на логин
+    // Если ошибка 401 - просто удаляем токен и показываем ошибку
     if (error.message && (
         error.message.includes('Not authenticated') || 
         error.message.includes('Could not validate credentials') ||
@@ -221,10 +221,7 @@ function handleError(error, customMessage = 'Произошла ошибка') {
         error.message.includes('Unauthorized')
     )) {
         localStorage.removeItem('auth_token');
-        showError('Сессия истекла. Перенаправление на логин...');
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1500);
+        showError('Необходима авторизация. Перезапустите приложение');
         return;
     }
     
@@ -281,50 +278,28 @@ function loadScreenData(screenName) {
 // ===== AUTHENTICATION =====
 async function authenticate() {
     console.log('🔐 Authenticating...');
-    console.log('Telegram WebApp available:', !!window.Telegram?.WebApp);
-    console.log('Telegram initDataUnsafe:', tg.initDataUnsafe);
     
     // Проверяем наличие токена
     const existingToken = localStorage.getItem('auth_token');
     if (existingToken) {
-        console.log('✅ Token found, verifying...');
+        console.log('✅ Token found');
         api.setToken(existingToken);
-        
-        // Проверим валидность токена
-        try {
-            await api.getOverview({ period: 'week' });
-            console.log('✅ Token is valid');
-            return true;
-        } catch (e) {
-            console.warn('⚠️ Token invalid, will re-authenticate');
-            localStorage.removeItem('auth_token');
-        }
+        return true;
     }
     
     try {
         const telegramData = tg.initDataUnsafe;
         const userId = telegramData?.user?.id;
         
-        console.log('Telegram user ID:', userId);
-        console.log('Running inside Telegram:', !!window.Telegram?.WebApp);
-        
-        // Если нет userId и мы НЕ в Telegram - перенаправляем на логин
+        // Если нет userId - показываем ошибку, но НЕ редиректим
         if (!userId) {
-            if (!window.Telegram?.WebApp) {
-                console.warn('⚠️ Not running in Telegram, redirecting to login...');
-                window.location.href = 'login.html';
-                return false;
-            } else {
-                console.error('❌ No user ID in Telegram WebApp');
-                showError('Не удалось получить данные пользователя из Telegram');
-                return false;
-            }
+            console.warn('⚠️ No Telegram user ID');
+            showError('Запустите приложение через Telegram бота');
+            return false;
         }
         
-        console.log('🔄 Authenticating with Telegram ID:', userId);
-        
         const response = await api.authTelegram({
-            telegram_chat_id: String(userId), // Конвертируем в строку
+            telegram_chat_id: String(userId),
             first_name: telegramData?.user?.first_name || 'Пользователь',
             username: telegramData?.user?.username || null,
             last_name: telegramData?.user?.last_name || null,
@@ -336,30 +311,13 @@ async function authenticate() {
             state.userId = userId;
             state.userName = telegramData?.user?.first_name || 'Пользователь';
             
-            const userNameEl = document.getElementById('user-name');
-            if (userNameEl) userNameEl.textContent = state.userName;
-            
             console.log('✅ Authentication successful');
-            
-            // Переключаемся на главный экран (он сам загрузит данные)
             switchScreen('home');
             return true;
-        } else {
-            console.error('❌ No access token in response');
-            showError('Не удалось получить токен авторизации');
-            return false;
         }
     } catch (error) {
         console.error('❌ Authentication failed:', error);
-        console.error('Error details:', {
-            message: error.message,
-            response: error.response,
-            stack: error.stack
-        });
-        
-        // Не перенаправляем на логин при ошибке API, только показываем ошибку
-        showError('Ошибка авторизации. Проверьте подключение к интернету');
-        
+        showError('Ошибка авторизации. Попробуйте позже');
         return false;
     }
 }
