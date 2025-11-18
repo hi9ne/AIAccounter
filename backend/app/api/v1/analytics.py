@@ -24,7 +24,6 @@ router = APIRouter()
 
 @router.get("/stats", response_model=IncomeExpenseStatsSchema)
 async def get_income_expense_statistics(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     current_user: User = Depends(get_current_user),
@@ -37,39 +36,39 @@ async def get_income_expense_statistics(
     query = text("""
         SELECT 
             COALESCE((SELECT SUM(amount) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as total_income,
             COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as total_expense,
             COALESCE((SELECT SUM(amount) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) - 
             COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as balance,
             (SELECT COUNT(*) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL) as income_count,
             (SELECT COUNT(*) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL) as expense_count
     """)
     
     result = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -96,7 +95,6 @@ async def get_income_expense_statistics(
 
 @router.get("/categories/top", response_model=list[TopCategorySchema])
 async def get_top_expense_categories(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     limit: int = Query(10, ge=1, le=50, description="Количество категорий"),
@@ -110,7 +108,7 @@ async def get_top_expense_categories(
         WITH total AS (
             SELECT COALESCE(SUM(amount), 0) as total_amount
             FROM expenses
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -124,7 +122,7 @@ async def get_top_expense_categories(
                 ELSE 0 
             END as percentage
         FROM expenses e, total t
-        WHERE e.workspace_id = :workspace_id
+        WHERE e.user_id = :user_id
             AND e.date >= :start_date
             AND e.date <= :end_date
             AND e.deleted_at IS NULL
@@ -134,7 +132,7 @@ async def get_top_expense_categories(
     """)
     
     result = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date,
         "limit": limit
@@ -155,7 +153,6 @@ async def get_top_expense_categories(
 
 @router.get("/chart/balance-trend", response_model=list[BalanceTrendSchema])
 async def get_balance_trend(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     current_user: User = Depends(get_current_user),
@@ -164,18 +161,6 @@ async def get_balance_trend(
     """
     Получить тренд баланса по дням
     """
-    # Check workspace access
-    query_check = text("""
-        SELECT 1 FROM workspaces w
-        LEFT JOIN workspace_members wm ON w.id = wm.workspace_id AND wm.user_id = :user_id
-        WHERE w.id = :workspace_id 
-        AND (w.owner_id = :user_id OR wm.user_id = :user_id)
-        LIMIT 1
-    """)
-    result_check = await db.execute(query_check, {"workspace_id": workspace_id, "user_id": current_user.user_id})
-    if not result_check.fetchone():
-        raise HTTPException(status_code=403, detail="You don't have access to this workspace")
-    
     # Simple aggregation by day - без generate_series для совместимости
     query = text("""
         SELECT 
@@ -186,7 +171,7 @@ async def get_balance_trend(
         FROM (
             SELECT date, SUM(amount) as amount
             FROM income
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -195,7 +180,7 @@ async def get_balance_trend(
         FULL OUTER JOIN (
             SELECT date, SUM(amount) as amount
             FROM expenses
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -205,7 +190,7 @@ async def get_balance_trend(
     """)
     
     result = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -225,7 +210,6 @@ async def get_balance_trend(
 
 @router.get("/chart/income-expense", response_model=ChartDataResponse)
 async def get_income_expense_chart(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     group_by: str = Query("day", description="Группировка: day, week, month"),
@@ -235,18 +219,6 @@ async def get_income_expense_chart(
     """
     Получить данные для графика доходов/расходов
     """
-    # Check workspace access
-    query_check = text("""
-        SELECT 1 FROM workspaces w
-        LEFT JOIN workspace_members wm ON w.id = wm.workspace_id AND wm.user_id = :user_id
-        WHERE w.id = :workspace_id 
-        AND (w.owner_id = :user_id OR wm.user_id = :user_id)
-        LIMIT 1
-    """)
-    result_check = await db.execute(query_check, {"workspace_id": workspace_id, "user_id": current_user.user_id})
-    if not result_check.fetchone():
-        raise HTTPException(status_code=403, detail="You don't have access to this workspace")
-    
     # Generate chart data without generate_series
     query = text("""
         SELECT 
@@ -256,7 +228,7 @@ async def get_income_expense_chart(
         FROM (
             SELECT date, SUM(amount) as amount
             FROM income
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -265,7 +237,7 @@ async def get_income_expense_chart(
         FULL OUTER JOIN (
             SELECT date, SUM(amount) as amount
             FROM expenses
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -275,7 +247,7 @@ async def get_income_expense_chart(
     """)
     
     result = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -291,7 +263,6 @@ async def get_income_expense_chart(
 
 @router.get("/chart/category-pie", response_model=Dict[str, float])
 async def get_category_pie_chart(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     transaction_type: str = Query("expense", description="Тип транзакций: income или expense"),
@@ -301,24 +272,12 @@ async def get_category_pie_chart(
     """
     Получить данные для круговой диаграммы по категориям
     """
-    # Check workspace access
-    query_check = text("""
-        SELECT 1 FROM workspaces w
-        LEFT JOIN workspace_members wm ON w.id = wm.workspace_id AND wm.user_id = :user_id
-        WHERE w.id = :workspace_id 
-        AND (w.owner_id = :user_id OR wm.user_id = :user_id)
-        LIMIT 1
-    """)
-    result_check = await db.execute(query_check, {"workspace_id": workspace_id, "user_id": current_user.user_id})
-    if not result_check.fetchone():
-        raise HTTPException(status_code=403, detail="You don't have access to this workspace")
-    
     # Get category breakdown
     table_name = "expenses" if transaction_type == "expense" else "income"
     query = text(f"""
         SELECT category, SUM(amount) as total
         FROM {table_name}
-        WHERE workspace_id = :workspace_id
+        WHERE user_id = :user_id
             AND date >= :start_date
             AND date <= :end_date
             AND deleted_at IS NULL
@@ -327,7 +286,7 @@ async def get_category_pie_chart(
     """)
     
     result = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -339,25 +298,12 @@ async def get_category_pie_chart(
 
 @router.get("/patterns", response_model=list[SpendingPatternSchema])
 async def get_spending_patterns(
-    workspace_id: int = Query(..., description="ID workspace"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Получить паттерны трат (регулярные платежи, подписки и т.д.)
     """
-    # Check workspace access
-    query_check = text("""
-        SELECT 1 FROM workspaces w
-        LEFT JOIN workspace_members wm ON w.id = wm.workspace_id AND wm.user_id = :user_id
-        WHERE w.id = :workspace_id 
-        AND (w.owner_id = :user_id OR wm.user_id = :user_id)
-        LIMIT 1
-    """)
-    result_check = await db.execute(query_check, {"workspace_id": workspace_id, "user_id": current_user.user_id})
-    if not result_check.fetchone():
-        raise HTTPException(status_code=403, detail="You don't have access to this workspace")
-    
     # Simple pattern detection - find recurring expenses (same category, similar amounts)
     query = text("""
         SELECT 
@@ -369,7 +315,7 @@ async def get_spending_patterns(
             category,
             0.8 as confidence_score
         FROM expenses
-        WHERE workspace_id = :workspace_id
+        WHERE user_id = :user_id
             AND deleted_at IS NULL
             AND date >= CURRENT_DATE - INTERVAL '3 months'
         GROUP BY category
@@ -378,7 +324,7 @@ async def get_spending_patterns(
         LIMIT 10
     """)
     
-    result = await db.execute(query, {"workspace_id": workspace_id})
+    result = await db.execute(query, {"user_id": current_user.user_id})
     patterns = result.fetchall()
     
     return [
@@ -397,7 +343,6 @@ async def get_spending_patterns(
 
 @router.get("/overview-old", response_model=Dict[str, Any])
 async def get_dashboard_data_old(
-    workspace_id: int = Query(..., description="ID workspace"),
     period: str = Query("month", description="Период: week, month, year"),
     start_date: Optional[date] = Query(None, description="Начальная дата"),
     end_date: Optional[date] = Query(None, description="Конечная дата"),
@@ -425,38 +370,38 @@ async def get_dashboard_data_old(
     stats_query = text("""
         SELECT 
             COALESCE((SELECT SUM(amount) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as total_income,
             COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as total_expense,
             COALESCE((SELECT SUM(amount) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) - 
             COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as balance,
             (SELECT COUNT(*) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL) as income_count,
             (SELECT COUNT(*) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL) as expense_count
     """)
     stats_result = await db.execute(stats_query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -469,7 +414,7 @@ async def get_dashboard_data_old(
             SUM(e.amount) as total,
             COUNT(*) as count
         FROM expenses e
-        WHERE e.workspace_id = :workspace_id
+        WHERE e.user_id = :user_id
             AND e.date >= :start_date
             AND e.date <= :end_date
             AND e.deleted_at IS NULL
@@ -478,7 +423,7 @@ async def get_dashboard_data_old(
         LIMIT 5
     """)
     top_cat_result = await db.execute(top_cat_query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -511,7 +456,6 @@ async def get_dashboard_data_old(
 
 @router.get("/compare-periods")
 async def compare_periods(
-    workspace_id: int = Query(..., description="ID workspace"),
     period1_start: date = Query(..., description="Начало первого периода"),
     period1_end: date = Query(..., description="Конец первого периода"),
     period2_start: date = Query(..., description="Начало второго периода"),
@@ -522,37 +466,25 @@ async def compare_periods(
     """
     Сравнить два периода
     """
-    # Check workspace access
-    query_check = text("""
-        SELECT 1 FROM workspaces w
-        LEFT JOIN workspace_members wm ON w.id = wm.workspace_id AND wm.user_id = :user_id
-        WHERE w.id = :workspace_id 
-        AND (w.owner_id = :user_id OR wm.user_id = :user_id)
-        LIMIT 1
-    """)
-    result_check = await db.execute(query_check, {"workspace_id": workspace_id, "user_id": current_user.user_id})
-    if not result_check.fetchone():
-        raise HTTPException(status_code=403, detail="You don't have access to this workspace")
-    
     query = text("""
         SELECT 
             COALESCE((SELECT SUM(amount) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as total_income,
             COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as total_expense,
             COALESCE((SELECT SUM(amount) FROM income 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) - 
             COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE workspace_id = :workspace_id 
+                WHERE user_id = :user_id 
                 AND date >= :start_date 
                 AND date <= :end_date 
                 AND deleted_at IS NULL), 0) as balance
@@ -560,7 +492,7 @@ async def compare_periods(
     
     # Период 1
     result1 = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": period1_start,
         "end_date": period1_end
     })
@@ -568,7 +500,7 @@ async def compare_periods(
     
     # Период 2
     result2 = await db.execute(query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": period2_start,
         "end_date": period2_end
     })
@@ -607,7 +539,6 @@ async def compare_periods(
 
 @router.get("/dashboard")
 async def get_dashboard_data(
-    workspace_id: int = Query(..., description="ID workspace"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -617,7 +548,7 @@ async def get_dashboard_data(
     Использует asyncio.gather() для параллельного выполнения независимых запросов
     """
     import asyncio
-    from app.models.models import Expense, Income, ExchangeRate, Workspace
+    from app.models.models import Expense, Income, ExchangeRate
     from sqlalchemy import select, func, and_, desc
     
     # Даты текущего месяца
@@ -626,34 +557,26 @@ async def get_dashboard_data(
     week_ago = today - timedelta(days=7)
     
     try:
-        # 1. Сначала получаем workspace (нужно для проверки доступа)
-        workspace_query = select(Workspace).where(Workspace.id == workspace_id)
-        workspace_result = await db.execute(workspace_query)
-        workspace = workspace_result.scalar_one_or_none()
-        
-        if not workspace:
-            raise HTTPException(status_code=404, detail="Workspace not found")
-        
-        # 2. Создаём все запросы
+        # Создаём все запросы
         stats_query = text("""
             SELECT 
                 COALESCE((SELECT SUM(amount) FROM income 
-                    WHERE workspace_id = :workspace_id 
+                    WHERE user_id = :user_id 
                     AND date >= :start_date 
                     AND date <= :end_date 
                     AND deleted_at IS NULL), 0) as total_income,
                 COALESCE((SELECT SUM(amount) FROM expenses 
-                    WHERE workspace_id = :workspace_id 
+                    WHERE user_id = :user_id 
                     AND date >= :start_date 
                     AND date <= :end_date 
                     AND deleted_at IS NULL), 0) as total_expense,
                 (SELECT COUNT(*) FROM income 
-                    WHERE workspace_id = :workspace_id 
+                    WHERE user_id = :user_id 
                     AND date >= :start_date 
                     AND date <= :end_date 
                     AND deleted_at IS NULL) as income_count,
                 (SELECT COUNT(*) FROM expenses 
-                    WHERE workspace_id = :workspace_id 
+                    WHERE user_id = :user_id 
                     AND date >= :start_date 
                     AND date <= :end_date 
                     AND deleted_at IS NULL) as expense_count
@@ -661,7 +584,6 @@ async def get_dashboard_data(
         
         recent_expenses_query = select(Expense).where(
             and_(
-                Expense.workspace_id == workspace_id,
                 Expense.user_id == current_user.user_id,
                 Expense.deleted_at.is_(None),
                 Expense.date >= week_ago,
@@ -671,7 +593,6 @@ async def get_dashboard_data(
         
         recent_income_query = select(Income).where(
             and_(
-                Income.workspace_id == workspace_id,
                 Income.user_id == current_user.user_id,
                 Income.deleted_at.is_(None),
                 Income.date >= week_ago,
@@ -702,9 +623,9 @@ async def get_dashboard_data(
             .order_by(ExchangeRate.from_currency, ExchangeRate.to_currency)
         )
         
-        # 3. Выполняем все запросы ПАРАЛЛЕЛЬНО
+        # Выполняем все запросы ПАРАЛЛЕЛЬНО
         stats_result, expenses_result, income_result, rates_result = await asyncio.gather(
-            db.execute(stats_query, {"workspace_id": workspace_id, "start_date": start_of_month, "end_date": today}),
+            db.execute(stats_query, {"user_id": current_user.user_id, "start_date": start_of_month, "end_date": today}),
             db.execute(recent_expenses_query),
             db.execute(recent_income_query),
             db.execute(rates_query)
@@ -722,12 +643,6 @@ async def get_dashboard_data(
         
         # Формируем ответ
         return {
-            "workspace": {
-                "id": workspace.id,
-                "name": workspace.name,
-                "currency": workspace.currency,
-                "description": workspace.description
-            },
             "balance": {
                 "total_income": total_income,
                 "total_expense": total_expense,

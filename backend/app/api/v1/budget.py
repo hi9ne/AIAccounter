@@ -21,9 +21,8 @@ async def create_budget(
     # Проверяем, есть ли уже бюджет на этот месяц
     query = select(Budget).where(
         and_(
-            Budget.user_id == current_user.user_id,
-            Budget.month == budget.month,
-            Budget.workspace_id == budget.workspace_id
+            Budget.user_id == user_id,
+            Budget.month == budget.month
         )
     )
     result = await db.execute(query)
@@ -40,7 +39,6 @@ async def create_budget(
     # Создаём новый
     db_budget = Budget(
         user_id=user_id,
-        workspace_id=budget.workspace_id,
         month=budget.month,
         budget_amount=budget.budget_amount,
         currency=budget.currency,
@@ -55,19 +53,15 @@ async def create_budget(
 async def get_budget(
     month: str,  # Format: YYYY-MM
     user_id: int,  # TODO: получать из JWT токена
-    workspace_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """Получить бюджет на конкретный месяц"""
     query = select(Budget).where(
         and_(
-            Budget.user_id == current_user.user_id,
+            Budget.user_id == user_id,
             Budget.month == month
         )
     )
-    
-    if workspace_id:
-        query = query.where(Budget.workspace_id == workspace_id)
     
     result = await db.execute(query)
     budget = result.scalar_one_or_none()
@@ -82,20 +76,16 @@ async def get_budget(
 async def get_budget_status(
     month: str,  # Format: YYYY-MM
     user_id: int,  # TODO: получать из JWT токена
-    workspace_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """Получить статус бюджета с расходами"""
     # Получаем бюджет
     budget_query = select(Budget).where(
         and_(
-            Budget.user_id == current_user.user_id,
+            Budget.user_id == user_id,
             Budget.month == month
         )
     )
-    
-    if workspace_id:
-        budget_query = budget_query.where(Budget.workspace_id == workspace_id)
     
     budget_result = await db.execute(budget_query)
     budget = budget_result.scalar_one_or_none()
@@ -110,15 +100,12 @@ async def get_budget_status(
         func.count(Expense.id).label("transaction_count")
     ).where(
         and_(
-            Expense.user_id == current_user.user_id,
+            Expense.user_id == user_id,
             Expense.deleted_at.is_(None),
             extract('year', Expense.date) == int(year),
             extract('month', Expense.date) == int(month_num)
         )
     )
-    
-    if workspace_id:
-        expenses_query = expenses_query.where(Expense.workspace_id == workspace_id)
     
     expenses_result = await db.execute(expenses_query)
     expenses_data = expenses_result.one()
@@ -145,19 +132,15 @@ async def update_budget(
     month: str,
     budget_update: BudgetUpdate,
     user_id: int,  # TODO: получать из JWT токена
-    workspace_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """Обновить бюджет"""
     query = select(Budget).where(
         and_(
-            Budget.user_id == current_user.user_id,
+            Budget.user_id == user_id,
             Budget.month == month
         )
     )
-    
-    if workspace_id:
-        query = query.where(Budget.workspace_id == workspace_id)
     
     result = await db.execute(query)
     budget = result.scalar_one_or_none()
@@ -178,19 +161,15 @@ async def update_budget(
 async def delete_budget(
     month: str,
     user_id: int,  # TODO: получать из JWT токена
-    workspace_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db)
 ):
     """Удалить бюджет"""
     query = select(Budget).where(
         and_(
-            Budget.user_id == current_user.user_id,
+            Budget.user_id == user_id,
             Budget.month == month
         )
     )
-    
-    if workspace_id:
-        query = query.where(Budget.workspace_id == workspace_id)
     
     result = await db.execute(query)
     budget = result.scalar_one_or_none()

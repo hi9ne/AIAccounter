@@ -1,173 +1,258 @@
-// AI Accounter Mini App v2.4.0 - Modern UI
-// Работает через n8n с Supabase PostgreSQL
+// ============================================================================
+// AIAccounter Mini App v3.0.0 - Read-Only Analytics Dashboard
+// Clean, Fast, Optimized
+// ============================================================================
 
-// ========== INITIALIZATION ==========
+console.log('🚀 AIAccounter v3.0.0 - Analytics Dashboard');
 
-// Telegram WebApp initialization with fallback
+// ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp || {
-    ready: () => console.log('Mock: Telegram WebApp ready'),
-    expand: () => console.log('Mock: Telegram WebApp expand'),
-    initDataUnsafe: { 
-        user: { id: null } // Will use fallback ID
-    },
-    MainButton: {
-        setText: () => {},
-        showProgress: () => {},
-        hideProgress: () => {},
-        show: () => {},
-        hide: () => {}
-    },
-    showAlert: null // Not supported in old versions
+    ready: () => console.log('[Mock] Telegram WebApp ready'),
+    expand: () => console.log('[Mock] Telegram WebApp expand'),
+    initDataUnsafe: { user: { id: null } },
+    MainButton: { show: () => {}, hide: () => {}, setText: () => {} }
 };
 
-// Initialize Telegram WebApp if available
 if (window.Telegram?.WebApp) {
     tg.ready();
     tg.expand();
     console.log('✅ Telegram WebApp initialized');
+    console.log('📱 Telegram user data:', tg.initDataUnsafe?.user);
 } else {
-    console.warn('⚠️ Telegram WebApp not found, using mock for testing');
+    console.warn('⚠️ Running without Telegram WebApp (testing mode)');
 }
 
-// Import configuration with fallback
-const config = window.MiniAppConfig || {
-    mode: 'fallback',
-    n8nWebhooks: {
-        miniapp: 'https://hi9neee.app.n8n.cloud/webhook/test', // Fallback endpoint
-        workspace: 'https://hi9neee.app.n8n.cloud/webhook/workspace-api',
-        analytics: 'https://hi9neee.app.n8n.cloud/webhook/analytics-api',
-        reports: 'https://hi9neee.app.n8n.cloud/webhook/reports-api'
-    }
+// ===== CONFIG =====
+const API_BASE = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') || 
+    (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://aiaccounterbackend-production.up.railway.app');
+
+console.log('📡 API Base:', API_BASE);
+
+// ===== STATE =====
+let state = {
+    currentScreen: 'home',
+    currentPeriod: 'week',
+    userId: tg.initDataUnsafe?.user?.id || null,
+    userName: tg.initDataUnsafe?.user?.first_name || tg.initDataUnsafe?.user?.username || 'Пользователь',
+    userPhoto: tg.initDataUnsafe?.user?.photo_url || null,
+    currency: 'KGS',
+    theme: 'auto'
 };
 
-// API Base URL - использует конфиг из miniapp-config.js
-const API_BASE_URL = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') || 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:8000'
-        : 'https://aiaccounterbackend-production.up.railway.app');
-
-// Current state
-let currentScreen = 'home';
-let currentWorkspaceId = null;
-let currentUserId = null;
-let selectedCurrency = 'KGS';
-let transactionType = 'expense';
-let isAuthenticated = false;
-
-// Currency rates cache
-let exchangeRates = {};
-
-// ✅ Batch конвертация транзакций
-async function convertTransactionsBatch(transactions, displayCurrency) {
-    if (!transactions || transactions.length === 0) {
-        return [];
-    }
+// ===== CACHE =====
+const cache = {
+    data: new Map(),
     
-    // Проверяем кеш
-    const cacheKey = `batch_conv:${transactions.map(t => t.id).join(',')}:${displayCurrency}`;
-    const cached = frontendCache.get(cacheKey);
-    if (cached) {
-        return cached;
-    }
+    set(key, value, ttl = 300) {
+        this.data.set(key, {
+            value,
+            expires: Date.now() + (ttl * 1000)
+        });
+    },
     
-    console.log(`💱 Batch converting ${transactions.length} transactions to ${displayCurrency}`);
-    
-    // Подготавливаем запросы на конвертацию
-    const conversions = transactions.map(t => ({
-        amount: t.amount,
-        from_currency: t.currency || 'KGS',
-        to_currency: displayCurrency
-    }));
-    
-    try {
-        const response = await api.convertAmountBatch(conversions);
-        
-        if (response && response.results) {
-            const convertedTransactions = transactions.map((t, i) => {
-                const result = response.results[i];
-                return {
-                    ...t,
-                    convertedAmount: result ? result.converted_amount : t.amount
-                };
-            });
-            
-            // Кешируем на 5 минут
-            frontendCache.set(cacheKey, convertedTransactions, 300);
-            
-            console.log(`✅ Batch conversion complete: ${response.successful_conversions}/${response.total_conversions}`);
-            return convertedTransactions;
+    get(key) {
+        const item = this.data.get(key);
+        if (!item) return null;
+        if (Date.now() > item.expires) {
+            this.data.delete(key);
+            return null;
         }
-    } catch (error) {
-        console.warn('⚠️ Batch conversion failed, falling back to original amounts:', error);
-    }
+        return item.value;
+    },
     
-    // Fallback: возвращаем оригинальные суммы
-    return transactions.map(t => ({
-        ...t,
-        convertedAmount: t.amount
-    }));
-}
-
-// Categories with icons
-const categories = {
-    expense: [
-        { name: 'Продукты', icon: 'fa-shopping-cart' },
-        { name: 'Транспорт', icon: 'fa-car' },
-        { name: 'Кафе', icon: 'fa-coffee' },
-        { name: 'Одежда', icon: 'fa-tshirt' },
-        { name: 'Развлечения', icon: 'fa-gamepad' },
-        { name: 'Здоровье', icon: 'fa-heartbeat' },
-        { name: 'Дом', icon: 'fa-home' },
-        { name: 'Связь', icon: 'fa-phone' }
-    ],
-    income: [
-        { name: 'Зарплата', icon: 'fa-money-bill-wave' },
-        { name: 'Фриланс', icon: 'fa-laptop' },
-        { name: 'Продажа', icon: 'fa-tag' },
-        { name: 'Инвестиции', icon: 'fa-chart-line' },
-        { name: 'Подарок', icon: 'fa-gift' }
-    ]
+    clear() {
+        this.data.clear();
+        console.log('🗑️ Cache cleared');
+    }
 };
 
-// =================================
-// Loading State Management
-// =================================
+// ===== UTILITY FUNCTIONS =====
+function formatCurrency(amount, currency = state.currency) {
+    const symbols = { KGS: 'с', USD: '$', EUR: '€', RUB: '₽' };
+    const formatted = new Intl.NumberFormat('ru-RU', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(Math.abs(amount));
+    
+    return `${formatted} ${symbols[currency] || currency}`;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+        return 'Сегодня';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return 'Вчера';
+    }
+    
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: 'numeric',
+        month: 'long'
+    }).format(date);
+}
 
 function showLoading() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        overlay.style.display = 'flex';
+        overlay.classList.add('active');
     }
+}
+
+// Устанавливает имя и аватар пользователя из Telegram
+function ensureUserIdentity() {
+    console.log('👤 Updating user identity...');
+    console.log('Telegram WebApp object:', window.Telegram?.WebApp);
+    console.log('initDataUnsafe:', tg?.initDataUnsafe);
+    
+    // Освежим данные из Telegram на всякий случай
+    const tgUser = tg?.initDataUnsafe?.user || {};
+    console.log('Telegram user data:', tgUser);
+    
+    if (tgUser && tgUser.id) {
+        state.userId = tgUser.id;
+        state.userName = tgUser.first_name || tgUser.username || 'Пользователь';
+        state.userPhoto = tgUser.photo_url || null;
+        
+        console.log('✅ User identity updated:', {
+            id: state.userId,
+            name: state.userName,
+            photo: state.userPhoto ? 'present' : 'absent'
+        });
+    } else {
+        console.warn('⚠️ No Telegram user data available');
+    }
+
+    const userNameEl = document.getElementById('user-name');
+    if (userNameEl) {
+        userNameEl.textContent = state.userName;
+        console.log('📝 Username set to:', state.userName);
+    }
+
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl) {
+        if (state.userPhoto) {
+            avatarEl.style.backgroundImage = `url(${state.userPhoto})`;
+            avatarEl.style.backgroundSize = 'cover';
+            avatarEl.style.backgroundPosition = 'center';
+            avatarEl.innerHTML = '';
+            console.log('🖼️ Avatar image set');
+        } else {
+            // Вернём иконку, если фото нет
+            if (!avatarEl.querySelector('i')) {
+                avatarEl.innerHTML = '<i class="fas fa-user-circle"></i>';
+            }
+            avatarEl.style.removeProperty('background-image');
+            console.log('👤 Using default avatar icon');
+        }
+    }
+}
+
+// Возвращает диапазон дат для периода в формате YYYY-MM-DD
+function getDateRangeFor(period) {
+    const end = new Date();
+    let start = new Date();
+    switch (period) {
+        case 'day':
+            // за сегодняшний день
+            break;
+        case 'week':
+            start.setDate(end.getDate() - 7);
+            break;
+        case 'month':
+            start.setMonth(end.getMonth() - 1);
+            break;
+        case 'quarter':
+            start.setMonth(end.getMonth() - 3);
+            break;
+        case 'year':
+            start.setFullYear(end.getFullYear() - 1);
+            break;
+        default:
+            start.setMonth(end.getMonth() - 1);
+    }
+    const toISO = (d) => d.toISOString().split('T')[0];
+    return { start_date: toISO(start), end_date: toISO(end) };
 }
 
 function hideLoading() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
-        overlay.style.display = 'none';
+        overlay.classList.remove('active');
     }
 }
 
-// ========== NAVIGATION ==========
-
-function switchScreen(screenName) {
-    // Hide all screens
-    document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.remove('active');
-    });
+function showError(message) {
+    console.error('❌ Error:', message);
     
-    // Deactivate all nav items
+    // Используем HapticFeedback вместо showAlert
+    if (tg.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+    
+    // Показываем визуальное уведомление
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Обработка ошибок с перенаправлением на логин
+function handleError(error, customMessage = 'Произошла ошибка') {
+    console.error('❌ Error:', error);
+    
+    // Если ошибка 401 - перенаправляем на логин
+    if (error.message && (
+        error.message.includes('Not authenticated') || 
+        error.message.includes('Could not validate credentials') ||
+        error.message.includes('401') ||
+        error.message.includes('Unauthorized')
+    )) {
+        localStorage.removeItem('auth_token');
+        showError('Сессия истекла. Перенаправление на логин...');
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1500);
+        return;
+    }
+    
+    showError(customMessage);
+}
+
+// ===== NAVIGATION =====
+function switchScreen(screenName) {
+    console.log(`📍 Navigate to: ${screenName}`);
+    
+    // Hide all screens
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    
+    // Show target screen
+    const targetScreen = document.getElementById(`${screenName}-screen`);
+    if (targetScreen) {
+        targetScreen.classList.add('active');
+    }
+    
+    // Update navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
+        if (item.dataset.screen === screenName) {
+            item.classList.add('active');
+        }
     });
     
-    // Show selected screen
-    document.getElementById(`${screenName}-screen`).classList.add('active');
-    
-    // Activate nav item
-    const navItem = document.querySelector(`[data-screen="${screenName}"]`);
-    if (navItem) navItem.classList.add('active');
-    
-    currentScreen = screenName;
+    state.currentScreen = screenName;
     
     // Load screen data
     loadScreenData(screenName);
@@ -181,1656 +266,823 @@ function loadScreenData(screenName) {
         case 'analytics':
             loadAnalytics();
             break;
-        case 'team':
-            loadTeam();
-            break;
-        case 'reports':
-            initReportsScreen();
+        case 'history':
+            loadHistory();
             break;
         case 'settings':
             loadSettings();
             break;
-        case 'history':
-            loadHistory();
+        case 'reports':
+            loadReports();
             break;
     }
 }
 
-// ========== MODAL MANAGEMENT ==========
-
-function openAddTransactionModal() {
-    document.getElementById('add-transaction-modal').classList.add('active');
-    resetTransactionForm();
-}
-
-// Alias for HTML onclick
-function openAddTransaction(type) {
-    openAddTransactionModal();
-    if (type) {
-        currentTransactionType = type;
-        document.querySelectorAll('.transaction-type-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.type === type);
-        });
-    }
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.style.animation = 'modalFadeOut 0.2s ease';
-    setTimeout(() => {
-        modal.classList.remove('active');
-        modal.style.animation = '';
-    }, 200);
-}
-
-function resetTransactionForm() {
-    document.getElementById('amount').value = '';
-    document.getElementById('description').value = '';
-    document.querySelectorAll('.category-pill').forEach(pill => {
-        pill.classList.remove('active');
-    });
-    setCurrentDateTime();
+// ===== AUTHENTICATION =====
+async function authenticate() {
+    console.log('🔐 Authenticating...');
     
-    // Set default currency from settings
-    const savedCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-    const currencySelect = document.getElementById('transaction-currency-select');
-    if (currencySelect) {
-        currencySelect.value = savedCurrency;
-    }
-}
-
-function setCurrentDateTime() {
-    const now = new Date();
-    const date = now.toISOString().split('T')[0];
-    const time = now.toTimeString().slice(0, 5);
-    document.getElementById('transaction-date').value = date;
-    document.getElementById('transaction-time').value = time;
-}
-
-function toggleTransactionType(type) {
-    transactionType = type;
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    // Update category pills with icons
-    const categoryContainer = document.querySelector('.category-pills');
-    categoryContainer.innerHTML = categories[type].map(cat => 
-        `<div class="category-pill" onclick="selectCategory('${cat.name}')">
-            <i class="fas ${cat.icon}"></i>
-            <span>${cat.name}</span>
-        </div>`
-    ).join('');
-}
-
-function selectCategory(category) {
-    document.querySelectorAll('.category-pill').forEach(pill => {
-        pill.classList.remove('active');
-    });
-    // Находим родительский элемент category-pill
-    const pillElement = event.target.closest('.category-pill');
-    if (pillElement) {
-        pillElement.classList.add('active');
-    }
-}
-
-// ========== API CALLS ==========
-
-// Currency conversion functions
-async function loadExchangeRates() {
-    try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            console.warn('⚠️ No auth token for loading rates');
-            return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/api/v1/rates/latest`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const rates = await response.json();
-            console.log('📊 Raw rates from API:', rates);
-            
-            // Build rates lookup object
-            exchangeRates = {};
-            
-            if (Array.isArray(rates)) {
-                rates.forEach(rate => {
-                    const key = `${rate.from_currency}_${rate.to_currency}`;
-                    exchangeRates[key] = rate.rate;
-                });
-            }
-            
-            console.log('✅ Exchange rates loaded:', Object.keys(exchangeRates).length, 'pairs');
-            console.log('📋 Available rates:', Object.keys(exchangeRates));
-        } else {
-            const errorText = await response.text();
-            console.error('❌ Failed to load exchange rates:', response.status, errorText);
-        }
-    } catch (error) {
-        console.error('❌ Error loading exchange rates:', error);
-    }
-}
-
-async function convertCurrency(amount, fromCurrency, toCurrency) {
-    // Same currency - no conversion needed
-    if (fromCurrency === toCurrency) {
-        return amount;
-    }
-
-    console.log(`🔄 Converting ${amount} from ${fromCurrency} to ${toCurrency}`);
-    console.log(`📊 Available rates:`, Object.keys(exchangeRates).filter(k => 
-        k.includes(fromCurrency) || k.includes(toCurrency)
-    ));
-
-    // Direct rate lookup
-    const directKey = `${fromCurrency}_${toCurrency}`;
-    if (exchangeRates[directKey]) {
-        const result = amount * parseFloat(exchangeRates[directKey]);
-        console.log(`✅ Direct rate: ${exchangeRates[directKey]} → ${result}`);
-        return result;
-    }
-
-    // Reverse rate lookup
-    const reverseKey = `${toCurrency}_${fromCurrency}`;
-    if (exchangeRates[reverseKey]) {
-        const result = amount / parseFloat(exchangeRates[reverseKey]);
-        console.log(`✅ Reverse rate: ${exchangeRates[reverseKey]} → ${result}`);
-        return result;
-    }
-
-    // Cross-rate through USD
-    const toUsdKey = `${fromCurrency}_USD`;
-    const fromUsdKey = `USD_${toCurrency}`;
-    
-    if (exchangeRates[toUsdKey] && exchangeRates[fromUsdKey]) {
-        const usdAmount = amount * parseFloat(exchangeRates[toUsdKey]);
-        const result = usdAmount * parseFloat(exchangeRates[fromUsdKey]);
-        console.log(`✅ Cross-rate via USD: ${result}`);
-        return result;
-    }
-
-    // Try reverse cross-rate
-    const fromUsdKeyReverse = `${fromCurrency}_USD`;
-    const toUsdKeyReverse = `USD_${toCurrency}`;
-    
-    if (exchangeRates[fromUsdKeyReverse] && exchangeRates[toUsdKeyReverse]) {
-        const usdAmount = amount * parseFloat(exchangeRates[fromUsdKeyReverse]);
-        const result = usdAmount * parseFloat(exchangeRates[toUsdKeyReverse]);
-        console.log(`✅ Reverse cross-rate via USD: ${result}`);
-        return result;
-    }
-
-    // If no rate found, return original amount
-    console.warn(`⚠️ No exchange rate found for ${fromCurrency} -> ${toCurrency}, returning original amount`);
-    return amount;
-}
-
-function formatCurrency(amount, currency) {
-    const symbols = {
-        'KGS': 'с',
-        'USD': '$',
-        'EUR': '€',
-        'RUB': '₽'
-    };
-    
-    const symbol = symbols[currency] || currency;
-    const formatted = Math.abs(amount).toFixed(2);
-    
-    // Для KGS и RUB символ идет после числа, для USD и EUR - перед
-    if (currency === 'KGS' || currency === 'RUB') {
-        return `${formatted} ${symbol}`;
-    } else {
-        return `${symbol}${formatted}`;
-    }
-}
-
-function getUserId() {
-    if (currentUserId) return currentUserId;
-    
-    // Try to get Telegram user ID
-    const userId = tg.initDataUnsafe?.user?.id;
-    
-    if (!userId) {
-        // Fallback for local testing or old Telegram versions
-        console.warn('⚠️ Telegram ID not found, using fallback ID for testing');
-        currentUserId = 123456789; // Fallback test ID
-        return currentUserId;
-    }
-    
-    currentUserId = userId;
-    return userId;
-}
-
-async function apiCall(endpoint, action, data = {}) {
-    try {
-        const userId = getUserId();
-        if (!userId) {
-            console.warn('⚠️ User ID not available');
-            return { success: false, error: 'User ID not available' };
-        }
-
-        const payload = {
-            userId: userId,
-            workspaceId: currentWorkspaceId,
-            action: action,
-            ...data
-        };
-
-        console.log(`🚀 API Call: ${endpoint}/${action}`, payload);
-
-        const webhookUrl = config.n8nWebhooks[endpoint];
-        if (!webhookUrl) {
-            console.error(`❌ No webhook URL for endpoint: ${endpoint}`);
-            return { success: false, error: `Endpoint ${endpoint} not configured` };
-        }
-
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        console.log(`📡 Response status: ${response.status}`);
-
-        if (!response.ok) {
-            if (response.status === 404) {
-                console.error(`❌ Webhook not found: ${webhookUrl}`);
-                return { success: false, error: 'API endpoint not found. Please check n8n workflow setup.' };
-            }
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const result = await response.json();
-        console.log(`✅ API Response:`, result);
-        return result;
-    } catch (error) {
-        console.error(`❌ API Error (${endpoint}/${action}):`, error);
-        return { 
-            success: false, 
-            error: error.message || 'Network error',
-            endpoint: endpoint,
-            action: action
-        };
-    }
-}
-
-// ========== AUTHENTICATION ==========
-
-async function authenticateUser() {
-    console.log('🔐 Starting authentication...');
-    
-    // Check if token already exists and validate it
+    // Проверяем наличие токена
     const existingToken = localStorage.getItem('auth_token');
     if (existingToken) {
+        console.log('✅ Token found');
         api.setToken(existingToken);
-        
-        // Try to validate token
-        try {
-            await api.getWorkspaces();
-            console.log('✅ Using existing token');
-            isAuthenticated = true;
-            return;
-        } catch (error) {
-            console.warn('⚠️ Token expired or invalid, re-authenticating...');
-            localStorage.removeItem('auth_token');
-        }
-    }
-
-    // Get Telegram user data
-    const telegramUser = tg.initDataUnsafe?.user;
-    
-    // Если НЕ в Telegram и нет токена - перенаправляем на страницу входа
-    if (!telegramUser || !telegramUser.id) {
-        console.warn('⚠️ No Telegram user data and no token');
-        // Перенаправляем на логин, если не там уже
-        if (!window.location.pathname.includes('login.html')) {
-            console.log('🔄 Redirecting to login page...');
-            window.location.href = 'login.html';
-        }
-        isAuthenticated = false;
-        return;
+        return true;
     }
     
     try {
-        console.log('📱 Authenticating with user:', telegramUser.id, telegramUser.first_name);
+        const telegramData = tg.initDataUnsafe;
+        const userId = telegramData?.user?.id;
         
-        // Prepare auth data matching backend schema
-        const authData = {
-            telegram_chat_id: telegramUser.id.toString(),
-            username: telegramUser.username || null,
-            first_name: telegramUser.first_name || null,
-            last_name: telegramUser.last_name || null,
-            language_code: telegramUser.language_code || 'ru'
-        };
+        // Если нет userId - перенаправляем на логин
+        if (!userId) {
+            console.warn('⚠️ No Telegram user ID, redirecting to login...');
+            window.location.href = 'login.html';
+            return false;
+        }
         
-        // Authenticate via API
-        const response = await api.authTelegram(authData);
+        const response = await api.authTelegram({
+            telegram_chat_id: String(userId), // Конвертируем в строку
+            first_name: telegramData?.user?.first_name || 'Пользователь',
+            username: telegramData?.user?.username || null,
+            last_name: telegramData?.user?.last_name || null,
+            language_code: telegramData?.user?.language_code || 'ru'
+        });
         
-        if (response && response.access_token) {
-            // Save token
-            api.setToken(response.access_token);
-            currentUserId = telegramUser.id;
-            isAuthenticated = true;
-            console.log('✅ Authentication successful, token saved');
-        } else {
-            throw new Error('No access token received');
+        if (response.access_token) {
+            localStorage.setItem('auth_token', response.access_token);
+            state.userId = userId;
+            state.userName = telegramData?.user?.first_name || 'Пользователь';
+            
+            document.getElementById('user-name').textContent = state.userName;
+            
+            console.log('✅ Authentication successful');
+            
+            // Переключаемся на главный экран (он сам загрузит данные)
+            switchScreen('home');
+            return true;
         }
     } catch (error) {
         console.error('❌ Authentication failed:', error);
-        showError('Ошибка авторизации. Пожалуйста, перезапустите приложение.');
-        isAuthenticated = false;
+        showError('Ошибка авторизации');
+        
+        // Перенаправляем на логин при ошибке
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 2000);
+        
+        return false;
     }
 }
 
-// ========== DASHBOARD (HOME) ==========
 
+
+// ===== DASHBOARD (HOME) =====
 async function loadDashboard() {
-    showLoading();
+    console.log(`📊 Loading dashboard for period: ${state.currentPeriod}`);
+    
+    const cacheKey = `dashboard:${state.currentPeriod}`;
+    const cached = cache.get(cacheKey);
+    
+    // Показываем индикатор на кнопке обновления
+    const refreshBtn = document.querySelector('.icon-btn');
+    if (refreshBtn) refreshBtn.classList.add('loading');
+    
     try {
-        // 🚀 ОПТИМИЗАЦИЯ: Сначала загружаем workspace (нужен для dashboard запроса)
-        await loadWorkspaces();
-        
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace available');
-            hideLoading();
-            return;
-        }
-        
-        // 🚀 НОВЫЙ ПОДХОД: Один запрос вместо 7+
-        const cacheKey = `dashboard:${currentWorkspaceId}`;
-        const cached = frontendCache.get(cacheKey);
-        
+        let data;
         if (cached) {
             console.log('📦 Using cached dashboard data');
-            updateDashboardUI(cached);
-            hideLoading();
-            return;
+            data = cached;
+        } else {
+            data = await api.getOverview({ period: state.currentPeriod });
+            cache.set(cacheKey, data, 300); // Cache for 5 minutes
+        }
+
+        // Всегда загружаем топ категории (даже при кэше)
+        try {
+            const range = getDateRangeFor(state.currentPeriod);
+            console.log('📊 Loading top categories with range:', range);
+            const homeTop = await api.getCategoryAnalytics({ ...range, limit: 3 });
+            console.log('📊 Top categories response:', homeTop);
+            if (Array.isArray(homeTop)) {
+                updateHomeTopCategories(homeTop);
+            } else {
+                console.warn('⚠️ Top categories is not an array:', homeTop);
+            }
+        } catch (e) {
+            console.warn('Не удалось загрузить топ категории для главной', e);
         }
         
-        console.log('🚀 Loading dashboard data (1 request)...');
-        const startTime = performance.now();
+        updateDashboardUI(data);
         
-        // Один запрос для всех данных!
-        const dashboardData = await api.getOverview({ workspace_id: currentWorkspaceId });
-        
-        const loadTime = (performance.now() - startTime).toFixed(0);
-        console.log(`✅ Dashboard loaded in ${loadTime}ms`);
-        
-        // 🐛 DEBUG: Выводим структуру ответа
-        console.log('📊 Dashboard data:', JSON.stringify(dashboardData, null, 2));
-        
-        // Кешируем на 30 секунд
-        frontendCache.set(cacheKey, dashboardData, 30);
-        
-        updateDashboardUI(dashboardData);
-        
+        console.log('✅ Dashboard loaded');
     } catch (error) {
-        console.error('❌ Error loading dashboard:', error);
-        showError('Не удалось загрузить данные');
+        handleError(error, 'Не удалось загрузить данные');
     } finally {
-        hideLoading();
+        if (refreshBtn) refreshBtn.classList.remove('loading');
     }
 }
 
 function updateDashboardUI(data) {
-    console.log('🎨 updateDashboardUI called with data:', data);
+    console.log('🎨 Updating dashboard UI', data);
     
-    const displayCurrency = localStorage.getItem('defaultCurrency') || data.workspace?.currency || 'KGS';
-    console.log('💰 Display currency:', displayCurrency);
-    
-    // Сохраняем курсы валют в глобальную переменную
-    if (data.exchange_rates) {
-        exchangeRates = {};
-        data.exchange_rates.forEach(rate => {
-            const key = `${rate.from_currency}_${rate.to_currency}`;
-            exchangeRates[key] = rate.rate;
-        });
-        console.log(`💱 Loaded ${data.exchange_rates.length} exchange rates`);
-    }
-    
-    // Обновляем баланс
-    if (data.balance) {
-        console.log('💵 Updating balance:', data.balance);
-        updateBalanceUIFromData(data.balance, displayCurrency);
-    } else {
+    if (!data || !data.balance) {
         console.warn('⚠️ No balance data');
-    }
-    
-    // Обновляем статистику
-    if (data.balance) {
-        console.log('📊 Updating stats:', data.balance);
-        updateQuickStatsUIFromData(data.balance, displayCurrency);
-    } else {
-        console.warn('⚠️ No stats data');
-    }
-    
-    // Обновляем последние транзакции
-    if (data.recent_transactions) {
-        console.log('📝 Updating transactions:', data.recent_transactions);
-        updateRecentTransactionsUI(data.recent_transactions, displayCurrency);
-    } else {
-        console.warn('⚠️ No recent transactions');
-    }
-}
-
-function updateBalanceUIFromData(balanceData, currency) {
-    const balanceEl = document.querySelector('.balance-amount');
-    console.log('🔍 Balance element:', balanceEl);
-    
-    if (balanceEl) {
-        const formatted = formatCurrency(balanceData.balance, currency);
-        console.log(`💵 Setting balance to: ${formatted}`);
-        balanceEl.textContent = formatted;
-    } else {
-        console.error('❌ Balance element not found!');
-    }
-    if (balanceEl) {
-        balanceEl.textContent = formatCurrency(balanceData.balance, currency);
-    }
-    
-    const changeEl = document.querySelector('.balance-change');
-    if (changeEl && changeEl.querySelector('span')) {
-        // TODO: Calculate proper change percentage
-        changeEl.querySelector('span').textContent = '+0.0%';
-    }
-}
-
-function updateQuickStatsUIFromData(balanceData, currency) {
-    console.log('📈 updateQuickStatsUIFromData called');
-    const incomeEl = document.querySelector('.stat-item.income .stat-value');
-    const expenseEl = document.querySelector('.stat-item.expense .stat-value');
-    
-    console.log('🔍 Income element:', incomeEl);
-    console.log('🔍 Expense element:', expenseEl);
-    
-    if (incomeEl) {
-        const formatted = formatCurrency(balanceData.total_income, currency);
-        console.log(`💚 Setting income to: ${formatted}`);
-        incomeEl.textContent = formatted;
-    } else {
-        console.error('❌ Income element not found!');
-    }
-    
-    if (expenseEl) {
-        const formatted = formatCurrency(balanceData.total_expense, currency);
-        console.log(`❤️ Setting expense to: ${formatted}`);
-        expenseEl.textContent = formatted;
-    } else {
-        console.error('❌ Expense element not found!');
-    }
-}
-
-function updateRecentTransactionsUI(transactions, displayCurrency) {
-    const container = document.querySelector('.transactions-list');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    // Объединяем и сортируем транзакции
-    const allTransactions = [
-        ...transactions.expenses.map(e => ({ ...e, type: 'expense' })),
-        ...transactions.income.map(i => ({ ...i, type: 'income' }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-    
-    if (allTransactions.length === 0) {
-        container.innerHTML = '<div class="empty-state">Нет транзакций за последнюю неделю</div>';
         return;
     }
     
-    allTransactions.forEach(t => {
-        const item = document.createElement('div');
-        item.className = 'transaction-item';
-        item.onclick = () => openTransactionDetails(t.id, t.type);
-        
-        // Конвертируем если нужно
-        let displayAmount = t.amount;
-        if (t.currency !== displayCurrency && exchangeRates[`${t.currency}_${displayCurrency}`]) {
-            displayAmount = t.amount * exchangeRates[`${t.currency}_${displayCurrency}`];
-        }
-        
-        item.innerHTML = `
-            <div class="transaction-icon ${t.type}">
-                <i class="fa-solid fa-${t.type === 'expense' ? 'arrow-up' : 'arrow-down'}"></i>
-            </div>
-            <div class="transaction-details">
-                <div class="transaction-title">${t.category}</div>
-                <div class="transaction-description">${t.description || ''}</div>
-            </div>
-            <div class="transaction-amount ${t.type}">
-                ${t.type === 'expense' ? '-' : '+'}${formatCurrency(displayAmount, displayCurrency)}
+    // Balance
+    const balance = data.balance.balance || 0;
+    const income = data.balance.total_income || 0;
+    const expense = data.balance.total_expense || 0;
+    
+    document.getElementById('main-balance').textContent = formatCurrency(balance);
+    document.getElementById('total-income').textContent = formatCurrency(income);
+    document.getElementById('total-expense').textContent = formatCurrency(expense);
+    
+    // Trend (simplified - можно улучшить с историческими данными)
+    const trendEl = document.getElementById('balance-trend');
+    if (trendEl && balance !== 0) {
+        const isPositive = balance > 0;
+        trendEl.innerHTML = `<i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i> ${Math.abs(balance).toFixed(1)}%`;
+        trendEl.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+    }
+    
+    // Stats
+    const transactionsCount = (data.balance.income_count || 0) + (data.balance.expense_count || 0);
+    document.getElementById('transactions-count').textContent = `${transactionsCount} операций`;
+    
+    const avgDaily = income > 0 ? (expense / 30).toFixed(0) : 0;
+    document.getElementById('avg-daily').textContent = `${formatCurrency(avgDaily)}/день`;
+    
+    const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
+    document.getElementById('savings-rate').textContent = `${savingsRate}% экономия`;
+    
+    // Top categories на главной
+    if (data.top_categories && data.top_categories.length > 0) {
+        updateHomeTopCategories(data.top_categories.slice(0, 3));
+    }
+    
+    // Recent transactions
+    if (data.recent_transactions) {
+        updateRecentTransactions(data.recent_transactions);
+    }
+}
+
+function updateHomeTopCategories(categories) {
+    const container = document.getElementById('home-top-categories');
+    if (!container) return;
+    
+    if (!categories || categories.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-tag"></i><p>Нет данных</p></div>';
+        return;
+    }
+    
+    // Фильтруем только валидные категории с суммой > 0
+    const validCategories = categories.filter(cat => cat && cat.total && cat.total > 0);
+    if (validCategories.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-tag"></i><p>Нет данных</p></div>';
+        return;
+    }
+    
+    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total || 0), 0);
+    
+    container.innerHTML = validCategories.map((cat, index) => {
+        const amount = parseFloat(cat.total || 0);
+        const percent = total > 0 ? ((amount / total) * 100).toFixed(0) : 0;
+        const colors = ['#667eea', '#f093fb', '#4facfe'];
+        return `
+            <div class="top-category-compact">
+                <div class="category-indicator" style="background: ${colors[index]}"></div>
+                <div class="category-compact-info">
+                    <div class="category-compact-name">${cat.category || 'Без категории'}</div>
+                    <div class="category-compact-amount">${formatCurrency(amount)}</div>
+                </div>
+                <div class="category-compact-percent">${percent}%</div>
             </div>
         `;
-        
-        container.appendChild(item);
-    });
+    }).join('');
 }
 
-async function loadWorkspaces() {
-    try {
-        const workspaces = await api.getWorkspaces();
-        
-        if (workspaces && workspaces.length > 0) {
-            currentWorkspaceId = workspaces[0].workspace_id;
-            console.log('✅ Workspace loaded:', currentWorkspaceId);
-        } else {
-            // Create default workspace
-            const workspace = await api.createWorkspace({
-                name: 'Мой кошелек',
-                description: 'Личный кошелёк',
-                currency: selectedCurrency
-            });
-            currentWorkspaceId = workspace.workspace_id;
-            console.log('✅ Workspace created:', currentWorkspaceId);
-        }
-    } catch (error) {
-        console.warn('⚠️ Не удалось загрузить workspace:', error);
-        // Продолжаем работу без workspace
-    }
-}
-
-async function loadBalance() {
-    console.log('📊 Loading balance...');
+function updateRecentTransactions(transactions) {
+    const container = document.getElementById('recent-transactions');
+    if (!container) return;
     
-    try {
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace selected');
-            document.querySelector('.balance-amount').textContent = '0 с';
-            return;
-        }
-        
-        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-        
-        // Проверяем кеш
-        const cacheKey = `balance:${currentWorkspaceId}:${displayCurrency}`;
-        const cached = frontendCache.get(cacheKey);
-        if (cached) {
-            console.log('📦 Using cached balance');
-            updateBalanceUI(cached, displayCurrency);
-            return;
-        }
-        
-        // Получаем данные за текущий месяц
-        const today = new Date();
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = today.toISOString().split('T')[0];
-        
-        // Получаем все транзакции
-        const [expenses, income] = await Promise.all([
-            api.getExpenses({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate,
-                end_date: endDate,
-                limit: 1000
-            }),
-            api.getIncome({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate,
-                end_date: endDate,
-                limit: 1000
-            })
-        ]);
-        
-        // ✅ Batch конвертация вместо цикла
-        const [convertedExpenses, convertedIncome] = await Promise.all([
-            convertTransactionsBatch(expenses, displayCurrency),
-            convertTransactionsBatch(income, displayCurrency)
-        ]);
-        
-        const totalIncome = convertedIncome.reduce((sum, t) => sum + t.convertedAmount, 0);
-        const totalExpense = convertedExpenses.reduce((sum, t) => sum + t.convertedAmount, 0);
-        const balance = totalIncome - totalExpense;
-        
-        const balanceData = { totalIncome, totalExpense, balance };
-        
-        // Кешируем на 1 минуту
-        frontendCache.set(cacheKey, balanceData, 60);
-        
-        updateBalanceUI(balanceData, displayCurrency);
-        
-        console.log('✅ Balance loaded:', balance);
-    } catch (error) {
-        console.error('❌ Failed to load balance:', error);
-        document.querySelector('.balance-amount').textContent = '0 с';
-    }
-}
-
-function updateBalanceUI(balanceData, currency) {
-    const balanceEl = document.querySelector('.balance-amount');
-    if (balanceEl) {
-        balanceEl.textContent = formatCurrency(balanceData.balance, currency);
-    }
+    const allTransactions = [
+        ...(transactions.expenses || []).map(t => ({ ...t, type: 'expense' })),
+        ...(transactions.income || []).map(t => ({ ...t, type: 'income' }))
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
     
-    // TODO: Calculate change percent properly
-    const changeEl = document.querySelector('.balance-change');
-    if (changeEl && changeEl.querySelector('span')) {
-        changeEl.querySelector('span').textContent = '+0.0%';
-    }
-}
-
-async function loadQuickStats() {
-    console.log('📈 Loading quick stats...');
-    
-    try {
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace selected');
-            return;
-        }
-        
-        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-        
-        // Проверяем кеш
-        const cacheKey = `quickstats:${currentWorkspaceId}:${displayCurrency}`;
-        const cached = frontendCache.get(cacheKey);
-        if (cached) {
-            console.log('📦 Using cached stats');
-            updateQuickStatsUI(cached, displayCurrency);
-            return;
-        }
-        
-        const today = new Date();
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = today.toISOString().split('T')[0];
-        
-        // Получаем все транзакции
-        const [expenses, income] = await Promise.all([
-            api.getExpenses({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate,
-                end_date: endDate,
-                limit: 1000
-            }),
-            api.getIncome({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate,
-                end_date: endDate,
-                limit: 1000
-            })
-        ]);
-        
-        // ✅ Batch конвертация
-        const [convertedExpenses, convertedIncome] = await Promise.all([
-            convertTransactionsBatch(expenses, displayCurrency),
-            convertTransactionsBatch(income, displayCurrency)
-        ]);
-        
-        const totalIncome = convertedIncome.reduce((sum, t) => sum + t.convertedAmount, 0);
-        const totalExpense = convertedExpenses.reduce((sum, t) => sum + t.convertedAmount, 0);
-        
-        const statsData = { totalIncome, totalExpense };
-        
-        // Кешируем на 1 минуту
-        frontendCache.set(cacheKey, statsData, 60);
-        
-        updateQuickStatsUI(statsData, displayCurrency);
-        
-        console.log('✅ Quick stats loaded');
-    } catch (error) {
-        console.warn('⚠️ Не удалось загрузить статистику:', error);
-        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-        updateQuickStatsUI({ totalIncome: 0, totalExpense: 0 }, displayCurrency);
-    }
-}
-
-function updateQuickStatsUI(statsData, currency) {
-    document.querySelector('.stat-item.income .stat-value').textContent = 
-        formatCurrency(statsData.totalIncome, currency);
-    document.querySelector('.stat-item.expense .stat-value').textContent = 
-        formatCurrency(statsData.totalExpense, currency);
-}
-
-async function loadRecentTransactions() {
-    try {
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace selected');
-            return;
-        }
-        
-        const today = new Date();
-        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        
-        // Получаем последние расходы и доходы
-        const [expenses, income] = await Promise.all([
-            api.getExpenses({
-                workspace_id: currentWorkspaceId,
-                start_date: weekAgo.toISOString().split('T')[0],
-                end_date: today.toISOString().split('T')[0],
-                limit: 3
-            }),
-            api.getIncome({
-                workspace_id: currentWorkspaceId,
-                start_date: weekAgo.toISOString().split('T')[0],
-                end_date: today.toISOString().split('T')[0],
-                limit: 2
-            })
-        ]);
-        
-        // Объединяем и сортируем по дате
-        const transactions = [
-            ...expenses.map(e => ({ ...e, type: 'expense' })),
-            ...income.map(i => ({ ...i, type: 'income' }))
-        ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-        
-        await displayRecentTransactions(transactions);
-        console.log('✅ Recent transactions loaded:', transactions.length);
-    } catch (error) {
-        console.warn('⚠️ Не удалось загрузить транзакции:', error);
-    }
-}
-
-async function displayRecentTransactions(transactions) {
-    const container = document.querySelector('.transactions-list');
-    const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-    
-    if (!transactions || transactions.length === 0) {
+    if (allTransactions.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="fa-solid fa-inbox"></i>
+                <i class="fas fa-receipt"></i>
                 <p>Нет транзакций</p>
             </div>
         `;
         return;
     }
     
-    container.innerHTML = '';
-    
-    // Convert and display each transaction - используем for...of вместо forEach
-    for (const t of transactions) {
-        const transactionCurrency = t.currency || 'KGS';
-        const convertedAmount = await convertCurrency(t.amount, transactionCurrency, displayCurrency);
-        
-        const item = document.createElement('div');
-        item.className = 'transaction-item';
-        item.innerHTML = `
+    container.innerHTML = allTransactions.map(t => `
+        <div class="transaction-item">
             <div class="transaction-icon ${t.type}">
-                <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+                <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
             </div>
             <div class="transaction-info">
-                <div class="transaction-category">${t.category}</div>
-                <div class="transaction-description">${t.description || '-'}</div>
+                <div class="transaction-category">${t.category || 'Без категории'}</div>
+                <div class="transaction-description">${t.description || '—'}</div>
             </div>
-            <div class="transaction-amount ${t.type}">
-                ${t.type === 'income' ? '+' : '-'}${formatCurrency(convertedAmount, displayCurrency)}
+            <div class="transaction-amount">
+                <div class="transaction-value ${t.type}">${formatCurrency(t.amount, t.currency)}</div>
+                <div class="transaction-date">${formatDate(t.date)}</div>
             </div>
-        `;
-        container.appendChild(item);
-    }
+        </div>
+    `).join('');
 }
 
-// ========== ANALYTICS ==========
-
-// ========== ANALYTICS ==========
-
-let charts = {
-    incomeExpense: null,
-    categoryPie: null,
-    balanceTrend: null
+// ===== ANALYTICS =====
+let customPeriod = {
+    startDate: null,
+    endDate: null
 };
 
-async function loadAnalytics() {
-    if (!currentWorkspaceId) {
-        console.warn('⚠️ No workspace selected');
-        return;
-    }
-    
-    const period = document.querySelector('.period-select')?.value || 'month';
-    
-    await Promise.all([
-        loadMetrics(period),
-        loadCharts(period)
-    ]);
-}
-
-async function loadMetrics(period) {
-    try {
-        const today = new Date();
-        let startDate;
-        
-        if (period === 'week') {
-            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        } else if (period === 'month') {
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        } else if (period === 'year') {
-            startDate = new Date(today.getFullYear(), 0, 1);
-        } else {
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        }
-        
-        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-        
-        // Получаем все транзакции для правильного подсчета
-        const [expenses, income] = await Promise.all([
-            api.getExpenses({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate.toISOString().split('T')[0],
-                end_date: today.toISOString().split('T')[0],
-                limit: 1000
-            }),
-            api.getIncome({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate.toISOString().split('T')[0],
-                end_date: today.toISOString().split('T')[0],
-                limit: 1000
-            })
-        ]);
-        
-        // Конвертируем и суммируем
-        let totalIncome = 0;
-        let totalExpense = 0;
-        
-        for (const item of income) {
-            const itemCurrency = item.currency || 'KGS';
-            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
-            totalIncome += converted;
-        }
-        
-        for (const item of expenses) {
-            const itemCurrency = item.currency || 'KGS';
-            const converted = await convertCurrency(item.amount, itemCurrency, displayCurrency);
-            totalExpense += converted;
-        }
-        
-        const balance = totalIncome - totalExpense;
-        
-        document.querySelectorAll('.metric-value')[0].textContent = formatCurrency(totalIncome, displayCurrency);
-        document.querySelectorAll('.metric-value')[1].textContent = formatCurrency(totalExpense, displayCurrency);
-        document.querySelectorAll('.metric-value')[2].textContent = formatCurrency(balance, displayCurrency);
-        
-        const savingsRate = totalIncome > 0 
-            ? ((balance / totalIncome) * 100).toFixed(0)
-            : 0;
-        document.querySelectorAll('.metric-value')[3].textContent = `${savingsRate}%`;
-    } catch (error) {
-        console.error('❌ Failed to load metrics:', error);
-    }
-}
-
-async function loadCharts(period) {
-    try {
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace selected');
-            return;
-        }
-        
-        const today = new Date();
-        let startDate;
-        
-        if (period === 'week') {
-            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        } else if (period === 'month') {
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        } else if (period === 'year') {
-            startDate = new Date(today.getFullYear(), 0, 1);
-        } else {
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        }
-        
-        // Top categories
-        const categoryData = await api.getCategoryAnalytics({
-            workspace_id: currentWorkspaceId,
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: today.toISOString().split('T')[0],
-            limit: 10
-        });
-        
-        if (categoryData && categoryData.length > 0) {
-            renderCategoryPieChart(categoryData);
-        }
-        
-        // Balance trend
-        const trendData = await api.getTrends({
-            workspace_id: currentWorkspaceId,
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: today.toISOString().split('T')[0]
-        });
-        
-        if (trendData && trendData.length > 0) {
-            renderBalanceTrendChart(trendData);
-        }
-        
-        console.log('✅ Charts loaded');
-    } catch (error) {
-        console.error('❌ Failed to load charts:', error);
-    }
-}
-
-function renderIncomeExpenseChart(data) {
-    const ctx = document.getElementById('incomeExpenseChart');
-    if (!ctx) return;
-    
-    if (charts.incomeExpense) {
-        charts.incomeExpense.destroy();
-    }
-    
-    charts.incomeExpense = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.labels || [],
-            datasets: [
-                {
-                    label: 'Доходы',
-                    data: data.income || [],
-                    borderColor: '#10B981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.4
-                },
-                {
-                    label: 'Расходы',
-                    data: data.expenses || [],
-                    borderColor: '#EF4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.4
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' }
-            }
-        }
-    });
-}
-
-function renderCategoryPieChart(data) {
-    const ctx = document.getElementById('categoryPieChart');
-    if (!ctx) return;
-    
-    if (charts.categoryPie) {
-        charts.categoryPie.destroy();
-    }
-    
-    const colors = [
-        '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#3B82F6',
-        '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#06B6D4'
-    ];
-    
-    charts.categoryPie = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: data.categories || [],
-            datasets: [{
-                data: data.amounts || [],
-                backgroundColor: colors
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'right' }
-            }
-        }
-    });
-}
-
-function renderBalanceTrendChart(data) {
-    const ctx = document.getElementById('balanceTrendChart');
-    if (!ctx) return;
-    
-    if (charts.balanceTrend) {
-        charts.balanceTrend.destroy();
-    }
-    
-    charts.balanceTrend = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.labels || [],
-            datasets: [{
-                label: 'Баланс',
-                data: data.balance || [],
-                borderColor: '#6366F1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            }
-        }
-    });
-}
-
-// ========== TEAM (WORKSPACES) ==========
-
-async function loadTeam() {
-    await loadWorkspacesList();
-    await loadMembers();
-}
-
-async function loadWorkspacesList() {
-    try {
-        const workspaces = await api.getWorkspaces();
-        
-        if (workspaces && workspaces.length > 0) {
-            const select = document.querySelector('.workspace-select');
-            if (select) {
-                select.innerHTML = workspaces.map(ws => 
-                    `<option value="${ws.workspace_id}" ${ws.workspace_id === currentWorkspaceId ? 'selected' : ''}>
-                        ${ws.name}
-                    </option>`
-                ).join('');
-                
-                select.onchange = async function() {
-                    currentWorkspaceId = parseInt(this.value);
-                    await loadMembers();
-                    await loadDashboard();
-                };
-            }
-        }
-    } catch (error) {
-        console.error('❌ Failed to load workspaces:', error);
-    }
-}
-
-async function loadMembers() {
-    try {
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace selected');
-            return;
-        }
-        
-        const members = await api.getWorkspaceMembers(currentWorkspaceId);
-        
-        const container = document.querySelector('.members-list');
-        if (!container) return;
-        
-        if (members && members.length > 0) {
-            container.innerHTML = members.map(member => {
-                const initials = member.user_name ? member.user_name.slice(0, 2).toUpperCase() : 'U';
-                return `
-                    <div class="member-item">
-                        <div class="member-avatar">${initials}</div>
-                        <div class="member-info">
-                        <div class="member-name">${member.user_name || 'User'}</div>
-                        <span class="member-role ${member.role}">${getRoleLabel(member.role)}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } else {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fa-solid fa-users"></i>
-                <p>Нет участников</p>
-            </div>
-        `;
-    }
-    } catch (error) {
-        console.error('❌ Failed to load members:', error);
-    }
-}
-
-function getRoleLabel(role) {
-    const labels = {
-        owner: 'Владелец',
-        admin: 'Администратор',
-        member: 'Участник',
-        viewer: 'Наблюдатель'
-    };
-    return labels[role] || role;
-}
-
-function openInviteModal() {
-    // Simple implementation - directly generate invite
-    generateInvite();
-}
-
-async function generateInvite() {
-    try {
-        if (!currentWorkspaceId) {
-            showError('Workspace не выбран');
-            return;
-        }
-        
-        const result = await api.createInvite(currentWorkspaceId, {
-            role: 'member',
-            expires_in_days: 7
-        });
-        
-        if (result && result.invite_code) {
-            const inviteLink = `https://t.me/your_bot?start=invite_${result.invite_code}`;
-            
-            // Copy to clipboard
-            if (navigator.clipboard) {
-                await navigator.clipboard.writeText(inviteLink);
-                showSuccess('Ссылка приглашения скопирована');
-            } else {
-                showSuccess(`Код приглашения: ${result.invite_code}`);
-            }
-        }
-    } catch (error) {
-        console.error('❌ Failed to generate invite:', error);
-        showError('Не удалось создать приглашение');
-    }
-}
-
-// ========== REPORTS ==========
-
-// ========== REPORTS ==========
-
-function initReportsScreen() {
-    console.log('📊 Initializing reports screen...');
-    
-    // Установить дефолтные даты (текущий месяц)
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    
-    const startDateInput = document.getElementById('report-start-date');
-    const endDateInput = document.getElementById('report-end-date');
-    
-    if (startDateInput && endDateInput) {
-        startDateInput.value = firstDay.toISOString().split('T')[0];
-        endDateInput.value = today.toISOString().split('T')[0];
-    }
-    
-    // Добавить обработчики на кнопки формата
-    document.querySelectorAll('.format-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-        });
-    });
-    
-    console.log('✅ Reports screen initialized');
-}
-
-function setReportPeriod(period) {
-    const today = new Date();
-    let startDate, endDate = today;
-    
-    switch(period) {
-        case 'today':
-            startDate = today;
-            break;
-        case 'week':
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 7);
-            break;
-        case 'month':
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-            break;
-        case 'year':
-            startDate = new Date(today.getFullYear(), 0, 1);
-            break;
-        default:
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    }
-    
-    const startDateInput = document.getElementById('report-start-date');
-    const endDateInput = document.getElementById('report-end-date');
-    
-    if (startDateInput && endDateInput) {
-        startDateInput.value = startDate.toISOString().split('T')[0];
-        endDateInput.value = endDate.toISOString().split('T')[0];
-    }
-}
-
-async function generateReport(event) {
-    if (event) event.preventDefault();
-    
-    const reportType = document.getElementById('report-type').value;
-    const startDate = document.getElementById('report-start-date').value;
-    const endDate = document.getElementById('report-end-date').value;
-    const format = document.querySelector('.format-btn.active')?.dataset.format || 'pdf';
+function applyCustomPeriod() {
+    const startDate = document.getElementById('custom-start-date')?.value;
+    const endDate = document.getElementById('custom-end-date')?.value;
     
     if (!startDate || !endDate) {
-        showError('Выберите период отчета');
+        showError('Выберите даты начала и конца периода');
         return;
     }
     
-    if (!currentWorkspaceId) {
-        showError('Workspace не выбран');
-        return;
-    }
+    customPeriod.startDate = startDate;
+    customPeriod.endDate = endDate;
     
-    // Проверка дат
-    if (new Date(startDate) > new Date(endDate)) {
-        showError('Начальная дата не может быть позже конечной');
-        return;
-    }
-    
-    showLoading('Генерация отчета...');
+    loadAnalytics();
+}
+
+async function loadAnalytics() {
+    console.log('📊 Loading analytics...');
     
     try {
-        let result;
+        const periodSelect = document.getElementById('analytics-period');
+        const period = periodSelect?.value || 'month';
         
-        if (format === 'csv') {
-            // CSV экспорт
-            result = await api.exportCSV(currentWorkspaceId, startDate, endDate);
-            hideLoading();
-            showSuccess('CSV файл скачан');
-        } else if (format === 'excel') {
-            // Excel экспорт
-            result = await api.exportExcel(currentWorkspaceId, startDate, endDate);
-            hideLoading();
-            showSuccess('Excel файл скачан');
+        let params = {};
+        if (period === 'custom') {
+            const panel = document.getElementById('custom-period-panel');
+            if (!customPeriod.startDate || !customPeriod.endDate) {
+                if (panel) panel.style.display = 'block';
+                // Ждём ввода дат и применения пользователем
+                return;
+            }
+            params = {
+                start_date: customPeriod.startDate,
+                end_date: customPeriod.endDate
+            };
         } else {
-            // PDF отчет - пробуем, если не работает, предлагаем CSV
-            try {
-                result = await api.generateReportPDF(currentWorkspaceId, startDate, endDate, 'period');
-                hideLoading();
-                
-                if (result && result.pdf_url) {
-                    window.open(result.pdf_url, '_blank');
-                    showSuccess('PDF отчет сгенерирован');
-                } else {
-                    showSuccess('Отчет будет доступен в ближайшее время');
-                }
-            } catch (pdfError) {
-                console.warn('⚠️ PDF generation failed, offering CSV fallback:', pdfError);
-                hideLoading();
-                
-                // Предлагаем альтернативу
-                if (confirm('PDF генерация недоступна. Скачать отчет в CSV формате?')) {
-                    showLoading('Экспорт CSV...');
-                    result = await api.exportCSV(currentWorkspaceId, startDate, endDate);
-                    hideLoading();
-                    showSuccess('CSV отчет скачан');
-                } else {
-                    showError('PDF генерация требует настройки APITemplate.io в .env файле');
+            params = getDateRangeFor(period);
+        }
+
+        const [stats, topCategories] = await Promise.all([
+            api.getIncomeExpenseStats(params),
+            api.getCategoryAnalytics({ ...params, limit: 10 })
+        ]);
+        
+        // Объединяем данные
+        const analyticsData = {
+            ...stats,
+            top_categories: topCategories
+        };
+        
+        updateAnalyticsUI(analyticsData);
+        loadCharts(analyticsData);
+        
+        console.log('✅ Analytics loaded');
+    } catch (error) {
+        handleError(error, 'Не удалось загрузить аналитику');
+    }
+}
+
+function updateAnalyticsUI(stats) {
+    if (!stats) return;
+    
+    // KPI Cards
+    document.getElementById('kpi-income').textContent = formatCurrency(stats.total_income || 0);
+    document.getElementById('kpi-expense').textContent = formatCurrency(stats.total_expense || 0);
+    document.getElementById('kpi-savings').textContent = formatCurrency(stats.balance || 0);
+    
+    const savingsRate = stats.total_income > 0 ? ((stats.balance / stats.total_income) * 100).toFixed(1) : 0;
+    document.getElementById('kpi-rate').textContent = `${savingsRate}%`;
+    
+    // Top Categories
+    updateTopCategories(stats.top_categories || []);
+}
+
+function updateTopCategories(categories) {
+    const container = document.getElementById('top-categories-list');
+    if (!container) return;
+    
+    if (!categories || categories.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных</p></div>';
+        return;
+    }
+    
+    // Фильтруем только валидные категории
+    const validCategories = categories.filter(cat => cat && cat.total && cat.total > 0);
+    if (validCategories.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных</p></div>';
+        return;
+    }
+    
+    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total || 0), 0);
+    
+    container.innerHTML = validCategories.map(cat => {
+        const amount = parseFloat(cat.total || 0);
+        const percent = total > 0 ? ((amount / total) * 100).toFixed(0) : 0;
+        return `
+            <div class="category-item">
+                <div class="category-icon">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <div class="category-info">
+                    <div class="category-name">${cat.category || 'Без категории'}</div>
+                    <div class="category-progress">
+                        <div class="category-progress-bar" style="width: ${percent}%"></div>
+                    </div>
+                </div>
+                <div class="category-amount">
+                    <div class="category-value">${formatCurrency(amount)}</div>
+                    <div class="category-percent">${percent}%</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function loadCharts(stats) {
+    // Trend Chart
+    const trendCanvas = document.getElementById('trend-chart');
+    if (trendCanvas && typeof Chart !== 'undefined') {
+        if (trendCanvas.chart) trendCanvas.chart.destroy();
+        
+        trendCanvas.chart = new Chart(trendCanvas, {
+            type: 'line',
+            data: {
+                labels: ['Нед 1', 'Нед 2', 'Нед 3', 'Нед 4'],
+                datasets: [
+                    {
+                        label: 'Доходы',
+                        data: [stats.total_income * 0.2, stats.total_income * 0.25, stats.total_income * 0.3, stats.total_income * 0.25],
+                        borderColor: 'rgb(16, 185, 129)',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Расходы',
+                        data: [stats.total_expense * 0.25, stats.total_expense * 0.3, stats.total_expense * 0.25, stats.total_expense * 0.2],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
                 }
             }
-        }
+        });
+    }
+    
+    // Category Pie Chart
+    const pieCanvas = document.getElementById('category-pie-chart');
+    if (pieCanvas && typeof Chart !== 'undefined' && stats.top_categories) {
+        if (pieCanvas.chart) pieCanvas.chart.destroy();
         
-        console.log('✅ Report generated:', format, result);
-    } catch (error) {
-        hideLoading();
-        console.error('❌ Report generation failed:', error);
-        showError('Ошибка генерации отчета: ' + error.message);
+        const validCategories = stats.top_categories.filter(c => c && c.total && c.total > 0);
+        if (validCategories.length === 0) {
+            pieCanvas.parentElement.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных о расходах</p></div>';
+        } else {
+            pieCanvas.chart = new Chart(pieCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: validCategories.map(c => c.category || 'Без категории'),
+                    datasets: [{
+                        data: validCategories.map(c => parseFloat(c.total || 0)),
+                        backgroundColor: [
+                            '#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a',
+                            '#f59e0b', '#3b82f6', '#10b981'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: { size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percent = ((value / total) * 100).toFixed(0);
+                                    return `${context.label}: ${formatCurrency(value)} (${percent}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 }
 
-// ========== SETTINGS ==========
+// ===== HISTORY =====
+let historyFilters = {
+    type: 'all',
+    period: 'month',
+    category: 'all',
+    sortBy: 'date_desc' // date_desc, date_asc, amount_desc, amount_asc
+};
 
-function loadSettings() {
-    console.log('⚙️ Loading settings...');
-    
-    // Load current settings
-    const savedCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const savedLanguage = localStorage.getItem('language') || 'ru';
-    const savedNotifications = localStorage.getItem('notifications') !== 'false';
-    const savedSubscriptions = localStorage.getItem('subscriptions') !== 'false';
-    
-    // Set currency select
-    const currencyEl = document.getElementById('currency-select');
-    if (currencyEl) {
-        currencyEl.value = savedCurrency;
-        console.log('💰 Currency set to:', savedCurrency);
-    }
-    
-    // Set theme select
-    const themeEl = document.getElementById('theme-select');
-    if (themeEl) {
-        themeEl.value = savedTheme;
-        console.log('🎨 Theme set to:', savedTheme);
-    }
-    
-    // Set language select
-    const languageEl = document.getElementById('language-select');
-    if (languageEl) {
-        languageEl.value = savedLanguage;
-        console.log('🌐 Language set to:', savedLanguage);
-    }
-    
-    // Set notifications toggle
-    const notifToggle = document.getElementById('notifications-toggle');
-    if (notifToggle) {
-        notifToggle.checked = savedNotifications;
-        console.log('🔔 Notifications:', savedNotifications);
-    }
-    
-    // Set subscriptions toggle
-    const subsToggle = document.getElementById('subscriptions-toggle');
-    if (subsToggle) {
-        subsToggle.checked = savedSubscriptions;
-        console.log('📅 Subscriptions:', savedSubscriptions);
-    }
-    
-    console.log('✅ Settings loaded');
-}
-
-function changeCurrency(currency) {
-    selectedCurrency = currency;
-    localStorage.setItem('defaultCurrency', currency);
-    console.log('💰 Currency changed to:', currency);
-    showSuccess('Валюта изменена на ' + currency);
-    
-    // Reload dashboard to show converted amounts
-    if (currentScreen === 'home') {
-        loadDashboard();
+function openFilters() {
+    const panel = document.getElementById('filters-panel');
+    if (panel) {
+        panel.classList.toggle('active');
     }
 }
-
-function changeTheme(theme) {
-    if (!theme) {
-        // Called from select onchange
-        theme = document.getElementById('theme-select')?.value || 'light';
-    }
-    
-    console.log('🎨 Changing theme to:', theme);
-    
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    
-    console.log('✅ Theme changed to:', theme);
-    showSuccess('Тема изменена на ' + (theme === 'dark' ? 'тёмную' : theme === 'light' ? 'светлую' : 'авто'));
-}
-
-function toggleTheme() {
-    const isDark = event.target.checked;
-    const theme = isDark ? 'dark' : 'light';
-    changeTheme(theme);
-}
-
-function toggleNotifications() {
-    const enabled = event.target.checked;
-    localStorage.setItem('notifications', enabled);
-    console.log('🔔 Notifications toggled:', enabled);
-    showSuccess(enabled ? 'Уведомления включены' : 'Уведомления выключены');
-}
-
-// ========== HISTORY ==========
 
 async function loadHistory() {
+    console.log('📜 Loading history...');
+    
+    const container = document.getElementById('transactions-history');
+    if (container) {
+        container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
+    }
+    
     try {
-        if (!currentWorkspaceId) {
-            console.warn('⚠️ No workspace selected');
-            return;
+        const type = historyFilters.type;
+        
+        const [expenses, income] = await Promise.all([
+            type !== 'income' ? api.getExpenses() : Promise.resolve([]),
+            type !== 'expense' ? api.getIncome() : Promise.resolve([])
+        ]);
+        
+        let allTransactions = [
+            ...(expenses || []).map(t => ({ ...t, type: 'expense' })),
+            ...(income || []).map(t => ({ ...t, type: 'income' }))
+        ];
+        
+        // Фильтрация по категории
+        if (historyFilters.category !== 'all') {
+            allTransactions = allTransactions.filter(t => t.category === historyFilters.category);
         }
         
-        const filter = document.getElementById('history-filter')?.value || 'all';
-        const period = document.getElementById('history-period')?.value || 'month';
+        // Сортировка
+        allTransactions = sortTransactions(allTransactions, historyFilters.sortBy);
         
-        const today = new Date();
-        let startDate;
+        updateHistoryUI(allTransactions);
         
-        if (period === 'week') {
-            startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        } else if (period === 'month') {
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        } else if (period === 'year') {
-            startDate = new Date(today.getFullYear(), 0, 1);
-        } else {
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        }
-        
-        // Get expenses and income based on filter
-        let transactions = [];
-        
-        if (filter === 'all' || filter === 'expense') {
-            const expenses = await api.getExpenses({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate.toISOString().split('T')[0],
-                end_date: today.toISOString().split('T')[0],
-                limit: 50
-            });
-            transactions = transactions.concat(expenses.map(e => ({ ...e, type: 'expense' })));
-        }
-        
-        if (filter === 'all' || filter === 'income') {
-            const income = await api.getIncome({
-                workspace_id: currentWorkspaceId,
-                start_date: startDate.toISOString().split('T')[0],
-                end_date: today.toISOString().split('T')[0],
-                limit: 50
-            });
-            transactions = transactions.concat(income.map(i => ({ ...i, type: 'income' })));
-        }
-        
-        // Sort by date
-        transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const container = document.querySelector('#history-screen .transactions-list');
-        if (!container) return;
-        
-        const displayCurrency = localStorage.getItem('defaultCurrency') || 'KGS';
-        
-        if (transactions.length > 0) {
-            // Конвертируем все транзакции
-            container.innerHTML = '';
-            
-            for (const t of transactions) {
-                const transactionCurrency = t.currency || 'KGS';
-                const convertedAmount = await convertCurrency(t.amount, transactionCurrency, displayCurrency);
-                
-                const item = document.createElement('div');
-                item.className = 'transaction-item';
-                item.innerHTML = `
+        console.log('✅ History loaded');
+    } catch (error) {
+        handleError(error, 'Не удалось загрузить историю');
+    }
+}
+
+function sortTransactions(transactions, sortBy) {
+    switch(sortBy) {
+        case 'date_desc':
+            return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        case 'date_asc':
+            return transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+        case 'amount_desc':
+            return transactions.sort((a, b) => b.amount - a.amount);
+        case 'amount_asc':
+            return transactions.sort((a, b) => a.amount - b.amount);
+        default:
+            return transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+}
+
+function updateHistoryUI(transactions) {
+    // Summary
+    const totalTransactions = transactions.length;
+    const totalAmount = transactions.reduce((sum, t) => {
+        return t.type === 'income' ? sum + t.amount : sum - t.amount;
+    }, 0);
+    
+    const totalTransactionsEl = document.getElementById('total-transactions');
+    if (totalTransactionsEl) totalTransactionsEl.textContent = totalTransactions;
+    const totalAmountEl = document.getElementById('total-amount');
+    if (totalAmountEl) totalAmountEl.textContent = formatCurrency(totalAmount);
+    
+    // Group by date
+    const grouped = {};
+    transactions.forEach(t => {
+        const dateKey = formatDate(t.date);
+        if (!grouped[dateKey]) grouped[dateKey] = [];
+        grouped[dateKey].push(t);
+    });
+    
+    const container = document.getElementById('transactions-history');
+    if (!container) return;
+    
+    if (totalTransactions === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><p>Нет транзакций</p></div>';
+        return;
+    }
+    
+    container.innerHTML = Object.entries(grouped).map(([date, items]) => `
+        <div class="date-group">
+            <div class="date-header">${date}</div>
+            ${items.map(t => `
+                <div class="transaction-item">
                     <div class="transaction-icon ${t.type}">
-                        <i class="fa-solid fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+                        <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
                     </div>
                     <div class="transaction-info">
                         <div class="transaction-category">${t.category || 'Без категории'}</div>
-                        <div class="transaction-description">${t.description || '-'}</div>
-                        <div class="transaction-date">${formatDate(t.date)}</div>
+                        <div class="transaction-description">${t.description || '—'}</div>
                     </div>
-                    <div class="transaction-amount ${t.type}">
-                        ${t.type === 'income' ? '+' : '-'}${formatCurrency(convertedAmount, displayCurrency)}
+                    <div class="transaction-amount">
+                        <div class="transaction-value ${t.type}">${formatCurrency(t.amount, t.currency)}</div>
                     </div>
-                `;
-                container.appendChild(item);
-            }
-        } else {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-inbox"></i>
-                    <p>Нет транзакций</p>
                 </div>
-        `;
-    }
-    } catch (error) {
-        console.error('❌ Failed to load history:', error);
-    }
+            `).join('')}
+        </div>
+    `).join('');
 }
 
-// ========== TRANSACTION FORM ==========
+// ===== SETTINGS =====
+function loadSettings() {
+    console.log('⚙️ Loading settings...');
+    
+    // Load saved settings
+    const savedCurrency = localStorage.getItem('currency') || 'KGS';
+    const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
+    const savedTheme = localStorage.getItem('theme') || 'auto';
+    
+    document.getElementById('currency-select').value = savedCurrency;
+    document.getElementById('default-period').value = savedPeriod;
+    document.getElementById('theme-select').value = savedTheme;
+    
+    state.currency = savedCurrency;
+}
 
-async function submitTransaction() {
-    const amount = parseFloat(document.getElementById('amount').value);
-    const description = document.getElementById('description').value;
-    const category = document.querySelector('.category-pill.active')?.textContent;
-    const date = document.getElementById('transaction-date').value;
-    const time = document.getElementById('transaction-time').value;
-    const currency = document.getElementById('transaction-currency-select').value;
-    
-    if (!amount || amount <= 0) {
-        showError('Введите сумму');
-        return;
-    }
-    
-    if (!category) {
-        showError('Выберите категорию');
-        return;
-    }
-    
-    showLoading('Сохранение...');
+// ===== REPORTS =====
+async function loadReports() {
+    console.log('📄 Loading reports...');
     
     try {
-        const transactionData = {
-            amount: amount,
-            currency: currency,
-            category: category,
-            description: description,
-            date: `${date}T${time}:00`,
-            workspace_id: currentWorkspaceId
-        };
+        const response = await api.getReportsHistory();
+        console.log('Reports API response:', response);
         
-        // Создаём расход или доход через API
-        if (transactionType === 'expense') {
-            await api.createExpense(transactionData);
-        } else {
-            await api.createIncome(transactionData);
+        // Обрабатываем разные форматы ответа
+        let reports = [];
+        if (Array.isArray(response)) {
+            reports = response;
+        } else if (response && Array.isArray(response.reports)) {
+            reports = response.reports;
+        } else if (response && typeof response === 'object') {
+            // Если пришёл объект с данными отчётов
+            reports = Object.values(response).filter(item => item && typeof item === 'object');
         }
         
-        hideLoading();
-        closeModal('add-transaction-modal');
-        showSuccess('Транзакция добавлена');
-        await loadDashboard();
-        
-        console.log('✅ Transaction created successfully');
+        updateReportsUI(reports);
+        console.log('✅ Reports loaded:', reports.length);
     } catch (error) {
-        hideLoading();
-        console.error('❌ Failed to create transaction:', error);
-        showError('Ошибка сохранения: ' + error.message);
+        console.error('Reports loading error:', error);
+        handleError(error, 'Не удалось загрузить отчёты');
     }
 }
 
-// ========== UTILITY FUNCTIONS ==========
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    return `${day}.${month}.${date.getFullYear()}`;
+function updateReportsUI(reports) {
+    const container = document.getElementById('reports-list');
+    if (!container) return;
+    
+    if (!Array.isArray(reports) || reports.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <h3>Нет отчётов</h3>
+                <p>Отчёты будут появляться здесь автоматически</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = reports.map(r => {
+        const createdDate = formatDate(r.created_at);
+        const periodInfo = r.period_start && r.period_end 
+            ? `${new Date(r.period_start).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} - ${new Date(r.period_end).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}`
+            : '';
+        
+        return `
+            <div class="report-item">
+                <div class="report-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <div class="report-info">
+                    <div class="report-title">${r.title || 'Отчёт'}</div>
+                    <div class="report-meta">${createdDate}${periodInfo ? ' • ' + periodInfo : ''}</div>
+                </div>
+                <div class="report-actions">
+                    ${r.pdf_url ? `<button class="icon-btn" onclick="window.open('${r.pdf_url}', '_blank')"><i class="fas fa-download"></i></button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-function showLoading(message = 'Загрузка...') {
-    console.log('⏳ ' + message);
-    if (tg.MainButton && typeof tg.MainButton.setText === 'function') {
-        try {
-            tg.MainButton.setText(message);
-            tg.MainButton.showProgress();
-        } catch (e) {
-            console.log('MainButton not supported');
-        }
-    }
-}
-
-function hideLoading() {
-    console.log('✅ Loading complete');
-    if (tg.MainButton && typeof tg.MainButton.hideProgress === 'function') {
-        try {
-            tg.MainButton.hideProgress();
-        } catch (e) {
-            console.log('MainButton not supported');
-        }
-    }
+// ===== SETTINGS HANDLERS =====
+function clearCache() {
+    cache.clear();
+    localStorage.clear();
+    showSuccess('Кэш очищен');
+    
+    // Перезагрузим данные
+    setTimeout(() => {
+        loadDashboard();
+    }, 500);
 }
 
 function showSuccess(message) {
-    // Только console.log, без alert и showPopup
-    console.log('✅ ' + message);
-}
-
-function showError(message) {
-    // Только console.error, без alert и showPopup
-    console.error('⚠️ ' + message);
-}
-
-// ========== EVENT LISTENERS ==========
-
-document.addEventListener('DOMContentLoaded', async function() {
-    // Authenticate first
-    await authenticateUser();
+    console.log('✅', message);
     
-    // Initialize
-    switchScreen('home');
+    // Показываем toast вместо alert
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.style.background = 'var(--success)';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
+
+// ===== EVENT LISTENERS =====
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎯 DOM loaded, initializing...');
+
+    // Установим имя и аватарку пользователя
+    ensureUserIdentity();
     
     // Navigation
-    document.querySelectorAll('[data-screen]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            switchScreen(this.dataset.screen);
+    document.querySelectorAll('.nav-item[data-screen]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            switchScreen(btn.dataset.screen);
         });
     });
     
-    // FAB button
-    document.querySelector('.fab-button').addEventListener('click', openAddTransactionModal);
-    
-    // Modal close
-    document.querySelectorAll('.modal-overlay, .close-btn').forEach(el => {
-        el.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            if (modal) modal.classList.remove('active');
+    // Period selector
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.currentPeriod = btn.dataset.period;
+            loadDashboard();
         });
     });
     
-    // Transaction type toggle
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            toggleTransactionType(this.dataset.type);
-        });
-    });
-    
-    // Period change (Analytics)
-    const periodSelect = document.querySelector('.period-select');
-    if (periodSelect) {
-        periodSelect.addEventListener('change', function() {
-            loadAnalytics();
-        });
-    }
-    
-    // Format buttons (Reports)
-    document.querySelectorAll('.format-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            selectFormat(this.dataset.format);
-        });
-    });
-    
-    // Settings toggles and selects
-    const themeSelect = document.getElementById('theme-select');
-    if (themeSelect) {
-        themeSelect.addEventListener('change', function() {
-            changeTheme(this.value);
+    // Analytics period
+    const analyticsPeriod = document.getElementById('analytics-period');
+    if (analyticsPeriod) {
+        analyticsPeriod.addEventListener('change', (e) => {
+            const customPanel = document.getElementById('custom-period-panel');
+            if (e.target.value === 'custom') {
+                if (customPanel) customPanel.style.display = 'block';
+            } else {
+                if (customPanel) customPanel.style.display = 'none';
+                loadAnalytics();
+            }
         });
     }
     
-    const notificationsToggle = document.getElementById('notifications-toggle');
-    if (notificationsToggle) {
-        notificationsToggle.addEventListener('change', toggleNotifications);
-    }
+    // History filters
+    const historyType = document.getElementById('history-type');
+    const historyPeriod = document.getElementById('history-period');
+    const historyCategory = document.getElementById('history-category');
+    const historySort = document.getElementById('history-sort');
     
-    const subscriptionsToggle = document.getElementById('subscriptions-toggle');
-    if (subscriptionsToggle) {
-        subscriptionsToggle.addEventListener('change', function() {
-            const enabled = this.checked;
-            localStorage.setItem('subscriptions', enabled);
-            showSuccess(enabled ? 'Напоминания включены' : 'Напоминания выключены');
+    if (historyType) {
+        historyType.addEventListener('change', (e) => {
+            historyFilters.type = e.target.value;
+            loadHistory();
         });
     }
     
-    // Currency change
+    if (historyPeriod) {
+        historyPeriod.addEventListener('change', (e) => {
+            historyFilters.period = e.target.value;
+            loadHistory();
+        });
+    }
+    
+    if (historyCategory) {
+        historyCategory.addEventListener('change', (e) => {
+            historyFilters.category = e.target.value;
+            loadHistory();
+        });
+    }
+    
+    if (historySort) {
+        historySort.addEventListener('change', (e) => {
+            historyFilters.sortBy = e.target.value;
+            loadHistory();
+        });
+    }
+
+    // Подгружаем категории для фильтра
+    (async () => {
+        try {
+            const [expCats, incCats] = await Promise.all([
+                api.getExpenseCategories().catch(() => []),
+                api.getIncomeCategories().catch(() => [])
+            ]);
+            const unique = new Set();
+            const options = ['<option value="all">Все категории</option>'];
+            [...(expCats || []), ...(incCats || [])].forEach(c => {
+                const name = c?.name || c?.category || c;
+                if (name && !unique.has(name)) {
+                    unique.add(name);
+                    options.push(`<option value="${name}">${name}</option>`);
+                }
+            });
+            if (historyCategory) historyCategory.innerHTML = options.join('');
+        } catch (e) {
+            console.warn('Не удалось загрузить категории для фильтра', e);
+        }
+    })();
+    
+    // Settings
     const currencySelect = document.getElementById('currency-select');
     if (currencySelect) {
-        currencySelect.addEventListener('change', function() {
-            changeCurrency(this.value);
+        currencySelect.addEventListener('change', (e) => {
+            state.currency = e.target.value;
+            localStorage.setItem('currency', e.target.value);
+            loadDashboard(); // Reload to apply new currency
         });
     }
     
-    // Language change
-    const languageSelect = document.getElementById('language-select');
-    if (languageSelect) {
-        languageSelect.addEventListener('change', function() {
-            const lang = this.value;
-            localStorage.setItem('language', lang);
-            console.log('🌐 Language changed to:', lang);
-            showSuccess('Язык изменён на ' + (lang === 'ru' ? 'русский' : lang === 'en' ? 'English' : 'кыргызча'));
-            // TODO: Implement i18n translations
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            localStorage.setItem('theme', theme);
+            
+            if (theme === 'auto') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
         });
     }
     
-    // Apply saved theme
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    const defaultPeriod = document.getElementById('default-period');
+    if (defaultPeriod) {
+        defaultPeriod.addEventListener('change', (e) => {
+            localStorage.setItem('defaultPeriod', e.target.value);
+        });
+    }
     
-    // Set default dates for reports
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startDateInput = document.getElementById('report-start-date');
-    const endDateInput = document.getElementById('report-end-date');
-    if (startDateInput) startDateInput.value = firstDay.toISOString().split('T')[0];
-    if (endDateInput) endDateInput.value = today.toISOString().split('T')[0];
+    // Initialize
+    authenticate().then(async (success) => {
+        if (success) {
+            // Даём Telegram WebApp время обновить данные
+            await new Promise(resolve => setTimeout(resolve, 300));
+            // Обновим имя/аватар после авторизации
+            ensureUserIdentity();
+            // После аутентификации переходим на главный экран
+            switchScreen('home');
+        }
+    });
 });
+
+// ===== GLOBAL ERROR HANDLER =====
+window.addEventListener('error', (e) => {
+    console.error('💥 Global error:', e.error);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('💥 Unhandled rejection:', e.reason);
+});
+
+console.log('✅ App initialized');

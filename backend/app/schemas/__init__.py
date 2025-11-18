@@ -19,11 +19,6 @@ from .schemas import (
     BudgetCreate,
     BudgetUpdate,
     Budget,
-    # Workspace (базовые)
-    WorkspaceBase,
-    WorkspaceCreate,
-    WorkspaceUpdate,
-    Workspace,
     # Responses
     MessageResponse,
     ErrorResponse,
@@ -31,14 +26,6 @@ from .schemas import (
 
 # Auth schemas
 from .auth import Token, TokenData, TelegramAuthData
-
-# Workspace schemas (расширенные)
-from .workspace import (
-    WorkspaceSchema,
-    WorkspaceMemberSchema,
-    WorkspaceInviteCreate,
-    WorkspaceInviteSchema,
-)
 
 # Rate schemas
 from .rate import (
@@ -88,15 +75,6 @@ __all__ = [
     "BudgetCreate",
     "BudgetUpdate",
     "Budget",
-    # Workspace
-    "WorkspaceBase",
-    "WorkspaceCreate",
-    "WorkspaceUpdate",
-    "Workspace",
-    "WorkspaceSchema",
-    "WorkspaceMemberSchema",
-    "WorkspaceInviteCreate",
-    "WorkspaceInviteSchema",
     # Auth
     "Token",
     "TokenData",

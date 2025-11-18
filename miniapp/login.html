@@ -2,9 +2,40 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - AI Accounter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Вход - AIAccounter</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
+        :root {
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --primary-light: #E0E7FF;
+            --success: #10B981;
+            --success-light: #D1FAE5;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F9FAFB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,81 +43,137 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: var(--font-main);
+            background: var(--gradient-purple);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            -webkit-font-smoothing: antialiased;
         }
 
         .login-container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-xl);
+            padding: 48px 32px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 420px;
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-purple);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            box-shadow: var(--shadow-lg);
         }
 
         .logo h1 {
-            font-size: 32px;
-            color: #667eea;
-            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
 
         .logo p {
-            color: #666;
-            font-size: 14px;
+            color: var(--text-secondary);
+            font-size: 15px;
+            font-weight: 400;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-weight: 600;
             font-size: 14px;
+            letter-spacing: -0.2px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 16px;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-family: var(--font-main);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            background: var(--bg-primary);
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary);
+            background: var(--bg-primary);
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-secondary);
         }
 
         .btn-login {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            background: var(--gradient-purple);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            font-family: var(--font-main);
         }
 
         .btn-login:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         .btn-login:active {
@@ -96,54 +183,88 @@
         .btn-login:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
 
         .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: var(--danger-light);
+            color: var(--danger);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
             font-size: 14px;
             display: none;
+            border-left: 4px solid var(--danger);
+            font-weight: 500;
         }
 
         .success-message {
-            background: #efe;
-            color: #3c3;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            background: var(--success-light);
+            color: var(--success);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
             font-size: 14px;
             display: none;
+            border-left: 4px solid var(--success);
+            font-weight: 500;
         }
 
         .divider {
             text-align: center;
-            margin: 30px 0;
-            color: #999;
+            margin: 32px 0;
+            color: var(--text-secondary);
             font-size: 14px;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider::before {
+            left: 0;
+        }
+
+        .divider::after {
+            right: 0;
         }
 
         .telegram-info {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 10px;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: var(--radius-md);
             text-align: center;
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            border: 1px solid var(--border-color);
+        }
+
+        .telegram-info i {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .telegram-info strong {
-            color: #0088cc;
+            color: var(--primary);
+            font-weight: 600;
         }
 
         .loader {
             display: none;
             width: 20px;
             height: 20px;
-            border: 3px solid #fff;
-            border-top-color: transparent;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto;
@@ -152,13 +273,26 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 32px 24px;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <h1>💰 AI Accounter</h1>
-            <p>Умный учет финансов</p>
+            <div class="logo-icon">
+                💰
+            </div>
+            <h1>AIAccounter</h1>
+            <p>Современная финансовая аналитика</p>
         </div>
 
         <div class="error-message" id="error-message"></div>
@@ -166,29 +300,41 @@
 
         <form id="login-form">
             <div class="form-group">
-                <label for="telegram_id">Telegram ID</label>
-                <input 
-                    type="text" 
-                    id="telegram_id" 
-                    name="telegram_id" 
-                    placeholder="Ваш Telegram ID"
-                    required
-                >
+                <label for="telegram_id">
+                    <i class="fab fa-telegram"></i> Telegram ID
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-id-card"></i>
+                    <input 
+                        type="text" 
+                        id="telegram_id" 
+                        name="telegram_id" 
+                        placeholder="Введите ваш Telegram ID"
+                        required
+                    >
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="first_name">Имя</label>
-                <input 
-                    type="text" 
-                    id="first_name" 
-                    name="first_name" 
-                    placeholder="Иван"
-                    required
-                >
+                <label for="first_name">
+                    <i class="fas fa-user"></i> Имя
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-signature"></i>
+                    <input 
+                        type="text" 
+                        id="first_name" 
+                        name="first_name" 
+                        placeholder="Введите ваше имя"
+                        required
+                    >
+                </div>
             </div>
 
             <button type="submit" class="btn-login" id="login-btn">
-                <span id="btn-text">Войти</span>
+                <span id="btn-text">
+                    <i class="fas fa-sign-in-alt"></i> Войти в систему
+                </span>
                 <div class="loader" id="loader"></div>
             </button>
         </form>
@@ -196,7 +342,8 @@
         <div class="divider">или</div>
 
         <div class="telegram-info">
-            Откройте приложение в <strong>Telegram</strong> для автоматического входа
+            <i class="fab fa-telegram"></i>
+            <div>Откройте приложение в <strong>Telegram</strong><br>для автоматического входа</div>
         </div>
     </div>
 

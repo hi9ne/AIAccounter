@@ -21,7 +21,6 @@ async def create_expense(
     """Создать новый расход"""
     db_expense = Expense(
         user_id=current_user.user_id,
-        workspace_id=expense.workspace_id,
         amount=expense.amount,
         currency=expense.currency,
         category=expense.category,
@@ -37,7 +36,6 @@ async def create_expense(
 @router.get("/", response_model=List[ExpenseSchema])
 async def get_expenses(
     current_user: User = Depends(get_current_user),
-    workspace_id: Optional[int] = None,
     category: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
@@ -53,8 +51,6 @@ async def get_expenses(
         )
     )
     
-    if workspace_id:
-        query = query.where(Expense.workspace_id == workspace_id)
     if category:
         query = query.where(Expense.category == category)
     if start_date:
@@ -151,7 +147,6 @@ async def delete_expense(
 @router.get("/stats/summary")
 async def get_expenses_summary(
     current_user: User = Depends(get_current_user),
-    workspace_id: Optional[int] = None,
     month: Optional[str] = None,  # Format: YYYY-MM
     db: AsyncSession = Depends(get_db)
 ):
@@ -166,9 +161,6 @@ async def get_expenses_summary(
             Expense.deleted_at.is_(None)
         )
     )
-    
-    if workspace_id:
-        query = query.where(Expense.workspace_id == workspace_id)
     
     if month:
         year, month_num = month.split("-")
@@ -197,7 +189,6 @@ async def get_expenses_summary(
 @router.get("/stats/by-category")
 async def get_expenses_by_category(
     current_user: User = Depends(get_current_user),
-    workspace_id: Optional[int] = None,
     month: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
@@ -213,9 +204,6 @@ async def get_expenses_by_category(
             Expense.deleted_at.is_(None)
         )
     )
-    
-    if workspace_id:
-        query = query.where(Expense.workspace_id == workspace_id)
     
     if month:
         year, month_num = month.split("-")

@@ -35,7 +35,6 @@ const MINIAPP_CONFIG = {
     
     // n8n webhook URLs (запасной вариант)
     n8nWebhooks: {
-        workspace: 'https://hi9neee.app.n8n.cloud/webhook/workspace-api',
         analytics: 'https://hi9neee.app.n8n.cloud/webhook/analytics-api',
         reports: 'https://hi9neee.app.n8n.cloud/webhook/reports-api',
         miniapp: 'https://hi9neee.app.n8n.cloud/webhook/miniapp'

@@ -43,7 +43,7 @@ class ExpenseBase(BaseModel):
 
 
 class ExpenseCreate(ExpenseBase):
-    workspace_id: Optional[int] = None
+    pass
 
 
 class ExpenseUpdate(BaseModel):
@@ -59,7 +59,6 @@ class Expense(ExpenseBase):
     
     id: int
     user_id: int
-    workspace_id: Optional[int]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -74,7 +73,7 @@ class IncomeBase(BaseModel):
 
 
 class IncomeCreate(IncomeBase):
-    workspace_id: Optional[int] = None
+    pass
 
 
 class IncomeUpdate(BaseModel):
@@ -90,7 +89,6 @@ class Income(IncomeBase):
     
     id: int
     user_id: int
-    workspace_id: Optional[int]
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -103,7 +101,7 @@ class BudgetBase(BaseModel):
 
 
 class BudgetCreate(BudgetBase):
-    workspace_id: Optional[int] = None
+    pass
 
 
 class BudgetUpdate(BaseModel):
@@ -116,33 +114,6 @@ class Budget(BudgetBase):
     
     id: int
     user_id: int
-    workspace_id: Optional[int]
-    created_at: datetime
-
-
-# Workspace Schemas
-class WorkspaceBase(BaseModel):
-    name: str
-    description: Optional[str] = None
-    currency: str = "KGS"
-
-
-class WorkspaceCreate(WorkspaceBase):
-    pass
-
-
-class WorkspaceUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    currency: Optional[str] = None
-
-
-class Workspace(WorkspaceBase):
-    model_config = ConfigDict(from_attributes=True)
-    
-    id: int
-    owner_id: int
-    is_active: bool
     created_at: datetime
 
 

@@ -42,13 +42,25 @@ class APIHelper {
             const response = await fetch(url, config);
             
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'API Error');
+                let errorMessage = `HTTP ${response.status}`;
+                try {
+                    const error = await response.json();
+                    // Обработка массива ошибок FastAPI
+                    if (Array.isArray(error)) {
+                        errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
+                    } else {
+                        errorMessage = error.detail || error.message || errorMessage;
+                    }
+                } catch (e) {
+                    // Не JSON ответ
+                }
+                console.error('API Error:', errorMessage);
+                throw new Error(errorMessage);
             }
             
             return await response.json();
         } catch (error) {
-            console.error('API Request failed:', error);
+            console.error('API Request failed:', error.message || error);
             throw error;
         }
     }
@@ -108,40 +120,6 @@ class APIHelper {
 
     async getAllCategories() {
         return this.get('/categories/all');
-    }
-
-    // ===== WORKSPACES =====
-    
-    async getWorkspaces() {
-        return this.get('/workspaces/');
-    }
-
-    async createWorkspace(data) {
-        return this.post('/workspaces/', data);
-    }
-
-    async getWorkspace(workspaceId) {
-        return this.get(`/workspaces/${workspaceId}`);
-    }
-
-    async updateWorkspace(workspaceId, data) {
-        return this.put(`/workspaces/${workspaceId}`, data);
-    }
-
-    async getWorkspaceMembers(workspaceId) {
-        return this.get(`/workspaces/${workspaceId}/members`);
-    }
-
-    async createInvite(workspaceId, data) {
-        return this.post(`/workspaces/${workspaceId}/invites`, data);
-    }
-
-    async acceptInvite(inviteCode) {
-        return this.post('/workspaces/accept-invite', { invite_code: inviteCode });
-    }
-
-    async getWorkspaceInvites(workspaceId) {
-        return this.get(`/workspaces/${workspaceId}/invites`);
     }
 
     // ===== EXPENSES =====
@@ -251,12 +229,41 @@ class APIHelper {
     async getReports(params = {}) {
         return this.get('/reports', params);
     }
-
-    // ===== REPORTS =====
     
-    async generateReportPDF(workspaceId, startDate, endDate, reportType = 'period') {
+    async getReportsHistory(params = {}) {
+        return this.get('/reports/history', params);
+    }
+
+    async getStats(params = {}) {
+        // Convert period to date range
+        if (params.period && !params.start_date) {
+            const end = new Date();
+            const start = new Date();
+            
+            switch (params.period) {
+                case 'week':
+                    start.setDate(end.getDate() - 7);
+                    break;
+                case 'month':
+                    start.setMonth(end.getMonth() - 1);
+                    break;
+                case 'year':
+                    start.setFullYear(end.getFullYear() - 1);
+                    break;
+                default:
+                    start.setMonth(end.getMonth() - 1);
+            }
+            
+            params.start_date = start.toISOString().split('T')[0];
+            params.end_date = end.toISOString().split('T')[0];
+            delete params.period;
+        }
+        
+        return this.get('/analytics/stats', params);
+    }
+    
+    async generateReportPDF(startDate, endDate, reportType = 'period') {
         const params = new URLSearchParams({
-            workspace_id: workspaceId,
             start_date: startDate,
             end_date: endDate
         });
@@ -267,7 +274,6 @@ class APIHelper {
             // Extract year and month from startDate
             const date = new Date(startDate);
             const yearMonth = new URLSearchParams({
-                workspace_id: workspaceId,
                 year: date.getFullYear(),
                 month: date.getMonth() + 1
             });
@@ -275,7 +281,6 @@ class APIHelper {
         } else {
             // Period report
             return this.post('/reports/period', {
-                workspace_id: workspaceId,
                 start_date: startDate,
                 end_date: endDate,
                 include_transactions: true
@@ -283,9 +288,8 @@ class APIHelper {
         }
     }
     
-    async exportCSV(workspaceId, startDate, endDate) {
+    async exportCSV(startDate, endDate) {
         const params = new URLSearchParams({
-            workspace_id: workspaceId,
             start_date: startDate,
             end_date: endDate
         });
@@ -319,9 +323,8 @@ class APIHelper {
         return { success: true };
     }
     
-    async exportExcel(workspaceId, startDate, endDate) {
+    async exportExcel(startDate, endDate) {
         const params = new URLSearchParams({
-            workspace_id: workspaceId,
             start_date: startDate,
             end_date: endDate
         });

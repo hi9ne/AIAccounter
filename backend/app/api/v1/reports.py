@@ -35,7 +35,7 @@ PERIOD_TEMPLATE_ID = settings.PERIOD_TEMPLATE_ID
 
 
 async def fetch_report_data(
-    workspace_id: int,
+    user_id: int,
     start_date: date,
     end_date: date,
     db: AsyncSession
@@ -46,11 +46,11 @@ async def fetch_report_data(
     # Базовая статистика
     stats_query = text("""
         SELECT * FROM get_income_expense_stats(
-            :workspace_id, :start_date, :end_date
+            :user_id, :start_date, :end_date
         )
     """)
     stats_result = await db.execute(stats_query, {
-        "workspace_id": workspace_id,
+        "user_id": user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -59,11 +59,11 @@ async def fetch_report_data(
     # Топ категории
     top_cat_query = text("""
         SELECT * FROM get_top_categories(
-            :workspace_id, :start_date, :end_date, 10
+            :user_id, :start_date, :end_date, 10
         )
     """)
     top_cat_result = await db.execute(top_cat_query, {
-        "workspace_id": workspace_id,
+        "user_id": user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -79,7 +79,7 @@ async def fetch_report_data(
         FROM (
             SELECT date, SUM(amount) as amount
             FROM income
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -88,7 +88,7 @@ async def fetch_report_data(
         FULL OUTER JOIN (
             SELECT date, SUM(amount) as amount
             FROM expenses
-            WHERE workspace_id = :workspace_id
+            WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
@@ -97,7 +97,7 @@ async def fetch_report_data(
         ORDER BY COALESCE(i.date, e.date)
     """)
     trend_result = await db.execute(trend_query, {
-        "workspace_id": workspace_id,
+        "user_id": user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -112,7 +112,7 @@ async def fetch_report_data(
             e.amount,
             'expense' as type
         FROM expenses e
-        WHERE e.workspace_id = :workspace_id
+        WHERE e.user_id = :user_id
             AND e.date >= :start_date
             AND e.date <= :end_date
             AND e.deleted_at IS NULL
@@ -124,13 +124,13 @@ async def fetch_report_data(
             i.amount,
             'income' as type
         FROM income i
-        WHERE i.workspace_id = :workspace_id
+        WHERE i.user_id = :user_id
             AND i.date >= :start_date
             AND i.date <= :end_date
         ORDER BY date DESC
     """)
     trans_result = await db.execute(transactions_query, {
-        "workspace_id": workspace_id,
+        "user_id": user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -241,7 +241,6 @@ async def generate_pdf_via_apitemplate(
 
 @router.post("/weekly", response_model=ReportResponse)
 async def generate_weekly_report(
-    workspace_id: int = Query(..., description="ID workspace"),
     week_start: Optional[date] = Query(None, description="Начало недели (по умолчанию - текущая неделя)"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -257,7 +256,7 @@ async def generate_weekly_report(
     week_end = week_start + timedelta(days=6)
     
     # Получаем данные
-    report_data = await fetch_report_data(workspace_id, week_start, week_end, db)
+    report_data = await fetch_report_data(current_user.user_id, week_start, week_end, db)
     
     # Подготовка данных для шаблона
     template_data = {
@@ -273,7 +272,7 @@ async def generate_weekly_report(
     
     return {
         "report_type": "weekly",
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": week_start,
         "end_date": week_end,
         "pdf_url": pdf_url,
@@ -283,7 +282,6 @@ async def generate_weekly_report(
 
 @router.post("/monthly", response_model=ReportResponse)
 async def generate_monthly_report(
-    workspace_id: int = Query(..., description="ID workspace"),
     year: Optional[int] = Query(None, description="Год"),
     month: Optional[int] = Query(None, ge=1, le=12, description="Месяц (1-12)"),
     current_user: User = Depends(get_current_user),
@@ -306,7 +304,7 @@ async def generate_monthly_report(
         month_end = date(year, month + 1, 1) - timedelta(days=1)
     
     # Получаем данные
-    report_data = await fetch_report_data(workspace_id, month_start, month_end, db)
+    report_data = await fetch_report_data(current_user.user_id, month_start, month_end, db)
     
     # Получаем бюджеты
     budget_query = text("""
@@ -318,17 +316,17 @@ async def generate_monthly_report(
         FROM budgets b
         LEFT JOIN expenses e 
             ON e.category = b.category 
-            AND e.workspace_id = b.workspace_id
+            AND e.user_id = b.user_id
             AND e.date >= :start_date
             AND e.date <= :end_date
-        WHERE b.workspace_id = :workspace_id
+        WHERE b.user_id = :user_id
             AND b.start_date <= :end_date
             AND b.end_date >= :start_date
         GROUP BY b.category, b.budget_amount
     """)
     
     budget_result = await db.execute(budget_query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": month_start,
         "end_date": month_end
     })
@@ -361,7 +359,7 @@ async def generate_monthly_report(
     
     return {
         "report_type": "monthly",
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": month_start,
         "end_date": month_end,
         "pdf_url": pdf_url,
@@ -380,7 +378,7 @@ async def generate_period_report(
     """
     # Получаем данные
     report_data = await fetch_report_data(
-        report_request.workspace_id,
+        current_user.user_id,
         report_request.start_date,
         report_request.end_date,
         db
@@ -406,7 +404,6 @@ async def generate_period_report(
     # Сохраняем отчет в базу
     saved_report = SavedReport(
         user_id=current_user.user_id,
-        workspace_id=report_request.workspace_id,
         report_type="period",
         title=f"Отчет за {report_request.start_date.strftime('%d.%m.%Y')} - {report_request.end_date.strftime('%d.%m.%Y')}",
         period_start=report_request.start_date,
@@ -422,7 +419,7 @@ async def generate_period_report(
     
     return {
         "report_type": "period",
-        "workspace_id": report_request.workspace_id,
+        "user_id": current_user.user_id,
         "start_date": report_request.start_date,
         "end_date": report_request.end_date,
         "pdf_url": pdf_url,
@@ -433,7 +430,6 @@ async def generate_period_report(
 
 @router.get("/history")
 async def get_report_history(
-    workspace_id: int = Query(..., description="ID workspace"),
     limit: int = Query(10, ge=1, le=50, description="Количество отчётов"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
@@ -445,15 +441,14 @@ async def get_report_history(
     
     # Получаем сохраненные отчеты
     query = select(SavedReport).where(
-        SavedReport.user_id == current_user.user_id,
-        SavedReport.workspace_id == workspace_id
+        SavedReport.user_id == current_user.user_id
     ).order_by(desc(SavedReport.created_at)).limit(limit)
     
     result = await db.execute(query)
     reports = result.scalars().all()
     
     return {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "reports": [
             {
                 "id": report.id,
@@ -473,7 +468,6 @@ async def get_report_history(
 
 @router.get("/export/csv")
 async def export_transactions_csv(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     current_user: User = Depends(get_current_user),
@@ -492,7 +486,7 @@ async def export_transactions_csv(
             e.amount,
             e.currency
         FROM expenses e
-        WHERE e.workspace_id = :workspace_id
+        WHERE e.user_id = :user_id
             AND e.date >= :start_date
             AND e.date <= :end_date
             AND e.deleted_at IS NULL
@@ -505,7 +499,7 @@ async def export_transactions_csv(
             i.amount,
             i.currency
         FROM income i
-        WHERE i.workspace_id = :workspace_id
+        WHERE i.user_id = :user_id
             AND i.date >= :start_date
             AND i.date <= :end_date
             AND i.deleted_at IS NULL
@@ -513,7 +507,7 @@ async def export_transactions_csv(
     """)
     
     result = await db.execute(transactions_query, {
-        "workspace_id": workspace_id,
+        "user_id": current_user.user_id,
         "start_date": start_date,
         "end_date": end_date
     })
@@ -552,7 +546,6 @@ async def export_transactions_csv(
 
 @router.get("/export/excel")
 async def export_transactions_excel(
-    workspace_id: int = Query(..., description="ID workspace"),
     start_date: date = Query(..., description="Начальная дата"),
     end_date: date = Query(..., description="Конечная дата"),
     current_user: User = Depends(get_current_user),
@@ -572,7 +565,7 @@ async def export_transactions_excel(
         )
     
     # Получаем данные
-    report_data = await fetch_report_data(workspace_id, start_date, end_date, db)
+    report_data = await fetch_report_data(current_user.user_id, start_date, end_date, db)
     
     # Создаем Excel файл
     wb = Workbook()

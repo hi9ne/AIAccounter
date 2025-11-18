@@ -21,7 +21,6 @@ async def create_income(
     """Создать новый доход"""
     db_income = Income(
         user_id=current_user.user_id,
-        workspace_id=income.workspace_id,
         amount=income.amount,
         currency=income.currency,
         category=income.category,
@@ -36,7 +35,6 @@ async def create_income(
 
 @router.get("/", response_model=List[IncomeSchema])
 async def get_income_list(
-    workspace_id: Optional[int] = None,
     category: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
@@ -53,8 +51,6 @@ async def get_income_list(
         )
     )
     
-    if workspace_id:
-        query = query.where(Income.workspace_id == workspace_id)
     if category:
         query = query.where(Income.category == category)
     if start_date:
@@ -72,7 +68,7 @@ async def get_income_list(
 @router.get("/{income_id}", response_model=IncomeSchema)
 async def get_income(
     income_id: int,
-    user_id: int,  # TODO: получать из JWT токена
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Получить конкретный доход"""
@@ -96,7 +92,7 @@ async def get_income(
 async def update_income(
     income_id: int,
     income_update: IncomeUpdate,
-    user_id: int,  # TODO: получать из JWT токена
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Обновить доход"""
@@ -125,7 +121,7 @@ async def update_income(
 @router.delete("/{income_id}")
 async def delete_income(
     income_id: int,
-    user_id: int,  # TODO: получать из JWT токена
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Удалить доход (мягкое удаление)"""

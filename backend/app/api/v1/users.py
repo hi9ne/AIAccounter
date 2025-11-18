@@ -33,21 +33,30 @@ async def get_current_user_profile(
         # Функция возвращает подробную статистику
         return {
             "user_id": current_user.user_id,
-            "telegram_chat_id": current_user.telegram_chat_id,
+            "telegram_chat_id": str(current_user.telegram_chat_id),  # Конвертируем в строку
             "username": current_user.username,
             "first_name": current_user.first_name,
             "last_name": current_user.last_name,
-            "language": current_user.language,
+            "language_code": current_user.language_code,
             "timezone": current_user.timezone,
             "is_active": current_user.is_active,
-            "created_at": current_user.created_at,
             "last_activity": current_user.last_activity,
-            # Добавить статистику из get_user_profile если нужно
+            "created_at": current_user.last_activity,  # Используем last_activity как created_at
         }
     
     # Если функция не вернула данные, возвращаем базовую информацию
-    return current_user
-
+    return {
+        "user_id": current_user.user_id,
+        "telegram_chat_id": str(current_user.telegram_chat_id),
+        "username": current_user.username,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "language_code": current_user.language_code,
+        "timezone": current_user.timezone,
+        "is_active": current_user.is_active,
+        "last_activity": current_user.last_activity,
+        "created_at": current_user.last_activity,
+    }
 
 @router.put("/me", response_model=UserSchema)
 async def update_current_user_profile(
@@ -100,8 +109,7 @@ async def get_user_statistics(
             top_expense_category,
             top_expense_amount,
             current_month_expenses,
-            current_month_income,
-            workspaces_count
+            current_month_income
         FROM get_user_profile(:user_id)
     """)
     
@@ -129,5 +137,4 @@ async def get_user_statistics(
         "top_expense_amount": float(stats.top_expense_amount or 0),
         "current_month_expenses": float(stats.current_month_expenses or 0),
         "current_month_income": float(stats.current_month_income or 0),
-        "workspaces_count": stats.workspaces_count or 0,
     }
