@@ -23,18 +23,34 @@ allowed_origins = [
     "http://localhost:5500",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5500",
-    "https://aiaccounter.pages.dev"
+    "https://aiaccounter.pages.dev",
+    "https://*.aiaccounter.pages.dev"  # Поддомены Cloudflare
 ]
 
 logger.info(f"🔧 Configured ALLOWED_ORIGINS: {allowed_origins}")
 
+# Функция для проверки origin
+def check_origin(origin: str) -> bool:
+    """Проверяет допустим ли origin"""
+    if origin in allowed_origins:
+        return True
+    # Проверяем поддомены pages.dev
+    if origin.endswith('.aiaccounter.pages.dev') or origin == 'https://aiaccounter.pages.dev':
+        return True
+    # Проверяем localhost
+    if origin.startswith('http://localhost') or origin.startswith('http://127.0.0.1'):
+        return True
+    return False
+
 app.add_middleware(
     CORSMiddleware,
+    allow_origin_regex=r"https://.*\.aiaccounter\.pages\.dev",  # Regex для поддоменов
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["*"],  # Разрешаем ВСЕ методы
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=3600  # Кэшируем preflight на 1 час
 )
 
 # Подключаем API роуты
