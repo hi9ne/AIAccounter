@@ -1,22 +1,22 @@
 // Service Worker for AIAccounter Mini App
 // Provides offline caching and PWA capabilities
 
-const CACHE_NAME = 'aiaccounter-v3.0.0';
-const RUNTIME_CACHE = 'aiaccounter-runtime';
+const CACHE_NAME = 'aiaccounter-v3.0.1';
+const RUNTIME_CACHE = 'aiaccounter-runtime-v3.0.1';
 
 // Critical assets to cache on install
 const PRECACHE_ASSETS = [
     './',
-    './index.html',
-    './style.css',
-    './app.js',
-    './api-helper.js',
-    './miniapp-config.js'
+    './index.html?v=3.0.1',
+    './style.css?v=3.0.1',
+    './app.js?v=3.0.1',
+    './api-helper.js?v=3.0.1',
+    './miniapp-config.js?v=3.0.1'
 ];
 
-// Install: Cache critical assets
+// Install: Cache critical assets and skip waiting
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing...');
+    console.log('[SW] Installing v3.0.1...');
     
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -24,37 +24,67 @@ self.addEventListener('install', (event) => {
                 console.log('[SW] Caching critical assets');
                 return cache.addAll(PRECACHE_ASSETS);
             })
-            .then(() => self.skipWaiting())
+            .then(() => {
+                console.log('[SW] Skip waiting - activate immediately');
+                return self.skipWaiting();
+            })
     );
 });
 
-// Activate: Clean old caches
+// Activate: Clean old caches and claim clients immediately
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating...');
+    console.log('[SW] Activating v3.0.1...');
     
     event.waitUntil(
         caches.keys()
             .then(cacheNames => {
                 return Promise.all(
                     cacheNames
-                        .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE)
+                        .filter(name => !name.includes('v3.0.1'))
                         .map(name => {
                             console.log('[SW] Deleting old cache:', name);
                             return caches.delete(name);
                         })
                 );
             })
-            .then(() => self.clients.claim())
+            .then(() => {
+                console.log('[SW] Claiming all clients');
+                return self.clients.claim();
+            })
     );
 });
 
-// Fetch: Network-first with cache fallback for API, cache-first for assets
+// Fetch: Network-first for everything to get latest version
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
     
     // Skip non-GET requests
     if (request.method !== 'GET') return;
+    
+    // Always try network first for app files
+    if (url.origin === location.origin && 
+        (url.pathname.endsWith('.html') || 
+         url.pathname.endsWith('.js') || 
+         url.pathname.endsWith('.css') ||
+         url.pathname === '/')) {
+        
+        event.respondWith(
+            fetch(request, { cache: 'no-store' })
+                .then(response => {
+                    // Update cache with latest version
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME)
+                        .then(cache => cache.put(request, responseClone));
+                    return response;
+                })
+                .catch(() => {
+                    // Fallback to cache only if network fails
+                    return caches.match(request);
+                })
+        );
+        return;
+    }
     
     // API requests: Network-first with cache fallback
     if (url.pathname.startsWith('/api/')) {

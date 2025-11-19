@@ -1365,6 +1365,33 @@ function showSuccess(message) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎯 DOM loaded, initializing...');
 
+    // Регистрируем Service Worker с автообновлением
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('✅ Service Worker registered');
+                
+                // Проверяем обновления каждые 30 секунд
+                setInterval(() => {
+                    registration.update();
+                }, 30000);
+                
+                // Автоматически обновляем при обнаружении новой версии
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('🔄 New Service Worker found, updating...');
+                    
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('✅ New version available, reloading...');
+                            window.location.reload();
+                        }
+                    });
+                });
+            })
+            .catch(err => console.warn('⚠️ Service Worker registration failed:', err));
+    }
+
     // Очищаем старые версии кэша из localStorage
     const storedVersion = localStorage.getItem('app_version');
     if (storedVersion !== APP_VERSION) {
