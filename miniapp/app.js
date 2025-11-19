@@ -124,6 +124,14 @@ let exchangeRates = {}; // Кэш курсов валют
 
 // Загрузка курсов валют
 async function loadExchangeRates() {
+    // Проверяем кэш курсов (1 час TTL)
+    const cachedRates = cache.get('exchange_rates');
+    if (cachedRates) {
+        exchangeRates = cachedRates;
+        console.log('💾 Exchange rates from cache:', Object.keys(exchangeRates).length, 'pairs');
+        return exchangeRates;
+    }
+    
     try {
         const rates = await api.get('/rates/latest');
         exchangeRates = {};
@@ -131,6 +139,9 @@ async function loadExchangeRates() {
             const key = `${rate.from_currency}_${rate.to_currency}`;
             exchangeRates[key] = rate.rate;
         });
+        
+        // Кэшируем на 1 час (курсы обновляются редко)
+        cache.set('exchange_rates', exchangeRates, 3600);
         console.log('✅ Exchange rates loaded:', Object.keys(exchangeRates).length, 'pairs');
         return exchangeRates;
     } catch (error) {
@@ -479,14 +490,24 @@ async function loadDashboard() {
     const cacheKey = `dashboard:${state.currentPeriod}:${state.currency}`;
     const cached = cache.get(cacheKey);
     
-    // Preload analytics в фоне для быстрого перехода
-    setTimeout(() => {
-        const analyticsKey = `analytics:${state.currentPeriod}:${state.currency}`;
-        if (!cache.get(analyticsKey)) {
+    // Preload analytics в фоне для быстрого перехода (только если нет кэша)
+    if (!cache.get(`analytics:${state.currentPeriod}:${state.currency}`)) {
+        setTimeout(() => {
             console.log('📦 Preloading analytics in background...');
             loadAnalytics().catch(e => console.warn('Preload analytics failed:', e));
+        }, 2000);
+    }
+    
+    // Показываем skeleton только если нет кэша
+    if (!cached && !state.preloadedData) {
+        const balanceCard = document.querySelector('.balance-card');
+        if (balanceCard && !balanceCard.querySelector('.skeleton-item')) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'loading-placeholder';
+            skeleton.innerHTML = '<div class="skeleton-item"></div>';
+            balanceCard.appendChild(skeleton);
         }
-    }, 1000);
+    }
     
     // Показываем индикатор на кнопке обновления
     const refreshBtn = document.querySelector('.icon-btn');
@@ -525,31 +546,24 @@ async function loadDashboard() {
             return;
         }
         
-        let data, topCategories;
+        let dashboardData;
         
         if (cached) {
             console.log('📦 Using cached dashboard data');
-            data = cached;
-            // Загружаем только топ категории
-            const range = getDateRangeFor(state.currentPeriod);
-            topCategories = await api.getCategoryAnalytics({ ...range, limit: 3 });
+            dashboardData = cached;
         } else {
             // Параллельная загрузка всех данных сразу
             const range = getDateRangeFor(state.currentPeriod);
             const loadRates = Object.keys(exchangeRates).length === 0 ? loadExchangeRates() : Promise.resolve();
             
-            [data, topCategories] = await Promise.all([
+            const [data, topCategories] = await Promise.all([
                 api.getOverview({ period: state.currentPeriod }),
                 api.getCategoryAnalytics({ ...range, limit: 3 }),
                 loadRates
             ]);
             
-            cache.set(cacheKey, data, 300);
-        }
-
-        // Конвертируем топ категории
-        if (Array.isArray(topCategories)) {
-            const convertedTop = topCategories.map(cat => {
+            // Конвертируем и кэшируем вместе
+            const convertedTop = Array.isArray(topCategories) ? topCategories.map(cat => {
                 const origCurrency = cat.currency || 'KGS';
                 const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
                 const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
@@ -561,16 +575,25 @@ async function loadDashboard() {
                     total_amount: convertAmount(originalAmount, origCurrency, state.currency),
                     currency: state.currency
                 };
-            });
-            updateHomeTopCategories(convertedTop);
+            }) : [];
+            
+            dashboardData = { ...data, topCategories: convertedTop };
+            cache.set(cacheKey, dashboardData, 300);
         }
         
-        updateDashboardUI(data);
+        // Обновляем UI
+        updateDashboardUI(dashboardData);
+        if (dashboardData.topCategories) {
+            updateHomeTopCategories(dashboardData.topCategories);
+        }
         console.log('✅ Dashboard loaded');
     } catch (error) {
         handleError(error, 'Не удалось загрузить данные');
     } finally {
         if (refreshBtn) refreshBtn.classList.remove('loading');
+        // Убираем skeleton
+        const skeleton = document.querySelector('.balance-card .loading-placeholder');
+        if (skeleton) skeleton.remove();
     }
 }
 
@@ -588,9 +611,11 @@ function updateDashboardUI(data) {
     const income = convertAmount(data.balance.total_income || 0, origCurrency, state.currency);
     const expense = convertAmount(data.balance.total_expense || 0, origCurrency, state.currency);
     
-    document.getElementById('main-balance').textContent = formatCurrency(balance);
-    document.getElementById('total-income').textContent = formatCurrency(income);
-    document.getElementById('total-expense').textContent = formatCurrency(expense);
+    // Батчим DOM операции
+    requestAnimationFrame(() => {
+        document.getElementById('main-balance').textContent = formatCurrency(balance);
+        document.getElementById('total-income').textContent = formatCurrency(income);
+        document.getElementById('total-expense').textContent = formatCurrency(expense);
     
     // Trend (simplified - можно улучшить с историческими данными)
     const trendEl = document.getElementById('balance-trend');
@@ -600,24 +625,20 @@ function updateDashboardUI(data) {
         trendEl.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
     }
     
-    // Stats
-    const transactionsCount = (data.balance.income_count || 0) + (data.balance.expense_count || 0);
-    document.getElementById('transactions-count').textContent = `${transactionsCount} операций`;
+        // Stats
+        const transactionsCount = (data.balance.income_count || 0) + (data.balance.expense_count || 0);
+        document.getElementById('transactions-count').textContent = `${transactionsCount} операций`;
+        
+        const avgDaily = income > 0 ? (expense / 30).toFixed(0) : 0;
+        document.getElementById('avg-daily').textContent = `${formatCurrency(avgDaily)}/день`;
+        
+        const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
+        document.getElementById('savings-rate').textContent = `${savingsRate}% экономия`;
+    });
     
-    const avgDaily = income > 0 ? (expense / 30).toFixed(0) : 0;
-    document.getElementById('avg-daily').textContent = `${formatCurrency(avgDaily)}/день`;
-    
-    const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
-    document.getElementById('savings-rate').textContent = `${savingsRate}% экономия`;
-    
-    // Top categories на главной
-    if (data.top_categories && data.top_categories.length > 0) {
-        updateHomeTopCategories(data.top_categories.slice(0, 3));
-    }
-    
-    // Recent transactions
+    // Recent transactions (асинхронно)
     if (data.recent_transactions) {
-        updateRecentTransactions(data.recent_transactions);
+        requestAnimationFrame(() => updateRecentTransactions(data.recent_transactions));
     }
 }
 
@@ -631,7 +652,6 @@ function updateHomeTopCategories(categories) {
     }
     
     // Фильтруем только валидные категории с суммой > 0
-    // API может вернуть amount, total или total_amount
     const validCategories = categories.filter(cat => {
         const value = cat.total_amount || cat.amount || cat.total || 0;
         return cat && value > 0;
@@ -643,22 +663,29 @@ function updateHomeTopCategories(categories) {
     }
     
     const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total_amount || cat.amount || cat.total || 0), 0);
+    const colors = ['#667eea', '#f093fb', '#4facfe'];
     
-    container.innerHTML = validCategories.map((cat, index) => {
+    // Используем DocumentFragment для батчинга
+    const fragment = document.createDocumentFragment();
+    validCategories.forEach((cat, index) => {
         const amount = parseFloat(cat.total_amount || cat.amount || cat.total || 0);
         const percent = total > 0 ? ((amount / total) * 100).toFixed(0) : 0;
-        const colors = ['#667eea', '#f093fb', '#4facfe'];
-        return `
-            <div class="top-category-compact">
-                <div class="category-indicator" style="background: ${colors[index]}"></div>
-                <div class="category-compact-info">
-                    <div class="category-compact-name">${cat.category || 'Без категории'}</div>
-                    <div class="category-compact-amount">${formatCurrency(amount)}</div>
-                </div>
-                <div class="category-compact-percent">${percent}%</div>
+        
+        const div = document.createElement('div');
+        div.className = 'top-category-compact';
+        div.innerHTML = `
+            <div class="category-indicator" style="background: ${colors[index]}"></div>
+            <div class="category-compact-info">
+                <div class="category-compact-name">${cat.category || 'Без категории'}</div>
+                <div class="category-compact-amount">${formatCurrency(amount)}</div>
             </div>
+            <div class="category-compact-percent">${percent}%</div>
         `;
-    }).join('');
+        fragment.appendChild(div);
+    });
+    
+    container.innerHTML = '';
+    container.appendChild(fragment);
 }
 
 function updateRecentTransactions(transactions) {
