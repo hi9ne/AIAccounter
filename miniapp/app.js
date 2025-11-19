@@ -52,13 +52,46 @@ const cache = {
             value,
             expires: Date.now() + (ttl * 1000)
         });
+        
+        // Сохраняем в localStorage для persistent кэша
+        try {
+            localStorage.setItem(`cache_${key}`, JSON.stringify({
+                value,
+                expires: Date.now() + (ttl * 1000)
+            }));
+        } catch (e) {
+            console.warn('Failed to save to localStorage:', e);
+        }
     },
     
     get(key) {
-        const item = this.data.get(key);
+        // Сначала проверяем memory cache
+        let item = this.data.get(key);
+        
+        // Если нет в памяти, проверяем localStorage
+        if (!item) {
+            try {
+                const stored = localStorage.getItem(`cache_${key}`);
+                if (stored) {
+                    item = JSON.parse(stored);
+                    if (Date.now() <= item.expires) {
+                        // Восстанавливаем в memory cache
+                        this.data.set(key, item);
+                        console.log('💾 Restored from localStorage:', key);
+                    } else {
+                        localStorage.removeItem(`cache_${key}`);
+                        return null;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to read from localStorage:', e);
+            }
+        }
+        
         if (!item) return null;
         if (Date.now() > item.expires) {
             this.data.delete(key);
+            localStorage.removeItem(`cache_${key}`);
             return null;
         }
         return item.value;
@@ -66,7 +99,23 @@ const cache = {
     
     clear() {
         this.data.clear();
+        // Очищаем localStorage кэш
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('cache_')) {
+                localStorage.removeItem(key);
+            }
+        });
         console.log('🗑️ Cache cleared');
+    },
+    
+    clearMatching(prefix) {
+        for (const key of this.data.keys()) {
+            if (key.startsWith(prefix)) {
+                this.data.delete(key);
+                localStorage.removeItem(`cache_${key}`);
+            }
+        }
+        console.log(`🗑️ Cleared cache with prefix: ${prefix}`);
     }
 };
 
@@ -430,6 +479,15 @@ async function loadDashboard() {
     const cacheKey = `dashboard:${state.currentPeriod}:${state.currency}`;
     const cached = cache.get(cacheKey);
     
+    // Preload analytics в фоне для быстрого перехода
+    setTimeout(() => {
+        const analyticsKey = `analytics:${state.currentPeriod}:${state.currency}`;
+        if (!cache.get(analyticsKey)) {
+            console.log('📦 Preloading analytics in background...');
+            loadAnalytics().catch(e => console.warn('Preload analytics failed:', e));
+        }
+    }, 1000);
+    
     // Показываем индикатор на кнопке обновления
     const refreshBtn = document.querySelector('.icon-btn');
     if (refreshBtn) refreshBtn.classList.add('loading');
@@ -690,7 +748,6 @@ async function loadAnalytics() {
             const panel = document.getElementById('custom-period-panel');
             if (!customPeriod.startDate || !customPeriod.endDate) {
                 if (panel) panel.style.display = 'block';
-                // Ждём ввода дат и применения пользователем
                 return;
             }
             params = {
@@ -701,10 +758,23 @@ async function loadAnalytics() {
             params = getDateRangeFor(period);
         }
 
-        const [stats, topCategories] = await Promise.all([
-            api.getIncomeExpenseStats(params),
-            api.getCategoryAnalytics({ ...params, limit: 10 })
-        ]);
+        const cacheKey = `analytics:${period}:${state.currency}:${params.start_date || ''}`;
+        const cached = cache.get(cacheKey);
+        
+        let stats, topCategories;
+        
+        if (cached) {
+            console.log('📦 Using cached analytics data');
+            ({ stats, topCategories } = cached);
+        } else {
+            [stats, topCategories] = await Promise.all([
+                api.getIncomeExpenseStats(params),
+                api.getCategoryAnalytics({ ...params, limit: 10 })
+            ]);
+            
+            // Кэшируем на 2 минуты
+            cache.set(cacheKey, { stats, topCategories }, 120);
+        }
         
         // Обновляем бейдж периода
         const periodBadge = document.getElementById('top-categories-period-badge');
@@ -946,40 +1016,54 @@ function openFilters() {
 async function loadHistory() {
     console.log('📜 Loading history...');
     
+    const cacheKey = `history:${historyFilters.type}:${historyFilters.category}:${state.currency}`;
+    const cached = cache.get(cacheKey);
+    
     const container = document.getElementById('transactions-history');
-    if (container) {
-        container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
-    }
     
     try {
-        // Загружаем курсы валют если еще не загружены
-        if (Object.keys(exchangeRates).length === 0) {
-            await loadExchangeRates();
+        let allTransactions;
+        
+        if (cached) {
+            console.log('📦 Using cached history data');
+            allTransactions = cached;
+        } else {
+            if (container) {
+                container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
+            }
+            
+            // Загружаем курсы валют если еще не загружены
+            if (Object.keys(exchangeRates).length === 0) {
+                await loadExchangeRates();
+            }
+            
+            const type = historyFilters.type;
+            
+            const [expenses, income] = await Promise.all([
+                type !== 'income' ? api.getExpenses() : Promise.resolve([]),
+                type !== 'expense' ? api.getIncome() : Promise.resolve([])
+            ]);
+            
+            allTransactions = [
+                ...(expenses || []).map(t => ({ ...t, type: 'expense' })),
+                ...(income || []).map(t => ({ ...t, type: 'income' }))
+            ];
+            
+            // Конвертируем все транзакции в выбранную валюту
+            allTransactions = allTransactions.map(t => {
+                const origCurrency = t.currency || 'KGS';
+                return {
+                    ...t,
+                    originalAmount: t.amount,
+                    originalCurrency: origCurrency,
+                    amount: convertAmount(t.amount, origCurrency, state.currency),
+                    currency: state.currency
+                };
+            });
+            
+            // Кэшируем на 3 минуты
+            cache.set(cacheKey, allTransactions, 180);
         }
-        
-        const type = historyFilters.type;
-        
-        const [expenses, income] = await Promise.all([
-            type !== 'income' ? api.getExpenses() : Promise.resolve([]),
-            type !== 'expense' ? api.getIncome() : Promise.resolve([])
-        ]);
-        
-        let allTransactions = [
-            ...(expenses || []).map(t => ({ ...t, type: 'expense' })),
-            ...(income || []).map(t => ({ ...t, type: 'income' }))
-        ];
-        
-        // Конвертируем все транзакции в выбранную валюту
-        allTransactions = allTransactions.map(t => {
-            const origCurrency = t.currency || 'KGS';
-            return {
-                ...t,
-                originalAmount: t.amount,
-                originalCurrency: origCurrency,
-                amount: convertAmount(t.amount, origCurrency, state.currency),
-                currency: state.currency
-            };
-        });
         
         // Фильтрация по категории
         if (historyFilters.category !== 'all') {
@@ -1112,29 +1196,44 @@ function loadSettings() {
 async function loadReports() {
     console.log('📄 Loading reports...');
     
+    const cacheKey = `reports:list`;
+    const cached = cache.get(cacheKey);
+    
     const container = document.getElementById('reports-list');
-    if (container) {
-        container.innerHTML = `
-            <div class="loading-state">
-                <div class="loading-spinner"></div>
-                <p>Загрузка отчётов...</p>
-            </div>
-        `;
-    }
     
     try {
-        const response = await api.getReportsHistory();
-        console.log('Reports API response:', response);
+        let reports;
         
-        // Обрабатываем разные форматы ответа
-        let reports = [];
-        if (Array.isArray(response)) {
-            reports = response;
-        } else if (response && Array.isArray(response.reports)) {
-            reports = response.reports;
-        } else if (response && typeof response === 'object') {
-            // Если пришёл объект с данными отчётов
-            reports = Object.values(response).filter(item => item && typeof item === 'object');
+        if (cached) {
+            console.log('📦 Using cached reports data');
+            reports = cached;
+        } else {
+            if (container) {
+                container.innerHTML = `
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Загрузка отчётов...</p>
+                    </div>
+                `;
+            }
+            
+            const response = await api.getReportsHistory();
+            console.log('Reports API response:', response);
+            
+            // Обрабатываем разные форматы ответа
+            if (Array.isArray(response)) {
+                reports = response;
+            } else if (response && Array.isArray(response.reports)) {
+                reports = response.reports;
+            } else if (response && typeof response === 'object') {
+                // Если пришёл объект с данными отчётов
+                reports = Object.values(response).filter(item => item && typeof item === 'object');
+            } else {
+                reports = [];
+            }
+            
+            // Кэшируем на 5 минут (отчеты обновляются редко)
+            cache.set(cacheKey, reports, 300);
         }
         
         updateReportsUI(reports);
@@ -1289,6 +1388,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let historyDebounceTimer;
     const debouncedLoadHistory = () => {
         clearTimeout(historyDebounceTimer);
+        // Очищаем кэш истории при изменении фильтров
+        cache.clearMatching('history');
         historyDebounceTimer = setTimeout(() => loadHistory(), 300);
     };
     
@@ -1350,8 +1451,10 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('currency', e.target.value);
             console.log('💱 Currency changed to:', state.currency);
             
-            // Очищаем кэш и перезагружаем все данные
-            cache.clear();
+            // Очищаем только зависимые кэши
+            cache.clearMatching('dashboard');
+            cache.clearMatching('history');
+            cache.clearMatching('analytics');
             
             // Перезагружаем текущий экран
             if (state.currentScreen === 'home') {
