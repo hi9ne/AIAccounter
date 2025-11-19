@@ -3,7 +3,8 @@
 // Clean, Fast, Optimized
 // ============================================================================
 
-console.log('🚀 AIAccounter v3.0.0 - Analytics Dashboard');
+const APP_VERSION = '3.0.1'; // Increment to invalidate all caches
+console.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
 
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
@@ -46,18 +47,21 @@ let state = {
 // ===== CACHE =====
 const cache = {
     data: new Map(),
+    version: APP_VERSION,
     
     set(key, value, ttl = 300) {
-        this.data.set(key, {
+        const versionedKey = `${this.version}_${key}`;
+        this.data.set(versionedKey, {
             value,
             expires: Date.now() + (ttl * 1000)
         });
         
         // Сохраняем в localStorage для persistent кэша
         try {
-            localStorage.setItem(`cache_${key}`, JSON.stringify({
+            localStorage.setItem(`cache_${versionedKey}`, JSON.stringify({
                 value,
-                expires: Date.now() + (ttl * 1000)
+                expires: Date.now() + (ttl * 1000),
+                version: this.version
             }));
         } catch (e) {
             console.warn('Failed to save to localStorage:', e);
@@ -65,21 +69,27 @@ const cache = {
     },
     
     get(key) {
+        const versionedKey = `${this.version}_${key}`;
         // Сначала проверяем memory cache
-        let item = this.data.get(key);
+        let item = this.data.get(versionedKey);
         
         // Если нет в памяти, проверяем localStorage
         if (!item) {
             try {
-                const stored = localStorage.getItem(`cache_${key}`);
+                const stored = localStorage.getItem(`cache_${versionedKey}`);
                 if (stored) {
                     item = JSON.parse(stored);
+                    // Проверяем версию
+                    if (item.version !== this.version) {
+                        localStorage.removeItem(`cache_${versionedKey}`);
+                        return null;
+                    }
                     if (Date.now() <= item.expires) {
                         // Восстанавливаем в memory cache
-                        this.data.set(key, item);
+                        this.data.set(versionedKey, item);
                         console.log('💾 Restored from localStorage:', key);
                     } else {
-                        localStorage.removeItem(`cache_${key}`);
+                        localStorage.removeItem(`cache_${versionedKey}`);
                         return null;
                     }
                 }
@@ -90,8 +100,8 @@ const cache = {
         
         if (!item) return null;
         if (Date.now() > item.expires) {
-            this.data.delete(key);
-            localStorage.removeItem(`cache_${key}`);
+            this.data.delete(versionedKey);
+            localStorage.removeItem(`cache_${versionedKey}`);
             return null;
         }
         return item.value;
@@ -109,8 +119,9 @@ const cache = {
     },
     
     clearMatching(prefix) {
+        const versionedPrefix = `${this.version}_${prefix}`;
         for (const key of this.data.keys()) {
-            if (key.startsWith(prefix)) {
+            if (key.startsWith(versionedPrefix) || key.startsWith(prefix)) {
                 this.data.delete(key);
                 localStorage.removeItem(`cache_${key}`);
             }
@@ -1353,6 +1364,19 @@ function showSuccess(message) {
 // ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎯 DOM loaded, initializing...');
+
+    // Очищаем старые версии кэша из localStorage
+    const storedVersion = localStorage.getItem('app_version');
+    if (storedVersion !== APP_VERSION) {
+        console.log(`🔄 Version changed from ${storedVersion} to ${APP_VERSION}, clearing old cache...`);
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('cache_') && !key.includes(APP_VERSION)) {
+                localStorage.removeItem(key);
+            }
+        });
+        localStorage.setItem('app_version', APP_VERSION);
+        console.log('✅ Old cache cleared');
+    }
 
     // Установим имя и аватарку пользователя
     ensureUserIdentity();
