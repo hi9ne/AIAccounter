@@ -38,7 +38,9 @@ let state = {
     userName: tg?.initDataUnsafe?.user?.first_name || tg?.initDataUnsafe?.user?.username || 'Test User',
     userPhoto: tg?.initDataUnsafe?.user?.photo_url || null,
     currency: 'KGS',
-    theme: 'auto'
+    theme: 'auto',
+    isInitialized: false,
+    preloadedData: null
 };
 
 // ===== CACHE =====
@@ -434,33 +436,17 @@ async function loadDashboard() {
     if (refreshBtn) refreshBtn.classList.add('loading');
     
     try {
-        // Загружаем курсы валют если еще не загружены
-        if (Object.keys(exchangeRates).length === 0) {
-            await loadExchangeRates();
-        }
-        
-        let data;
-        if (cached) {
-            console.log('📦 Using cached dashboard data');
-            data = cached;
-        } else {
-            data = await api.getOverview({ period: state.currentPeriod });
+        // Используем предзагруженные данные при первой загрузке
+        if (!state.isInitialized && state.preloadedData) {
+            console.log('⚡ Using preloaded data');
+            const { overview, topCategories, rates } = state.preloadedData;
+            exchangeRates = rates;
             
-            cache.set(cacheKey, data, 300); // Cache for 5 minutes
-        }
-
-        // Всегда загружаем топ категории (даже при кэше)
-        try {
-            const range = getDateRangeFor(state.currentPeriod);
-            console.log('📊 Loading top categories with range:', range);
-            const homeTop = await api.getCategoryAnalytics({ ...range, limit: 3 });
-            console.log('📊 Top categories response:', homeTop);
-            if (Array.isArray(homeTop)) {
-                // Конвертируем топ категории
-                const convertedTop = homeTop.map(cat => {
+            // Конвертируем топ категории
+            if (Array.isArray(topCategories)) {
+                const convertedTop = topCategories.slice(0, 3).map(cat => {
                     const origCurrency = cat.currency || 'KGS';
                     const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
-                    // Очищаем название категории от лишних пробелов и переносов строк
                     const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
                     return {
                         ...cat,
@@ -472,15 +458,57 @@ async function loadDashboard() {
                     };
                 });
                 updateHomeTopCategories(convertedTop);
-            } else {
-                console.warn('⚠️ Top categories is not an array:', homeTop);
             }
-        } catch (e) {
-            console.warn('Не удалось загрузить топ категории для главной', e);
+            
+            updateDashboardUI(overview);
+            cache.set(cacheKey, overview, 300);
+            state.isInitialized = true;
+            state.preloadedData = null;
+            console.log('✅ Dashboard loaded from preload');
+            return;
+        }
+        
+        let data, topCategories;
+        
+        if (cached) {
+            console.log('📦 Using cached dashboard data');
+            data = cached;
+            // Загружаем только топ категории
+            const range = getDateRangeFor(state.currentPeriod);
+            topCategories = await api.getCategoryAnalytics({ ...range, limit: 3 });
+        } else {
+            // Параллельная загрузка всех данных сразу
+            const range = getDateRangeFor(state.currentPeriod);
+            const loadRates = Object.keys(exchangeRates).length === 0 ? loadExchangeRates() : Promise.resolve();
+            
+            [data, topCategories] = await Promise.all([
+                api.getOverview({ period: state.currentPeriod }),
+                api.getCategoryAnalytics({ ...range, limit: 3 }),
+                loadRates
+            ]);
+            
+            cache.set(cacheKey, data, 300);
+        }
+
+        // Конвертируем топ категории
+        if (Array.isArray(topCategories)) {
+            const convertedTop = topCategories.map(cat => {
+                const origCurrency = cat.currency || 'KGS';
+                const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
+                const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
+                return {
+                    ...cat,
+                    category: cleanCategory,
+                    amount: convertAmount(originalAmount, origCurrency, state.currency),
+                    total: convertAmount(originalAmount, origCurrency, state.currency),
+                    total_amount: convertAmount(originalAmount, origCurrency, state.currency),
+                    currency: state.currency
+                };
+            });
+            updateHomeTopCategories(convertedTop);
         }
         
         updateDashboardUI(data);
-        
         console.log('✅ Dashboard loaded');
     } catch (error) {
         handleError(error, 'Не удалось загрузить данные');
@@ -647,11 +675,6 @@ async function loadAnalytics() {
     console.log('📊 Loading analytics...');
     
     try {
-        // Загружаем курсы валют если еще не загружены
-        if (Object.keys(exchangeRates).length === 0) {
-            await loadExchangeRates();
-        }
-        
         const periodSelect = document.getElementById('analytics-period');
         
         // Применяем сохраненный период если селектор еще не трогали
@@ -735,7 +758,9 @@ async function loadAnalytics() {
         };
         
         updateAnalyticsUI(analyticsData);
-        loadCharts(analyticsData);
+        
+        // Ленивая загрузка графиков - загружаем через небольшую задержку
+        setTimeout(() => loadCharts(analyticsData), 100);
         
         console.log('✅ Analytics loaded');
     } catch (error) {
@@ -1261,31 +1286,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyCategory = document.getElementById('history-category');
     const historySort = document.getElementById('history-sort');
     
+    // Дебаунсинг для фильтров - задержка 300мс
+    let historyDebounceTimer;
+    const debouncedLoadHistory = () => {
+        clearTimeout(historyDebounceTimer);
+        historyDebounceTimer = setTimeout(() => loadHistory(), 300);
+    };
+    
     if (historyType) {
         historyType.addEventListener('change', (e) => {
             historyFilters.type = e.target.value;
-            loadHistory();
+            debouncedLoadHistory();
         });
     }
     
     if (historyPeriod) {
         historyPeriod.addEventListener('change', (e) => {
             historyFilters.period = e.target.value;
-            loadHistory();
+            debouncedLoadHistory();
         });
     }
     
     if (historyCategory) {
         historyCategory.addEventListener('change', (e) => {
             historyFilters.category = e.target.value;
-            loadHistory();
+            debouncedLoadHistory();
         });
     }
     
     if (historySort) {
         historySort.addEventListener('change', (e) => {
             historyFilters.sortBy = e.target.value;
-            loadHistory();
+            debouncedLoadHistory();
         });
     }
 
@@ -1374,18 +1406,44 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
             
-            // 2. Загружаем курсы валют при старте
-            console.log('💱 Loading exchange rates...');
-            await loadExchangeRates();
+            // 2. Предзагрузка критичных данных параллельно с аутентификацией
+            console.log('⚡ Starting data preload...');
+            const preloadPromise = (async () => {
+                try {
+                    const range = getDateRangeFor(state.currentPeriod);
+                    const [rates, overview, topCategories] = await Promise.all([
+                        api.get('/rates/latest').then(r => {
+                            const ratesObj = {};
+                            r.forEach(rate => {
+                                const key = `${rate.from_currency}_${rate.to_currency}`;
+                                ratesObj[key] = rate.rate;
+                            });
+                            console.log('✅ Rates preloaded:', Object.keys(ratesObj).length, 'pairs');
+                            return ratesObj;
+                        }),
+                        api.getOverview({ period: state.currentPeriod }),
+                        api.getCategoryAnalytics({ ...range, limit: 10 })
+                    ]);
+                    
+                    state.preloadedData = { rates, overview, topCategories };
+                    console.log('⚡ All data preloaded successfully');
+                } catch (e) {
+                    console.warn('⚠️ Preload failed, will load on demand:', e);
+                }
+            })();
             
-            // 3. Даём Telegram WebApp время обновить данные
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // 3. Авторизация
+            const success = await authenticate(state.userId);
             
-            // 4. Обновим имя/аватар после авторизации
-            ensureUserIdentity();
+            // 4. Ждем завершения предзагрузки
+            await preloadPromise;
             
-            // 5. После аутентификации переходим на главный экран
-            switchScreen('home');
+            if (success) {
+                ensureUserIdentity();
+                switchScreen('home');
+            } else {
+                showError('Ошибка авторизации');
+            }
         }
     });
 });

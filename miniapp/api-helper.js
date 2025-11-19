@@ -6,6 +6,7 @@ class APIHelper {
         this.config = window.MiniAppConfig || {};
         this.baseUrl = this.config.api?.baseUrl || 'http://localhost:8000/api/v1';
         this.token = localStorage.getItem('auth_token');
+        this.pendingRequests = new Map(); // Кэш для предотвращения дублирующихся запросов
     }
 
     // Установить токен авторизации
@@ -38,31 +39,47 @@ class APIHelper {
             }
         };
 
-        try {
-            const response = await fetch(url, config);
-            
-            if (!response.ok) {
-                let errorMessage = `HTTP ${response.status}`;
-                try {
-                    const error = await response.json();
-                    // Обработка массива ошибок FastAPI
-                    if (Array.isArray(error)) {
-                        errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
-                    } else {
-                        errorMessage = error.detail || error.message || errorMessage;
-                    }
-                } catch (e) {
-                    // Не JSON ответ
-                }
-                console.error('API Error:', errorMessage);
-                throw new Error(errorMessage);
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('API Request failed:', error.message || error);
-            throw error;
+        // Предотвращаем дублирование одновременных запросов
+        const requestKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
+        
+        if (this.pendingRequests.has(requestKey)) {
+            console.log('⚡ Reusing pending request:', requestKey);
+            return this.pendingRequests.get(requestKey);
         }
+
+        const requestPromise = (async () => {
+            try {
+                const response = await fetch(url, config);
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}`;
+                    try {
+                        const error = await response.json();
+                        // Обработка массива ошибок FastAPI
+                        if (Array.isArray(error)) {
+                            errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
+                        } else {
+                            errorMessage = error.detail || error.message || errorMessage;
+                        }
+                    } catch (e) {
+                        // Не JSON ответ
+                    }
+                    console.error('API Error:', errorMessage);
+                    throw new Error(errorMessage);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API Request failed:', error.message || error);
+                throw error;
+            } finally {
+                // Удаляем из кэша после завершения
+                this.pendingRequests.delete(requestKey);
+            }
+        })();
+
+        this.pendingRequests.set(requestKey, requestPromise);
+        return requestPromise;
     }
 
     // GET запрос
