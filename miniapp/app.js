@@ -3,7 +3,7 @@
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '3.0.1'; // Increment to invalidate all caches
+const APP_VERSION = '3.0.2'; // Increment to invalidate all caches
 console.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
 
 // ===== TELEGRAM WEB APP =====
@@ -1365,6 +1365,15 @@ function showSuccess(message) {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎯 DOM loaded, initializing...');
 
+    // Применяем сохраненную тему НЕМЕДЛЕННО перед всем остальным
+    const savedTheme = localStorage.getItem('theme') || 'auto';
+    if (savedTheme === 'auto') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    console.log('🎨 Theme applied early:', savedTheme);
+
     // Регистрируем Service Worker с автообновлением
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
@@ -1556,6 +1565,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 document.documentElement.setAttribute('data-theme', theme);
             }
+            
+            // Форсируем перерисовку текущего экрана
+            console.log('🎨 Theme changed, reloading current screen...');
+            setTimeout(() => {
+                if (state.currentScreen === 'home') {
+                    loadDashboard();
+                } else if (state.currentScreen === 'analytics') {
+                    loadAnalytics();
+                } else if (state.currentScreen === 'history') {
+                    loadHistory();
+                }
+            }, 100);
         });
     }
     
@@ -1577,13 +1598,15 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currency = savedCurrency;
         state.currentPeriod = savedPeriod;
         
-        // Применяем тему сразу
-        if (savedTheme === 'auto') {
-            document.documentElement.removeAttribute('data-theme');
-        } else {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        }
-        console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
+        // Применяем тему сразу с небольшой задержкой для загрузки CSS
+        requestAnimationFrame(() => {
+            if (savedTheme === 'auto') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+            console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
+        });
         
         // 2. Аутентификация СНАЧАЛА (чтобы получить токен)
         console.log('🔐 Starting authentication...');
