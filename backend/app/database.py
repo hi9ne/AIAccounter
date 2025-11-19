@@ -20,7 +20,8 @@ engine = create_async_engine(
         "server_settings": {
             "jit": "off"   # Отключаем JIT для лучшей совместимости
         },
-        "prepared_statement_cache_size": 0  # Отключаем prepared statements для pgbouncer
+        "prepared_statement_cache_size": 0,  # Отключаем prepared statements для pgbouncer
+        "prepare_threshold": None  # Полностью отключаем prepared statements
     }
 )
 
