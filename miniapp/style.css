@@ -760,44 +760,13 @@ input, select, textarea {
 }
 
 .kpi-card {
+    background: var(--bg-primary);
     padding: var(--spacing-lg);
     border-radius: var(--radius-xl);
-    color: white !important;
-    position: relative;
-    overflow: hidden;
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-base);
     cursor: pointer;
-}
-
-/* Гарантируем белый текст в KPI на градиентах */
-.kpi-card,
-.kpi-card .kpi-icon,
-.kpi-card .kpi-label,
-.kpi-card .kpi-value,
-.kpi-card .kpi-change {
-    color: white !important;
-}
-
-/* Для светлой темы - темный текст как в доходах/расходах */
-[data-theme="light"] .kpi-card,
-[data-theme="light"] .kpi-card .kpi-icon,
-[data-theme="light"] .kpi-card .kpi-label,
-[data-theme="light"] .kpi-card .kpi-value,
-[data-theme="light"] .kpi-card .kpi-change {
-    color: #111827 !important;
-    text-shadow: none;
-}
-
-@media (prefers-color-scheme: light) {
-    :root:not([data-theme]) .kpi-card,
-    :root:not([data-theme]) .kpi-card .kpi-icon,
-    :root:not([data-theme]) .kpi-card .kpi-label,
-    :root:not([data-theme]) .kpi-card .kpi-value,
-    :root:not([data-theme]) .kpi-card .kpi-change {
-        color: #111827 !important;
-        text-shadow: none;
-    }
+    border: 1px solid var(--border-color);
 }
 
 .kpi-card:hover {
@@ -807,17 +776,6 @@ input, select, textarea {
 
 .kpi-card:active {
     transform: translateY(-2px);
-}
-
-.kpi-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
 }
 
 .kpi-icon {
@@ -852,26 +810,7 @@ input, select, textarea {
     content: '↓ ';
 }
 
-/* Gradient backgrounds for KPI cards */
-.gradient-purple {
-    background: var(--gradient-purple);
-}
 
-.gradient-blue {
-    background: var(--gradient-blue);
-}
-
-.gradient-green {
-    background: var(--gradient-green);
-}
-
-.gradient-red {
-    background: var(--gradient-red);
-}
-
-.gradient-orange {
-    background: var(--gradient-orange);
-}
 
 /* ===== CHART SECTION ===== */
 .chart-section {
