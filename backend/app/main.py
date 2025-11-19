@@ -44,13 +44,12 @@ def check_origin(origin: str) -> bool:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.aiaccounter\.pages\.dev",  # Regex для поддоменов
-    allow_origins=allowed_origins,
+    allow_origins=["*"],  # ВРЕМЕННО: разрешаем все для дебага
     allow_credentials=True,
-    allow_methods=["*"],  # Разрешаем ВСЕ методы
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
-    max_age=3600  # Кэшируем preflight на 1 час
+    max_age=3600
 )
 
 # Подключаем API роуты
