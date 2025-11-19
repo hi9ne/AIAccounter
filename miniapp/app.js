@@ -404,7 +404,6 @@ async function authenticate() {
             state.userId = userId;
             
             console.log('✅ Authentication successful');
-            switchScreen('home');
             return true;
         } else {
             console.error('❌ No access token in response');
@@ -1387,65 +1386,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Initialize
-    authenticate().then(async (success) => {
-        if (success) {
-            // 1. Загружаем настройки СРАЗУ
-            console.log('⚙️ Applying saved settings...');
-            const savedCurrency = localStorage.getItem('currency') || 'KGS';
-            const savedTheme = localStorage.getItem('theme') || 'auto';
-            const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
-            
-            state.currency = savedCurrency;
-            state.currentPeriod = savedPeriod;
-            
-            // Применяем тему сразу
-            if (savedTheme === 'auto') {
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
-            console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
-            
-            // 2. Предзагрузка критичных данных параллельно с аутентификацией
-            console.log('⚡ Starting data preload...');
-            const preloadPromise = (async () => {
-                try {
-                    const range = getDateRangeFor(state.currentPeriod);
-                    const [rates, overview, topCategories] = await Promise.all([
-                        api.get('/rates/latest').then(r => {
-                            const ratesObj = {};
-                            r.forEach(rate => {
-                                const key = `${rate.from_currency}_${rate.to_currency}`;
-                                ratesObj[key] = rate.rate;
-                            });
-                            console.log('✅ Rates preloaded:', Object.keys(ratesObj).length, 'pairs');
-                            return ratesObj;
-                        }),
-                        api.getOverview({ period: state.currentPeriod }),
-                        api.getCategoryAnalytics({ ...range, limit: 10 })
-                    ]);
-                    
-                    state.preloadedData = { rates, overview, topCategories };
-                    console.log('⚡ All data preloaded successfully');
-                } catch (e) {
-                    console.warn('⚠️ Preload failed, will load on demand:', e);
-                }
-            })();
-            
-            // 3. Авторизация
-            const success = await authenticate(state.userId);
-            
-            // 4. Ждем завершения предзагрузки
-            await preloadPromise;
-            
-            if (success) {
-                ensureUserIdentity();
-                switchScreen('home');
-            } else {
-                showError('Ошибка авторизации');
-            }
+    (async () => {
+        // 1. Загружаем настройки СРАЗУ (до аутентификации)
+        console.log('⚙️ Applying saved settings...');
+        const savedCurrency = localStorage.getItem('currency') || 'KGS';
+        const savedTheme = localStorage.getItem('theme') || 'auto';
+        const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
+        
+        state.currency = savedCurrency;
+        state.currentPeriod = savedPeriod;
+        
+        // Применяем тему сразу
+        if (savedTheme === 'auto') {
+            document.documentElement.removeAttribute('data-theme');
+        } else {
+            document.documentElement.setAttribute('data-theme', savedTheme);
         }
-    });
+        console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
+        
+        // 2. Аутентификация СНАЧАЛА (чтобы получить токен)
+        console.log('🔐 Starting authentication...');
+        const authSuccess = await authenticate();
+        
+        if (!authSuccess) {
+            console.error('❌ Authentication failed, stopping initialization');
+            return;
+        }
+        
+        console.log('✅ Authentication successful, token set');
+        
+        // 3. Предзагрузка данных УЖЕ С ТОКЕНОМ
+        console.log('⚡ Starting data preload with token...');
+        try {
+            const range = getDateRangeFor(state.currentPeriod);
+            const [rates, overview, topCategories] = await Promise.all([
+                api.get('/rates/latest').then(r => {
+                    const ratesObj = {};
+                    r.forEach(rate => {
+                        const key = `${rate.from_currency}_${rate.to_currency}`;
+                        ratesObj[key] = rate.rate;
+                    });
+                    console.log('✅ Rates preloaded:', Object.keys(ratesObj).length, 'pairs');
+                    return ratesObj;
+                }),
+                api.getOverview({ period: state.currentPeriod }),
+                api.getCategoryAnalytics({ ...range, limit: 10 })
+            ]);
+            
+            state.preloadedData = { rates, overview, topCategories };
+            console.log('⚡ All data preloaded successfully');
+        } catch (e) {
+            console.warn('⚠️ Preload failed, will load on demand:', e);
+        }
+        
+        // 4. Финальная инициализация
+        ensureUserIdentity();
+        switchScreen('home');
+    })();
 });
 
 // ===== GLOBAL ERROR HANDLER =====
