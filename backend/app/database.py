@@ -1,19 +1,19 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 from .config import settings
 
+# Session pooler (порт 5432) - используем NullPool и отключаем prepared statements
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    pool_size=10,          # Пул из 10 соединений
-    max_overflow=20,       # До 30 соединений в пике
-    pool_pre_ping=True,    # Проверка соединений перед использованием
-    pool_recycle=3600,     # Обновление соединений каждый час
+    poolclass=NullPool,  # Отключаем пулинг на стороне приложения
     connect_args={
         "server_settings": {
-            "jit": "off"   # Отключаем JIT для лучшей совместимости
+            "jit": "off"
         },
-        "statement_cache_size": 0  # Полностью отключаем prepared statements для pgbouncer
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0
     }
 )
 
