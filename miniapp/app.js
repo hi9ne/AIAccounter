@@ -3,7 +3,7 @@
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '3.0.2'; // Increment to invalidate all caches
+const APP_VERSION = '3.0.3'; // Increment to invalidate all caches
 console.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
 
 // ===== TELEGRAM WEB APP =====

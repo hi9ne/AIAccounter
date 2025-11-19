@@ -1,22 +1,22 @@
 // Service Worker for AIAccounter Mini App
 // Provides offline caching and PWA capabilities
 
-const CACHE_NAME = 'aiaccounter-v3.0.2';
-const RUNTIME_CACHE = 'aiaccounter-runtime-v3.0.2';
+const CACHE_NAME = 'aiaccounter-v3.0.3';
+const RUNTIME_CACHE = 'aiaccounter-runtime-v3.0.3';
 
 // Critical assets to cache on install
 const PRECACHE_ASSETS = [
     './',
-    './index.html?v=3.0.2',
-    './style.css?v=3.0.2',
-    './app.js?v=3.0.2',
-    './api-helper.js?v=3.0.2',
-    './miniapp-config.js?v=3.0.2'
+    './index.html?v=3.0.3',
+    './style.css?v=3.0.3',
+    './app.js?v=3.0.3',
+    './api-helper.js?v=3.0.3',
+    './miniapp-config.js?v=3.0.3'
 ];
 
 // Install: Cache critical assets and skip waiting
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing v3.0.2...');
+    console.log('[SW] Installing v3.0.3...');
     
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -33,14 +33,14 @@ self.addEventListener('install', (event) => {
 
 // Activate: Clean old caches and claim clients immediately
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating v3.0.2...');
+    console.log('[SW] Activating v3.0.3...');
     
     event.waitUntil(
         caches.keys()
             .then(cacheNames => {
                 return Promise.all(
                     cacheNames
-                        .filter(name => !name.includes('v3.0.2'))
+                        .filter(name => !name.includes('v3.0.3'))
                         .map(name => {
                             console.log('[SW] Deleting old cache:', name);
                             return caches.delete(name);

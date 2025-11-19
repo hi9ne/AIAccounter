@@ -67,6 +67,23 @@
 }
 
 /* Dark Theme */
+[data-theme="dark"],
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-primary: #111827;
+        --bg-secondary: #1F2937;
+        --bg-tertiary: #374151;
+        --text-primary: #F9FAFB;
+        --text-secondary: #D1D5DB;
+        --text-tertiary: #9CA3AF;
+        --border-color: #374151;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.4);
+        --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.5);
+    }
+}
+
 [data-theme="dark"] {
     --bg-primary: #111827;
     --bg-secondary: #1F2937;
@@ -348,14 +365,26 @@ input, select, textarea {
 }
 
 /* Для светлой темы - темный текст как в доходах/расходах */
-:root:not([data-theme="dark"]) .main-balance,
-:root:not([data-theme="dark"]) .main-balance .balance-label,
-:root:not([data-theme="dark"]) .main-balance .balance-amount,
-:root:not([data-theme="dark"]) .main-balance .balance-trend,
-:root:not([data-theme="dark"]) .main-balance .trend-indicator,
-:root:not([data-theme="dark"]) .main-balance .trend-period {
+[data-theme="light"] .main-balance,
+[data-theme="light"] .main-balance .balance-label,
+[data-theme="light"] .main-balance .balance-amount,
+[data-theme="light"] .main-balance .balance-trend,
+[data-theme="light"] .main-balance .trend-indicator,
+[data-theme="light"] .main-balance .trend-period {
     color: #111827 !important;
     text-shadow: none;
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .main-balance,
+    :root:not([data-theme]) .main-balance .balance-label,
+    :root:not([data-theme]) .main-balance .balance-amount,
+    :root:not([data-theme]) .main-balance .balance-trend,
+    :root:not([data-theme]) .main-balance .trend-indicator,
+    :root:not([data-theme]) .main-balance .trend-period {
+        color: #111827 !important;
+        text-shadow: none;
+    }
 }
 
 .balance-header {
@@ -750,13 +779,24 @@ input, select, textarea {
 }
 
 /* Для светлой темы - темный текст как в доходах/расходах */
-:root:not([data-theme="dark"]) .kpi-card,
-:root:not([data-theme="dark"]) .kpi-card .kpi-icon,
-:root:not([data-theme="dark"]) .kpi-card .kpi-label,
-:root:not([data-theme="dark"]) .kpi-card .kpi-value,
-:root:not([data-theme="dark"]) .kpi-card .kpi-change {
+[data-theme="light"] .kpi-card,
+[data-theme="light"] .kpi-card .kpi-icon,
+[data-theme="light"] .kpi-card .kpi-label,
+[data-theme="light"] .kpi-card .kpi-value,
+[data-theme="light"] .kpi-card .kpi-change {
     color: #111827 !important;
     text-shadow: none;
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .kpi-card,
+    :root:not([data-theme]) .kpi-card .kpi-icon,
+    :root:not([data-theme]) .kpi-card .kpi-label,
+    :root:not([data-theme]) .kpi-card .kpi-value,
+    :root:not([data-theme]) .kpi-card .kpi-change {
+        color: #111827 !important;
+        text-shadow: none;
+    }
 }
 
 .kpi-card:hover {
