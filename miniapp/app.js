@@ -6,20 +6,19 @@
 console.log('🚀 AIAccounter v3.0.0 - Analytics Dashboard');
 
 // ===== TELEGRAM WEB APP =====
-const tg = window.Telegram?.WebApp || {
-    ready: () => console.log('[Mock] Telegram WebApp ready'),
-    expand: () => console.log('[Mock] Telegram WebApp expand'),
-    initDataUnsafe: { user: { id: null } },
-    MainButton: { show: () => {}, hide: () => {}, setText: () => {} }
-};
+const tg = window.Telegram?.WebApp;
 
-if (window.Telegram?.WebApp) {
+// Определяем режим работы
+const IS_LOCALHOST = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+
+if (tg) {
     tg.ready();
     tg.expand();
     console.log('✅ Telegram WebApp initialized');
     console.log('📱 Telegram user data:', tg.initDataUnsafe?.user);
 } else {
-    console.warn('⚠️ Running without Telegram WebApp (testing mode)');
+    console.warn('⚠️ Running without Telegram WebApp (browser mode)');
 }
 
 // ===== CONFIG =====
@@ -28,13 +27,16 @@ const API_BASE = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') ||
 
 console.log('📡 API Base:', API_BASE);
 
+// Для тестирования в браузере на localhost - используем тестовый ID
+const TEST_USER_ID = 1109421300;
+
 // ===== STATE =====
 let state = {
     currentScreen: 'home',
     currentPeriod: 'week',
-    userId: tg.initDataUnsafe?.user?.id || null,
-    userName: tg.initDataUnsafe?.user?.first_name || tg.initDataUnsafe?.user?.username || 'Пользователь',
-    userPhoto: tg.initDataUnsafe?.user?.photo_url || null,
+    userId: tg?.initDataUnsafe?.user?.id || (IS_LOCALHOST ? TEST_USER_ID : null),
+    userName: tg?.initDataUnsafe?.user?.first_name || tg?.initDataUnsafe?.user?.username || 'Test User',
+    userPhoto: tg?.initDataUnsafe?.user?.photo_url || null,
     currency: 'KGS',
     theme: 'auto'
 };
@@ -65,6 +67,53 @@ const cache = {
         console.log('🗑️ Cache cleared');
     }
 };
+
+// ===== CURRENCY CONVERSION =====
+let exchangeRates = {}; // Кэш курсов валют
+
+// Загрузка курсов валют
+async function loadExchangeRates() {
+    try {
+        const rates = await api.get('/rates/latest');
+        exchangeRates = {};
+        rates.forEach(rate => {
+            const key = `${rate.from_currency}_${rate.to_currency}`;
+            exchangeRates[key] = rate.rate;
+        });
+        console.log('✅ Exchange rates loaded:', Object.keys(exchangeRates).length, 'pairs');
+        return exchangeRates;
+    } catch (error) {
+        console.error('❌ Failed to load exchange rates:', error);
+        // Устанавливаем базовые курсы по умолчанию
+        exchangeRates = {
+            'USD_KGS': 87.5,
+            'EUR_KGS': 95.0,
+            'RUB_KGS': 0.95,
+            'KGS_USD': 0.0114,
+            'KGS_EUR': 0.0105,
+            'KGS_RUB': 1.05
+        };
+        return exchangeRates;
+    }
+}
+
+// Конвертация суммы
+function convertAmount(amount, fromCurrency, toCurrency) {
+    if (!amount || amount === 0) return 0;
+    if (fromCurrency === toCurrency) return amount;
+    
+    const key = `${fromCurrency}_${toCurrency}`;
+    const reverseKey = `${toCurrency}_${fromCurrency}`;
+    
+    if (exchangeRates[key]) {
+        return amount * exchangeRates[key];
+    } else if (exchangeRates[reverseKey]) {
+        return amount / exchangeRates[reverseKey];
+    } else {
+        console.warn(`⚠️ No exchange rate for ${fromCurrency} -> ${toCurrency}`);
+        return amount; // Возвращаем исходную сумму если нет курса
+    }
+}
 
 // ===== UTILITY FUNCTIONS =====
 function formatCurrency(amount, currency = state.currency) {
@@ -122,14 +171,19 @@ function ensureUserIdentity() {
             name: state.userName,
             photo: state.userPhoto ? 'present' : 'absent'
         });
+    } else if (IS_LOCALHOST && TEST_USER_ID) {
+        // В браузере на localhost используем тестовый ID
+        state.userId = TEST_USER_ID;
+        console.log('🧪 Using TEST_USER_ID for localhost:', TEST_USER_ID);
     } else {
         console.warn('⚠️ No Telegram user data available');
     }
 
     const userNameEl = document.getElementById('user-name');
     if (userNameEl) {
-        userNameEl.textContent = state.userName;
-        console.log('📝 Username set to:', state.userName);
+        const displayName = (IS_LOCALHOST && !tgUser.id) ? `${state.userName} (TEST)` : state.userName;
+        userNameEl.textContent = displayName;
+        console.log('📝 Username set to:', displayName);
     }
 
     const avatarEl = document.getElementById('user-avatar');
@@ -307,15 +361,21 @@ async function authenticate() {
     }
     
     try {
-        const telegramData = tg.initDataUnsafe;
-        const userId = telegramData?.user?.id;
+        const telegramData = tg?.initDataUnsafe;
+        let userId = telegramData?.user?.id;
         
-        // Если нет userId - показываем ошибку
+        // Если нет userId из Telegram, используем тестовый на localhost
+        if (!userId && IS_LOCALHOST && TEST_USER_ID) {
+            userId = TEST_USER_ID;
+            console.log('🧪 Using TEST_USER_ID for authentication:', userId);
+        }
+        
+        // Если всё ещё нет userId - показываем ошибку
         if (!userId) {
             console.warn('⚠️ No Telegram user ID');
             const errorMsg = window.Telegram?.WebApp 
                 ? 'Не удалось получить данные из Telegram' 
-                : 'Откройте приложение через Telegram бота';
+                : 'Установите TEST_USER_ID в app.js для тестирования';
             showError(errorMsg);
             return false;
         }
@@ -324,7 +384,7 @@ async function authenticate() {
         
         const authData = {
             telegram_chat_id: String(userId),
-            first_name: telegramData?.user?.first_name || 'Пользователь',
+            first_name: telegramData?.user?.first_name || state.userName,
             username: telegramData?.user?.username || null,
             last_name: telegramData?.user?.last_name || null,
             language_code: telegramData?.user?.language_code || 'ru'
@@ -340,7 +400,6 @@ async function authenticate() {
             localStorage.setItem('auth_token', response.access_token);
             api.setToken(response.access_token);
             state.userId = userId;
-            state.userName = telegramData?.user?.first_name || 'Пользователь';
             
             console.log('✅ Authentication successful');
             switchScreen('home');
@@ -365,9 +424,9 @@ async function authenticate() {
 
 // ===== DASHBOARD (HOME) =====
 async function loadDashboard() {
-    console.log(`📊 Loading dashboard for period: ${state.currentPeriod}`);
+    console.log(`📊 Loading dashboard for period: ${state.currentPeriod}, currency: ${state.currency}`);
     
-    const cacheKey = `dashboard:${state.currentPeriod}`;
+    const cacheKey = `dashboard:${state.currentPeriod}:${state.currency}`;
     const cached = cache.get(cacheKey);
     
     // Показываем индикатор на кнопке обновления
@@ -375,12 +434,18 @@ async function loadDashboard() {
     if (refreshBtn) refreshBtn.classList.add('loading');
     
     try {
+        // Загружаем курсы валют если еще не загружены
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
+        }
+        
         let data;
         if (cached) {
             console.log('📦 Using cached dashboard data');
             data = cached;
         } else {
             data = await api.getOverview({ period: state.currentPeriod });
+            
             cache.set(cacheKey, data, 300); // Cache for 5 minutes
         }
 
@@ -391,7 +456,22 @@ async function loadDashboard() {
             const homeTop = await api.getCategoryAnalytics({ ...range, limit: 3 });
             console.log('📊 Top categories response:', homeTop);
             if (Array.isArray(homeTop)) {
-                updateHomeTopCategories(homeTop);
+                // Конвертируем топ категории
+                const convertedTop = homeTop.map(cat => {
+                    const origCurrency = cat.currency || 'KGS';
+                    const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
+                    // Очищаем название категории от лишних пробелов и переносов строк
+                    const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
+                    return {
+                        ...cat,
+                        category: cleanCategory,
+                        amount: convertAmount(originalAmount, origCurrency, state.currency),
+                        total: convertAmount(originalAmount, origCurrency, state.currency),
+                        total_amount: convertAmount(originalAmount, origCurrency, state.currency),
+                        currency: state.currency
+                    };
+                });
+                updateHomeTopCategories(convertedTop);
             } else {
                 console.warn('⚠️ Top categories is not an array:', homeTop);
             }
@@ -417,10 +497,11 @@ function updateDashboardUI(data) {
         return;
     }
     
-    // Balance
-    const balance = data.balance.balance || 0;
-    const income = data.balance.total_income || 0;
-    const expense = data.balance.total_expense || 0;
+    // Balance - конвертируем все суммы
+    const origCurrency = data.balance.currency || 'KGS';
+    const balance = convertAmount(data.balance.balance || 0, origCurrency, state.currency);
+    const income = convertAmount(data.balance.total_income || 0, origCurrency, state.currency);
+    const expense = convertAmount(data.balance.total_expense || 0, origCurrency, state.currency);
     
     document.getElementById('main-balance').textContent = formatCurrency(balance);
     document.getElementById('total-income').textContent = formatCurrency(income);
@@ -465,16 +546,21 @@ function updateHomeTopCategories(categories) {
     }
     
     // Фильтруем только валидные категории с суммой > 0
-    const validCategories = categories.filter(cat => cat && cat.total && cat.total > 0);
+    // API может вернуть amount, total или total_amount
+    const validCategories = categories.filter(cat => {
+        const value = cat.total_amount || cat.amount || cat.total || 0;
+        return cat && value > 0;
+    });
+    
     if (validCategories.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-tag"></i><p>Нет данных</p></div>';
         return;
     }
     
-    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total || 0), 0);
+    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total_amount || cat.amount || cat.total || 0), 0);
     
     container.innerHTML = validCategories.map((cat, index) => {
-        const amount = parseFloat(cat.total || 0);
+        const amount = parseFloat(cat.total_amount || cat.amount || cat.total || 0);
         const percent = total > 0 ? ((amount / total) * 100).toFixed(0) : 0;
         const colors = ['#667eea', '#f093fb', '#4facfe'];
         return `
@@ -494,10 +580,20 @@ function updateRecentTransactions(transactions) {
     const container = document.getElementById('recent-transactions');
     if (!container) return;
     
-    const allTransactions = [
+    let allTransactions = [
         ...(transactions.expenses || []).map(t => ({ ...t, type: 'expense' })),
         ...(transactions.income || []).map(t => ({ ...t, type: 'income' }))
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+    
+    // Конвертируем в выбранную валюту
+    allTransactions = allTransactions.map(t => {
+        const origCurrency = t.currency || 'KGS';
+        return {
+            ...t,
+            amount: convertAmount(t.amount, origCurrency, state.currency),
+            currency: state.currency
+        };
+    });
     
     if (allTransactions.length === 0) {
         container.innerHTML = `
@@ -519,7 +615,7 @@ function updateRecentTransactions(transactions) {
                 <div class="transaction-description">${t.description || '—'}</div>
             </div>
             <div class="transaction-amount">
-                <div class="transaction-value ${t.type}">${formatCurrency(t.amount, t.currency)}</div>
+                <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
                 <div class="transaction-date">${formatDate(t.date)}</div>
             </div>
         </div>
@@ -551,7 +647,20 @@ async function loadAnalytics() {
     console.log('📊 Loading analytics...');
     
     try {
+        // Загружаем курсы валют если еще не загружены
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
+        }
+        
         const periodSelect = document.getElementById('analytics-period');
+        
+        // Применяем сохраненный период если селектор еще не трогали
+        if (periodSelect && periodSelect.value === 'month') {
+            const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
+            periodSelect.value = savedPeriod;
+            console.log('📊 Applied saved period to analytics:', savedPeriod);
+        }
+        
         const period = periodSelect?.value || 'month';
         
         let params = {};
@@ -575,10 +684,54 @@ async function loadAnalytics() {
             api.getCategoryAnalytics({ ...params, limit: 10 })
         ]);
         
+        // Обновляем бейдж периода
+        const periodBadge = document.getElementById('top-categories-period-badge');
+        if (periodBadge) {
+            const periodTexts = {
+                'week': 'За неделю',
+                'month': 'За месяц',
+                'year': 'За год',
+                'custom': 'Период'
+            };
+            periodBadge.textContent = periodTexts[period] || 'За месяц';
+        }
+        
+        console.log('📊 Raw stats from API:', stats);
+        console.log('📊 Raw topCategories from API:', topCategories);
+        
+        // Конвертируем все суммы в выбранную валюту
+        const origCurrency = stats.currency || 'KGS';
+        stats.total_income = convertAmount(stats.total_income || 0, origCurrency, state.currency);
+        stats.total_expense = convertAmount(stats.total_expense || 0, origCurrency, state.currency);
+        stats.balance = convertAmount(stats.balance || 0, origCurrency, state.currency);
+        stats.currency = state.currency;
+        
+        // Конвертируем топ категории
+        const convertedCategories = topCategories.map(cat => {
+            console.log('📊 Converting category:', cat);
+            const catCurrency = cat.currency || 'KGS';
+            // API возвращает total_amount, а не amount или total
+            const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
+            const convertedAmount = convertAmount(originalAmount, catCurrency, state.currency);
+            // Очищаем название категории от лишних пробелов и переносов строк
+            const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
+            console.log(`💱 ${cleanCategory}: ${originalAmount} ${catCurrency} -> ${convertedAmount} ${state.currency}`);
+            return {
+                ...cat,
+                category: cleanCategory,
+                amount: convertedAmount,
+                total: convertedAmount,
+                total_amount: convertedAmount,
+                currency: state.currency
+            };
+        });
+        
+        console.log('📊 Converted categories:', convertedCategories);
+        
         // Объединяем данные
         const analyticsData = {
             ...stats,
-            top_categories: topCategories
+            top_categories: convertedCategories
         };
         
         updateAnalyticsUI(analyticsData);
@@ -593,7 +746,7 @@ async function loadAnalytics() {
 function updateAnalyticsUI(stats) {
     if (!stats) return;
     
-    // KPI Cards
+    // KPI Cards - используем уже сконвертированные значения из loadAnalytics
     document.getElementById('kpi-income').textContent = formatCurrency(stats.total_income || 0);
     document.getElementById('kpi-expense').textContent = formatCurrency(stats.total_expense || 0);
     document.getElementById('kpi-savings').textContent = formatCurrency(stats.balance || 0);
@@ -609,22 +762,34 @@ function updateTopCategories(categories) {
     const container = document.getElementById('top-categories-list');
     if (!container) return;
     
+    console.log('📊 updateTopCategories called with:', categories);
+    
     if (!categories || categories.length === 0) {
+        console.warn('⚠️ No categories provided');
         container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных</p></div>';
         return;
     }
     
     // Фильтруем только валидные категории
-    const validCategories = categories.filter(cat => cat && cat.total && cat.total > 0);
+    // API может вернуть amount, total или total_amount
+    const validCategories = categories.filter(cat => {
+        const value = cat.total_amount || cat.amount || cat.total || 0;
+        console.log(`Category ${cat.category}: total_amount=${cat.total_amount}, amount=${cat.amount}, total=${cat.total}, value=${value}`);
+        return cat && value > 0;
+    });
+    
+    console.log('✅ Valid categories:', validCategories);
+    
     if (validCategories.length === 0) {
+        console.warn('⚠️ No valid categories after filtering');
         container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных</p></div>';
         return;
     }
     
-    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total || 0), 0);
+    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total_amount || cat.amount || cat.total || 0), 0);
     
     container.innerHTML = validCategories.map(cat => {
-        const amount = parseFloat(cat.total || 0);
+        const amount = parseFloat(cat.total_amount || cat.amount || cat.total || 0);
         const percent = total > 0 ? ((amount / total) * 100).toFixed(0) : 0;
         return `
             <div class="category-item">
@@ -690,7 +855,11 @@ function loadCharts(stats) {
     if (pieCanvas && typeof Chart !== 'undefined' && stats.top_categories) {
         if (pieCanvas.chart) pieCanvas.chart.destroy();
         
-        const validCategories = stats.top_categories.filter(c => c && c.total && c.total > 0);
+        const validCategories = stats.top_categories.filter(c => {
+            const value = c.total_amount || c.total || c.amount || 0;
+            return c && value > 0;
+        });
+        
         if (validCategories.length === 0) {
             pieCanvas.parentElement.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных о расходах</p></div>';
         } else {
@@ -699,7 +868,7 @@ function loadCharts(stats) {
                 data: {
                     labels: validCategories.map(c => c.category || 'Без категории'),
                     datasets: [{
-                        data: validCategories.map(c => parseFloat(c.total || 0)),
+                        data: validCategories.map(c => parseFloat(c.total_amount || c.total || c.amount || 0)),
                         backgroundColor: [
                             '#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a',
                             '#f59e0b', '#3b82f6', '#10b981'
@@ -759,6 +928,11 @@ async function loadHistory() {
     }
     
     try {
+        // Загружаем курсы валют если еще не загружены
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
+        }
+        
         const type = historyFilters.type;
         
         const [expenses, income] = await Promise.all([
@@ -770,6 +944,18 @@ async function loadHistory() {
             ...(expenses || []).map(t => ({ ...t, type: 'expense' })),
             ...(income || []).map(t => ({ ...t, type: 'income' }))
         ];
+        
+        // Конвертируем все транзакции в выбранную валюту
+        allTransactions = allTransactions.map(t => {
+            const origCurrency = t.currency || 'KGS';
+            return {
+                ...t,
+                originalAmount: t.amount,
+                originalCurrency: origCurrency,
+                amount: convertAmount(t.amount, origCurrency, state.currency),
+                currency: state.currency
+            };
+        });
         
         // Фильтрация по категории
         if (historyFilters.category !== 'all') {
@@ -843,7 +1029,7 @@ function updateHistoryUI(transactions) {
                         <div class="transaction-description">${t.description || '—'}</div>
                     </div>
                     <div class="transaction-amount">
-                        <div class="transaction-value ${t.type}">${formatCurrency(t.amount, t.currency)}</div>
+                        <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
                     </div>
                 </div>
             `).join('')}
@@ -860,16 +1046,57 @@ function loadSettings() {
     const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
     const savedTheme = localStorage.getItem('theme') || 'auto';
     
-    document.getElementById('currency-select').value = savedCurrency;
-    document.getElementById('default-period').value = savedPeriod;
-    document.getElementById('theme-select').value = savedTheme;
-    
+    // Apply currency
     state.currency = savedCurrency;
+    const currencySelect = document.getElementById('currency-select');
+    if (currencySelect) {
+        currencySelect.value = savedCurrency;
+    }
+    
+    // Apply default period
+    state.currentPeriod = savedPeriod;
+    const defaultPeriodSelect = document.getElementById('default-period');
+    if (defaultPeriodSelect) {
+        defaultPeriodSelect.value = savedPeriod;
+    }
+    
+    // Update period buttons on home screen
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        if (btn.dataset.period === savedPeriod) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Apply theme
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.value = savedTheme;
+    }
+    
+    if (savedTheme === 'auto') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    
+    console.log('✅ Settings loaded:', { currency: savedCurrency, period: savedPeriod, theme: savedTheme });
 }
 
 // ===== REPORTS =====
 async function loadReports() {
     console.log('📄 Loading reports...');
+    
+    const container = document.getElementById('reports-list');
+    if (container) {
+        container.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Загрузка отчётов...</p>
+            </div>
+        `;
+    }
     
     try {
         const response = await api.getReportsHistory();
@@ -890,7 +1117,16 @@ async function loadReports() {
         console.log('✅ Reports loaded:', reports.length);
     } catch (error) {
         console.error('Reports loading error:', error);
-        handleError(error, 'Не удалось загрузить отчёты');
+        if (container) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h3>Ошибка загрузки</h3>
+                    <p>${error.message || 'Не удалось загрузить отчёты'}</p>
+                    <button class="btn-primary" onclick="loadReports()">Попробовать снова</button>
+                </div>
+            `;
+        }
     }
 }
 
@@ -980,11 +1216,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Period selector
     document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.currentPeriod = btn.dataset.period;
-            loadDashboard();
+            console.log('🔄 Period changed to:', state.currentPeriod);
+            // Очищаем кэш для нового периода
+            cache.clear();
+            await loadDashboard();
         });
     });
     
@@ -993,7 +1232,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (analyticsPeriod) {
         analyticsPeriod.addEventListener('change', (e) => {
             const customPanel = document.getElementById('custom-period-panel');
-            if (e.target.value === 'custom') {
+            const period = e.target.value;
+            
+            // Обновляем бейдж сразу
+            const periodBadge = document.getElementById('top-categories-period-badge');
+            if (periodBadge) {
+                const periodTexts = {
+                    'week': 'За неделю',
+                    'month': 'За месяц',
+                    'year': 'За год',
+                    'custom': 'Период'
+                };
+                periodBadge.textContent = periodTexts[period] || 'За месяц';
+            }
+            
+            if (period === 'custom') {
                 if (customPanel) customPanel.style.display = 'block';
             } else {
                 if (customPanel) customPanel.style.display = 'none';
@@ -1061,10 +1314,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings
     const currencySelect = document.getElementById('currency-select');
     if (currencySelect) {
-        currencySelect.addEventListener('change', (e) => {
+        currencySelect.addEventListener('change', async (e) => {
             state.currency = e.target.value;
             localStorage.setItem('currency', e.target.value);
-            loadDashboard(); // Reload to apply new currency
+            console.log('💱 Currency changed to:', state.currency);
+            
+            // Очищаем кэш и перезагружаем все данные
+            cache.clear();
+            
+            // Перезагружаем текущий экран
+            if (state.currentScreen === 'home') {
+                await loadDashboard();
+            } else if (state.currentScreen === 'analytics') {
+                await loadAnalytics();
+            } else if (state.currentScreen === 'history') {
+                await loadHistory();
+            }
         });
     }
     
@@ -1092,11 +1357,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     authenticate().then(async (success) => {
         if (success) {
-            // Даём Telegram WebApp время обновить данные
+            // 1. Загружаем настройки СРАЗУ
+            console.log('⚙️ Applying saved settings...');
+            const savedCurrency = localStorage.getItem('currency') || 'KGS';
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
+            
+            state.currency = savedCurrency;
+            state.currentPeriod = savedPeriod;
+            
+            // Применяем тему сразу
+            if (savedTheme === 'auto') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+            console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
+            
+            // 2. Загружаем курсы валют при старте
+            console.log('💱 Loading exchange rates...');
+            await loadExchangeRates();
+            
+            // 3. Даём Telegram WebApp время обновить данные
             await new Promise(resolve => setTimeout(resolve, 300));
-            // Обновим имя/аватар после авторизации
+            
+            // 4. Обновим имя/аватар после авторизации
             ensureUserIdentity();
-            // После аутентификации переходим на главный экран
+            
+            // 5. После аутентификации переходим на главный экран
             switchScreen('home');
         }
     });

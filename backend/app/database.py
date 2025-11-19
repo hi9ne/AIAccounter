@@ -2,13 +2,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from .config import settings
 
-# 🚀 ФИНАЛЬНОЕ РЕШЕНИЕ SUPABASE PGBOUNCER + ВЫСОКАЯ ПРОИЗВОДИТЕЛЬНОСТЬ
-# 
-# Session mode pooler (port 5432) + обычный connection pool = идеально
-# NullPool был нужен только для transaction mode, но убивал производительность
-# 
-# ВАЖНО: Отключаем prepared statements для совместимости с pgbouncer
-
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,

@@ -337,6 +337,27 @@ input, select, textarea {
     pointer-events: none;
 }
 
+/* Цвет текста для main-balance */
+.main-balance,
+.main-balance .balance-label,
+.main-balance .balance-amount,
+.main-balance .balance-trend,
+.main-balance .trend-indicator,
+.main-balance .trend-period {
+    color: white !important;
+}
+
+/* Для светлой темы - темный текст как в доходах/расходах */
+:root:not([data-theme="dark"]) .main-balance,
+:root:not([data-theme="dark"]) .main-balance .balance-label,
+:root:not([data-theme="dark"]) .main-balance .balance-amount,
+:root:not([data-theme="dark"]) .main-balance .balance-trend,
+:root:not([data-theme="dark"]) .main-balance .trend-indicator,
+:root:not([data-theme="dark"]) .main-balance .trend-period {
+    color: #111827 !important;
+    text-shadow: none;
+}
+
 .balance-header {
     display: flex;
     justify-content: space-between;
@@ -509,6 +530,7 @@ input, select, textarea {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    color: var(--text-primary);
 }
 
 .section-header h3 i {
@@ -710,12 +732,31 @@ input, select, textarea {
 .kpi-card {
     padding: var(--spacing-lg);
     border-radius: var(--radius-xl);
-    color: white;
+    color: white !important;
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-base);
     cursor: pointer;
+}
+
+/* Гарантируем белый текст в KPI на градиентах */
+.kpi-card,
+.kpi-card .kpi-icon,
+.kpi-card .kpi-label,
+.kpi-card .kpi-value,
+.kpi-card .kpi-change {
+    color: white !important;
+}
+
+/* Для светлой темы - темный текст как в доходах/расходах */
+:root:not([data-theme="dark"]) .kpi-card,
+:root:not([data-theme="dark"]) .kpi-card .kpi-icon,
+:root:not([data-theme="dark"]) .kpi-card .kpi-label,
+:root:not([data-theme="dark"]) .kpi-card .kpi-value,
+:root:not([data-theme="dark"]) .kpi-card .kpi-change {
+    color: #111827 !important;
+    text-shadow: none;
 }
 
 .kpi-card:hover {
@@ -804,6 +845,7 @@ input, select, textarea {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    color: var(--text-primary) !important;
 }
 
 .chart-header h3 i {
@@ -1173,6 +1215,32 @@ input, select, textarea {
     color: var(--text-primary);
 }
 
+/* Dark theme improvements for reports */
+[data-theme="dark"] .report-item {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .report-item:hover {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .report-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .report-meta {
+    color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .empty-state h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .empty-state p {
+    color: var(--text-tertiary);
+}
+
 .reports-list {
     display: flex;
     flex-direction: column;
@@ -1264,6 +1332,25 @@ input, select, textarea {
 
 .empty-state p {
     font-size: 14px;
+    color: var(--text-tertiary);
+}
+
+.empty-state button {
+    margin-top: var(--spacing-md);
+}
+
+/* ===== LOADING STATE ===== */
+.loading-state {
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+    color: var(--text-secondary);
+    animation: fadeIn 0.3s ease;
+}
+
+.loading-state p {
+    margin-top: var(--spacing-md);
+    font-size: 14px;
+    color: var(--text-tertiary);
 }
 
 /* ===== LOADING ===== */
