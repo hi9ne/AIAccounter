@@ -6,6 +6,8 @@ from .config import settings
 # 
 # Session mode pooler (port 5432) + обычный connection pool = идеально
 # NullPool был нужен только для transaction mode, но убивал производительность
+# 
+# ВАЖНО: Отключаем prepared statements для совместимости с pgbouncer
 
 engine = create_async_engine(
     settings.DATABASE_URL,
@@ -13,7 +15,13 @@ engine = create_async_engine(
     pool_size=10,          # Пул из 10 соединений
     max_overflow=20,       # До 30 соединений в пике
     pool_pre_ping=True,    # Проверка соединений перед использованием
-    pool_recycle=3600      # Обновление соединений каждый час
+    pool_recycle=3600,     # Обновление соединений каждый час
+    connect_args={
+        "server_settings": {
+            "jit": "off"   # Отключаем JIT для лучшей совместимости
+        },
+        "prepared_statement_cache_size": 0  # Отключаем prepared statements для pgbouncer
+    }
 )
 
 # Создаём фабрику сессий
