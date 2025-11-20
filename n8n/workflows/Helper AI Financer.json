@@ -1,0 +1,522 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "user_id",
+              "type": "number"
+            },
+            {
+              "name": "query"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        544
+      ],
+      "id": "a57dfdeb-7139-47cf-a7c5-d55650f6de30",
+      "name": "When Called",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "Вы - вспомогательный AI агент для финансового ассистента.\n\n🎯 ЗАДАЧИ:\n1. Обрабатывать сложные запросы от главного агента\n2. Выполнять специализированные операции\n3. Использовать инструменты для работы с БД\n4. Генерировать финансовые отчеты в PDF\n\n📊 ДОСТУПНЫЕ ИНСТРУМЕНТЫ:\n\n**CRUD Операции:**\n- Create Income/Expenses - добавление транзакций\n- Delete Income/Expenses - удаление транзакций\n\n**Отчеты:**\n- Reports Agent - генерация PDF отчетов за любой период\n  (используй когда нужен отчет, например: \"отчет за ноябрь\", \"дай отчет за последнюю неделю\")\n\n💬 СТИЛЬ:\nРаботай быстро и точно. Возвращай структурированный результат."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1184,
+        544
+      ],
+      "id": "547de8a5-8fcf-4578-9af1-e0f1b56c6466",
+      "name": "Helper AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        928,
+        768
+      ],
+      "id": "a3ea0b7a-ccbb-4187-aa42-82d2f9c13a73",
+      "name": "OpenAI Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "D1aWHG8Msi15h2ih",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id || 'default' }}",
+        "tableName": "n8n_chat_histories_general",
+        "contextWindowLength": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        768
+      ],
+      "id": "8c4a15bf-1fd4-4f58-a9df-8eb980209c4b",
+      "name": "Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Добавляет запись о расходе в базу данных",
+        "tableId": "expenses",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $fromAI('user_id', 'ID пользователя', 'number') }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $fromAI('amount', 'сумма расхода', 'number') }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $fromAI('category', 'категория расхода', 'string') }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $fromAI('description', 'описание', 'string') }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $fromAI('date', 'дата транзакции', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        768
+      ],
+      "id": "6a6ef2ed-d4af-499a-9c18-3b06a3048bc1",
+      "name": "Create Expense",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Добавляет запись о доходе в базу данных",
+        "tableId": "income",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $fromAI('user_id', 'ID пользователя', 'number') }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $fromAI('amount', 'сумма дохода', 'number') }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $fromAI('category', 'категория дохода', 'string') }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $fromAI('description', 'описание', 'string') }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $fromAI('date', 'дата транзакции', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        768
+      ],
+      "id": "aedd1502-ec23-4f07-96dc-bf240710f54d",
+      "name": "Create Income",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Удаляет запись о доходе по ID",
+        "operation": "delete",
+        "tableId": "income",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $fromAI('id', 'ID записи для удаления', 'number') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        768
+      ],
+      "id": "22018b8b-fab0-49c8-9421-6db570da44e2",
+      "name": "Delete Income",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Удаляет запись о расходе по ID",
+        "operation": "delete",
+        "tableId": "expenses",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $fromAI('id', 'ID записи для удаления', 'number') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        768
+      ],
+      "id": "f58553c6-ed51-4b3a-b1ca-4d34ee4a8709",
+      "name": "Delete Expense",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result_field",
+              "name": "result",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2112,
+        544
+      ],
+      "id": "a10b1b5a-b587-4db0-bdb4-bd5223cf4e9e",
+      "name": "Return Result"
+    },
+    {
+      "parameters": {
+        "text": "={{ $fromAI('query', 'Запрос пользователя о создании отчета. Примеры: отчет за ноябрь, дай отчет за последнюю неделю, отчет с 1 по 15 декабря', 'string') }}",
+        "options": {
+          "systemMessage": "=Ты финансовый помощник, который помогает пользователю получать PDF отчеты за указанный период.\n\n🎯 ТВОЯ ЗАДАЧА:\n1. Распознать период из запроса пользователя\n2. Использовать Get Report Data для получения данных из БД\n3. Сформировать краткий текстовый ответ с основными цифрами\n4. Сгенерировать красивый PDF через Generate PDF Report\n\n📅 ПРИМЕРЫ РАСПОЗНАВАНИЯ ПЕРИОДА:\n- \"отчет за ноябрь\" → 01.11.2025 - 30.11.2025\n- \"отчет за последнюю неделю\" → (today - 7 days) - today\n- \"отчет за сегодня\" → today - today\n- \"отчет с 1 по 15 декабря\" → 01.12.2025 - 15.12.2025\n- \"отчет за последний месяц\" → (today - 30 days) - today\n\n⚠️ ВАЖНО:\n- Даты передавай в формате DD.MM.YYYY\n- Если пользователь не указал год - используй текущий (2025)\n- Если период не указан явно - используй текущий месяц\n\n📊 ФОРМАТ ОТВЕТА:\nПосле генерации PDF ответь примерно так:\n\"📊 Отчет за [период] готов!\n\n💰 Основные показатели:\n• Доходы: [сумма]₽\n• Расходы: [сумма]₽\n• Баланс: [сумма]₽\n\n📄 PDF отчет отправлен выше ⬆️\"\n\nТекущая дата: {{ $now.format('DD.MM.YYYY') }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        768
+      ],
+      "id": "fb66fd74-3118-4eaa-883d-83d602bc0a36",
+      "name": "Reports Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1520,
+        976
+      ],
+      "id": "38dfca9d-50df-4919-82a4-b0846a1a359c",
+      "name": "OpenAI Model (Reports)",
+      "credentials": {
+        "openAiApi": {
+          "id": "D1aWHG8Msi15h2ih",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When Called').item.json.user_id }}",
+        "tableName": "n8n_chat_histories_reports"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1648,
+        976
+      ],
+      "id": "f9c4e7c5-bcfa-4095-9ca3-cd435a82a16c",
+      "name": "Reports Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Получаем данные для отчета за период\nWITH period_expenses AS (\n  SELECT \n    DATE(date) as expense_date,\n    category,\n    SUM(amount) as daily_total,\n    currency,\n    COUNT(*) as transaction_count,\n    json_agg(\n      json_build_object(\n        'amount', amount,\n        'description', description,\n        'date', TO_CHAR(date, 'DD.MM.YYYY')\n      )\n    ) as transactions\n  FROM expenses\n  WHERE user_id = {{ $('When Called').item.json.user_id }}\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n  GROUP BY DATE(date), category, currency\n  ORDER BY DATE(date) DESC\n),\nperiod_income AS (\n  SELECT \n    DATE(date) as income_date,\n    category,\n    SUM(amount) as daily_total,\n    currency\n  FROM income\n  WHERE user_id = {{ $('When Called').item.json.user_id }}\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n  GROUP BY DATE(date), category, currency\n),\nperiod_summary AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_expenses,\n    COUNT(*) as expense_count\n  FROM expenses\n  WHERE user_id = {{ $('When Called').item.json.user_id }}\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n),\nperiod_income_summary AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_income,\n    COUNT(*) as income_count\n  FROM income\n  WHERE user_id = {{ $('When Called').item.json.user_id }}\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n),\ncategory_totals AS (\n  SELECT \n    category,\n    SUM(amount) as category_total,\n    CASE \n      WHEN (SELECT total_expenses FROM period_summary) > 0 \n      THEN ROUND((SUM(amount) / (SELECT total_expenses FROM period_summary)) * 100, 1)\n      ELSE 0\n    END as percentage\n  FROM expenses\n  WHERE user_id = {{ $('When Called').item.json.user_id }}\n    AND date >= TO_DATE('{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n    AND date <= TO_DATE('{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}', 'DD.MM.YYYY')\n  GROUP BY category\n  ORDER BY category_total DESC\n)\nSELECT \n  {{ $('When Called').item.json.user_id }} as user_id,\n  ps.total_expenses,\n  pis.total_income,\n  ps.expense_count,\n  pis.income_count,\n  (SELECT json_agg(row_to_json(pe.*)) FROM period_expenses pe) as expenses_by_day,\n  (SELECT json_agg(row_to_json(pi.*)) FROM period_income pi) as income_by_day,\n  (SELECT json_agg(row_to_json(ct.*)) FROM category_totals ct) as category_totals,\n  '{{ $fromAI(\"start_date\", \"Дата начала периода в формате DD.MM.YYYY\", \"string\") }}' as period_start,\n  '{{ $fromAI(\"end_date\", \"Дата окончания периода в формате DD.MM.YYYY\", \"string\") }}' as period_end\nFROM period_summary ps\nCROSS JOIN period_income_summary pis;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1776,
+        976
+      ],
+      "id": "41b22c85-defb-44ac-86e0-3538218a09e5",
+      "name": "Get Report Data",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "49c77b23ede0d4e6",
+        "jsonParameters": true,
+        "propertiesJson": "=// Получаем данные из Get Report Data\nconst data = $('Get Report Data').first().json;\n\n// Функция форматирования валюты\nfunction formatCurrency(amount, symbol = '₽') {\n  return `${Math.round(amount)} ${symbol}`;\n}\n\n// Рассчитываем период дней\nconst startDate = new Date(data.period_start.split('.').reverse().join('-'));\nconst endDate = new Date(data.period_end.split('.').reverse().join('-'));\nconst periodDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;\n\n// Основные показатели\nconst totalExpenses = Math.round(parseFloat(data.total_expenses || 0));\nconst totalIncome = Math.round(parseFloat(data.total_income || 0));\nconst balance = totalIncome - totalExpenses;\nconst transactionCount = parseInt(data.expense_count || 0) + parseInt(data.income_count || 0);\n\n// Аналитические метрики\nconst avgExpensePerDay = Math.round(totalExpenses / periodDays);\nconst avgIncomePerDay = Math.round(totalIncome / periodDays);\n\n// Находим максимальный расход\nconst expensesByDay = data.expenses_by_day || [];\nlet maxExpense = 0;\nexpensesByDay.forEach(exp => {\n  const daily = parseFloat(exp.daily_total || 0);\n  if (daily > maxExpense) maxExpense = daily;\n});\nmaxExpense = Math.round(maxExpense);\n\n// Форматируем daily_data для графика\nconst dailyMap = {};\nexpensesByDay.forEach(exp => {\n  const date = new Date(exp.expense_date).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit'});\n  if (!dailyMap[date]) dailyMap[date] = {date, expenses: 0, income: 0};\n  dailyMap[date].expenses += parseFloat(exp.daily_total || 0);\n});\n\nconst incomeByDay = data.income_by_day || [];\nincomeByDay.forEach(inc => {\n  const date = new Date(inc.income_date).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit'});\n  if (!dailyMap[date]) dailyMap[date] = {date, expenses: 0, income: 0};\n  dailyMap[date].income += parseFloat(inc.daily_total || 0);\n});\n\nconst dailyData = Object.values(dailyMap).map(d => ({\n  date: d.date,\n  expenses: Math.round(d.expenses),\n  income: Math.round(d.income)\n}));\n\n// Форматируем категории\nconst categoryTotals = (data.category_totals || []).map(cat => ({\n  category: cat.category,\n  category_total: Math.round(parseFloat(cat.category_total || 0)),\n  category_total_formatted: formatCurrency(parseFloat(cat.category_total || 0)),\n  percentage: parseFloat(cat.percentage || 0)\n}));\n\n// Собираем все транзакции для таблицы\nconst allTransactions = [];\n\n// Добавляем расходы\nexpensesByDay.forEach(exp => {\n  const transactions = exp.transactions || [];\n  transactions.forEach(tx => {\n    allTransactions.push({\n      date: tx.date,\n      category: exp.category,\n      description: tx.description || 'Без описания',\n      type: 'expense',\n      amount: Math.round(parseFloat(tx.amount || 0)),\n      amount_formatted: formatCurrency(parseFloat(tx.amount || 0))\n    });\n  });\n});\n\n// Добавляем доходы\nincomeByDay.forEach(inc => {\n  const date = new Date(inc.income_date).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric'});\n  allTransactions.push({\n    date: date,\n    category: inc.category,\n    description: inc.category,\n    type: 'income',\n    amount: Math.round(parseFloat(inc.daily_total || 0)),\n    amount_formatted: formatCurrency(parseFloat(inc.daily_total || 0))\n  });\n});\n\n// Сортируем транзакции по дате (новые первые)\nallTransactions.sort((a, b) => {\n  const dateA = a.date.split('.').reverse().join('');\n  const dateB = b.date.split('.').reverse().join('');\n  return dateB.localeCompare(dateA);\n});\n\n// Формируем итоговый объект\nJSON.stringify({\n  user_name: 'Пользователь',\n  period_start: data.period_start,\n  period_end: data.period_end,\n  period_days: periodDays,\n  currency_symbol: '₽',\n  \n  // Основные метрики\n  total_expenses: totalExpenses,\n  total_expenses_formatted: formatCurrency(totalExpenses),\n  total_income: totalIncome,\n  total_income_formatted: formatCurrency(totalIncome),\n  balance: balance,\n  balance_formatted: formatCurrency(balance),\n  transaction_count: transactionCount,\n  \n  // Аналитика\n  avg_expense_per_day: avgExpensePerDay,\n  avg_expense_per_day_formatted: formatCurrency(avgExpensePerDay),\n  avg_income_per_day: avgIncomePerDay,\n  avg_income_per_day_formatted: formatCurrency(avgIncomePerDay),\n  max_expense: maxExpense,\n  max_expense_formatted: formatCurrency(maxExpense),\n  \n  // Данные для графиков\n  daily_data: dailyData,\n  category_totals: categoryTotals,\n  \n  // Таблица транзакций (ограничиваем 50)\n  all_transactions: allTransactions.slice(0, 50)\n});"
+      },
+      "type": "n8n-nodes-base.apiTemplateIoTool",
+      "typeVersion": 1,
+      "position": [
+        1904,
+        976
+      ],
+      "id": "ef1202e1-fe70-40bc-8620-c171e3f9a65f",
+      "name": "Generate PDF Report",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "NIFEHHMbU4WCVxC0",
+          "name": "PDF Report"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Helper AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Return Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reports Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Helper AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model (Reports)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reports Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reports Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Reports Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Report Data": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reports Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PDF Report": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reports Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
+}

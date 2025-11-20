@@ -1,0 +1,1076 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        832
+      ],
+      "id": "e8e17dc0-22ac-42aa-86d4-f3493d299e22",
+      "name": "Telegram Trigger",
+      "webhookId": "7d5db243-2146-45ba-a9b7-d0d743f58df0",
+      "credentials": {
+        "telegramApi": {
+          "id": "KYHLugYerbTJeC9p",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "38a2f08a-1def-498d-b22f-e47a57e5603c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "fd69850d-2840-4a76-a5a9-f6dce94ab80a"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1408,
+        832
+      ],
+      "id": "0bd72194-fd18-4d8a-9119-3436f8f93fda",
+      "name": "Message Type Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "id": "65e63a4b-d84a-4d8e-91f9-2d62ba9b370d",
+      "name": "Download Voice",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1632,
+        736
+      ],
+      "webhookId": "821074c4-189b-46c8-8660-a1ee61647ad1",
+      "credentials": {
+        "telegramApi": {
+          "id": "KYHLugYerbTJeC9p",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "11cea633-0c94-48c1-917c-79359f4c3515",
+      "name": "Transcribe Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        1856,
+        736
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "D1aWHG8Msi15h2ih",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6b2c00eb-2b2e-4ecd-b272-ee777faf6a00",
+              "name": "text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "user_id_field",
+              "name": "user_id",
+              "value": "={{ $json.message.from.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2080,
+        928
+      ],
+      "id": "5b21c7aa-0928-4f91-aa54-4febab4c2e08",
+      "name": "Extract Text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c438c1bb-f8ef-4292-9342-3baefd94e5d5",
+              "name": "text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "user_id_voice",
+              "name": "user_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2080,
+        736
+      ],
+      "id": "b603ef52-f709-443f-b610-d72b85ddf24d",
+      "name": "Extract Voice Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=Вы - финансовый AI ассистент для управления личными финансами.\n\n🎯 ГЛАВНАЯ ЗАДАЧА:\nАвтоматически распознавать намерения пользователя и НЕМЕДЛЕННО выполнять действия БЕЗ лишних вопросов.\n\n📋 ДОСТУПНЫЕ ИНСТРУМЕНТЫ:\n\n1. Income Agent - агент для работы с ДОХОДАМИ\n   - Просмотр истории доходов (с RAG поиском)\n   - Расчеты по доходам\n   - Анализ источников дохода\n\n2. Expenses Agent - агент для работы с РАСХОДАМИ\n   - Просмотр истории расходов (с RAG поиском)\n   - Расчеты по категориям\n   - Анализ трат\n\n3. Create a row in income - ДОБАВЛЕНИЕ дохода в БД\n4. Create a row in expenses - ДОБАВЛЕНИЕ расхода в БД\n5. Delete a row in income - УДАЛЕНИЕ дохода\n6. Delete a row in expenses - УДАЛЕНИЕ расхода\n\n7. Generate Report - ГЕНЕРАЦИЯ PDF ОТЧЕТОВ ЗА ПЕРИОД 📊\n   - Используй ОБЯЗАТЕЛЬНО когда пользователь просит отчет!\n   - Примеры: \"отчет за неделю\", \"дай отчет за ноябрь\", \"отчет за сегодня\"\n   - Передай в query ТОЧНЫЙ текст запроса пользователя\n   - Отчет будет содержать графики, таблицы, аналитику в PDF\n\n⚡ АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ:\n\n🟢 ДОХОД (используй Create a row in income):\n- \"Получил зарплату 50000\"\n- \"Заработал на фрилансе 30000\"\n- \"Продал машину за 500000\"\n- \"Пришли деньги 10000\"\n- \"Подарили 5000\"\n→ НЕМЕДЛЕННО создай запись БЕЗ подтверждения!\n\n🔴 РАСХОД (используй Create a row in expenses):\n- \"Купил продукты 2000\"\n- \"Потратил на такси 500\"\n- \"Оплатил интернет 1000\"\n- \"Сходил в кино 800\"\n→ НЕМЕДЛЕННО создай запись БЕЗ подтверждения!\n\n📊 ПРОСМОТР (используй агентов):\n- \"Покажи мои расходы\"\n- \"Сколько я потратил?\"\n- \"Какие у меня доходы?\"\n→ Вызови Income Agent или Expenses Agent\n\n📈 ОТЧЕТЫ (используй Generate Report):\n- \"Отчет за неделю\" / \"Weekly report\"\n- \"Отчет за месяц\" / \"Monthly report\" \n- \"Сводка за период\"\n- \"Финансовый анализ\"\n→ НЕМЕДЛЕННО вызови Generate Report с запросом пользователя\n→ НЕ спрашивай уточнений - инструмент сам определит что показать\n→ Передай ВЕСЬ запрос пользователя в Generate Report\n\n🗑 УДАЛЕНИЕ:\n- Если ID не указан - сначала найди через агента, покажи список\n- Если ID указан - удали сразу\n\n✅ ПРАВИЛА РАБОТЫ:\n\n1. НЕ спрашивай подтверждение перед добавлением\n2. Если не указана сумма - спроси ТОЛЬКО сумму\n3. Категорию определи сам по контексту\n4. Дату используй текущую ({{ $now.toISO() }})\n5. После добавления ответь: \"✅ Записал! [тип] [сумма]₽ - [описание]\"\n6. Используй эмодзи для дружелюбности\n7. При запросе отчета - СРАЗУ вызывай Generate Report БЕЗ уточнений\n8. Передавай в Generate Report полный запрос пользователя как есть\n\n📂 КАТЕГОРИИ:\n\nДоходы: Зарплата, Фриланс, Инвестиции, Подарки, Другое\n\nРасходы: Жильё, Транспорт, Продукты питания, Медицина, Одежда и обувь, Развлечения, Образование, Дети и семья, Подарки и праздники, Сбережения и инвестиции\n\n💬 СТИЛЬ ОБЩЕНИЯ:\nБудь дружелюбным, быстрым и эффективным. Пользователь доверяет тебе!"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        3576,
+        832
+      ],
+      "id": "bd7c50cc-807c-4d0d-84a6-94f66e31a290",
+      "name": "Main AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2304,
+        1056
+      ],
+      "id": "b443df17-6365-4b58-8530-8c5a2d5f52b0",
+      "name": "OpenAI Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "D1aWHG8Msi15h2ih",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        2432,
+        1056
+      ],
+      "id": "3f34364e-6225-4fc5-8e8a-318b796eff2f",
+      "name": "Main Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4368,
+        832
+      ],
+      "id": "3787f912-163e-4dd6-aaaf-be6c0678fcae",
+      "name": "Send Reply",
+      "webhookId": "56eabb46-5256-4b9f-856b-1173f56d288c",
+      "credentials": {
+        "telegramApi": {
+          "id": "KYHLugYerbTJeC9p",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $fromAI(\"query\", \"Запрос пользователя о доходах\", \"string\") }}",
+        "options": {
+          "systemMessage": "Вы - специализированный агент для анализа ДОХОДОВ.\n\n🎯 ЗАДАЧИ:\n1. Искать информацию о доходах пользователя в базе данных\n2. Использовать RAG для семантического поиска\n3. Выполнять расчеты через калькулятор\n4. Предоставлять структурированные ответы\n\n📊 ИНСТРУМЕНТЫ:\n- Get Income Rows - получение всех доходов из БД\n- Income Vector Store - RAG поиск по истории доходов\n- Calculator - для ВСЕХ математических операций\n\n⚡ ПРАВИЛА:\n- ВСЕГДА используй калькулятор для расчетов, НЕ считай в уме\n- ВСЕГДА ищи в базе перед ответом\n- Группируй по источникам (Зарплата, Фриланс и т.д.)\n- Считай общую сумму через калькулятор\n\n📝 ФОРМАТ ОТВЕТА:\n💰 ДОХОДЫ:\n\n🏢 Зарплата:\n- Описание - сумма ₽ (дата)\nИтого: [через калькулятор] ₽\n\n💼 Фриланс:\n- Описание - сумма ₽ (дата)\nИтого: [через калькулятор] ₽\n\n📊 ВСЕГО ДОХОДОВ: [калькулятор] ₽"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        2560,
+        1056
+      ],
+      "id": "5f43066a-7f63-4ac5-9308-80209e756aa2",
+      "name": "Income Agent"
+    },
+    {
+      "parameters": {
+        "text": "={{ $fromAI(\"query\", \"Запрос пользователя о расходах\", \"string\") }}",
+        "options": {
+          "systemMessage": "Вы - специализированный агент для анализа РАСХОДОВ.\n\n🎯 ЗАДАЧИ:\n1. Искать информацию о расходах в базе данных\n2. Использовать RAG для семантического поиска\n3. Выполнять расчеты через калькулятор\n4. Группировать по категориям\n\n📊 ИНСТРУМЕНТЫ:\n- Get Expenses Rows - получение всех расходов\n- Expenses Vector Store - RAG поиск по истории\n- Calculator - для ВСЕХ математических операций\n\n⚡ ПРАВИЛА:\n- ВСЕГДА используй калькулятор для сумм\n- Группируй по 10 категориям\n- Показывай детализацию\n\n📝 ФОРМАТ ОТВЕТА:\n💸 РАСХОДЫ:\n\n🏠 Жильё:\n- Описание - сумма ₽ (дата)\nИтого: [калькулятор] ₽\n\n🚗 Транспорт:\n- Описание - сумма ₽\nИтого: [калькулятор] ₽\n\n📊 ВСЕГО: [калькулятор] ₽\n\n10 категорий:\n1.Жильё 2.Транспорт 3.Продукты питания 4.Медицина 5.Одежда и обувь 6.Развлечения 7.Образование 8.Дети и семья 9.Подарки и праздники 10.Сбережения и инвестиции"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        3360,
+        1056
+      ],
+      "id": "c9c42b7e-c805-4d62-ae78-f79736966fc7",
+      "name": "Expenses Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2384,
+        1264
+      ],
+      "id": "47ca5678-5758-4c4b-8e82-5f63f67d53c3",
+      "name": "OpenAI Model (Income)",
+      "credentials": {
+        "openAiApi": {
+          "id": "D1aWHG8Msi15h2ih",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3184,
+        1264
+      ],
+      "id": "72e3c260-03c1-4d1b-97dc-5bcaf2259b24",
+      "name": "OpenAI Model (Expenses)",
+      "credentials": {
+        "openAiApi": {
+          "id": "D1aWHG8Msi15h2ih",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        1264
+      ],
+      "id": "64d2eee6-de33-44c1-87a0-c38a8de5790f",
+      "name": "Calculator (Income)"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        3312,
+        1264
+      ],
+      "id": "61a8ffb7-24d5-4222-b621-98f6ebec34df",
+      "name": "Calculator (Expenses)"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "tableName": "n8n_chat_histories_income",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        2640,
+        1264
+      ],
+      "id": "c9180100-3435-46d0-bfc4-07ed0eee72da",
+      "name": "Income Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "tableName": "n8n_chat_histories_expenses",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        3440,
+        1264
+      ],
+      "id": "ae67b7ee-58cd-4cb1-bb43-a8a1a1cbc7ea",
+      "name": "Expenses Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Добавляет новый доход в базу данных. Используй когда пользователь сообщает о получении денег.",
+        "tableId": "income",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Telegram Trigger').item.json.message.from.id }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $fromAI('sum', 'сумма дохода в рублях', 'number') }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $fromAI('category', 'категория: Зарплата, Фриланс, Инвестиции, Подарки или Другое', 'string') }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $fromAI('comment', 'описание дохода', 'string') }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $fromAI('created_at', 'дата в формате ISO или используй текущую: ' + $now.toISO(), 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3648,
+        1056
+      ],
+      "id": "6456a72c-96cf-44c8-97a7-5c9ad7f370c3",
+      "name": "Create a row in income",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Добавляет новый расход в базу данных. Используй когда пользователь сообщает о покупке или трате.",
+        "tableId": "expenses",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Telegram Trigger').item.json.message.from.id }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $fromAI('sum', 'сумма расхода в рублях', 'number') }}"
+            },
+            {
+              "fieldId": "category",
+              "fieldValue": "={{ $fromAI('category', 'категория из списка: Жильё, Транспорт, Продукты питания, Медицина, Одежда и обувь, Развлечения, Образование, Дети и семья, Подарки и праздники, Сбережения и инвестиции', 'string') }}"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $fromAI('comment', 'описание покупки', 'string') }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ $fromAI('created_at', 'дата в формате ISO или используй текущую: ' + $now.toISO(), 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3776,
+        1056
+      ],
+      "id": "091cfbe2-13c2-4f15-91fd-cb0f640f2f0c",
+      "name": "Create a row in expenses",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Удаляет запись о доходе. Попроси пользователя указать ID.",
+        "operation": "delete",
+        "tableId": "income",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $fromAI('id', 'ID записи для удаления', 'number') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3904,
+        1056
+      ],
+      "id": "e9f5a72a-2841-4425-a992-8f6f2a4e0322",
+      "name": "Delete a row in income",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Удаляет запись о расходе. Попроси пользователя указать ID.",
+        "operation": "delete",
+        "tableId": "expenses",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $fromAI('id', 'ID записи для удаления', 'number') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        4032,
+        1056
+      ],
+      "id": "a2e57903-0459-4bd3-a45f-cf1d923341df",
+      "name": "Delete a row in expenses",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Получает все записи о доходах пользователя из базы данных",
+        "operation": "getAll",
+        "tableId": "income",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        1264
+      ],
+      "id": "62566ac0-fdb6-425a-a524-9d04c5380a41",
+      "name": "Get Income Rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Получает все записи о расходах пользователя из базы данных",
+        "operation": "getAll",
+        "tableId": "expenses",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        3568,
+        1264
+      ],
+      "id": "e1ad59b0-73cf-4a41-87d5-04f92ea50d6e",
+      "name": "Get Expenses Rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "Income_Vector_Store",
+        "toolDescription": "Семантический поиск по истории доходов пользователя. Используй для поиска конкретных доходов по описанию, дате или категории.",
+        "tableName": {
+          "__rl": true,
+          "value": "income_embeddings",
+          "mode": "list",
+          "cachedResultName": "income_embeddings"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_income_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        2896,
+        1264
+      ],
+      "id": "5e19888b-b891-4318-ae05-f7c668b48f98",
+      "name": "Income Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "Expenses_Vector_Store",
+        "toolDescription": "Семантический поиск по истории расходов пользователя. Используй для поиска конкретных покупок по описанию, дате или категории.",
+        "tableName": {
+          "__rl": true,
+          "value": "expenses_embeddings",
+          "mode": "list",
+          "cachedResultName": "expenses_embeddings"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_expenses_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        3696,
+        1264
+      ],
+      "id": "a266438b-cdc2-49b7-9e18-0c3126fe5f32",
+      "name": "Expenses Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "CZjEcmPMUjv3s8us",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b77c9a93-da88-4103-887b-81b0264ca962",
+      "name": "Income Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2976,
+        1472
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YWdBHhtpkxTSXDR7",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4c679b05-a183-43bf-be18-e0aa855ddca0",
+      "name": "Expenses Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3776,
+        1472
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YWdBHhtpkxTSXDR7",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Генерирует красивый PDF отчет о доходах и расходах за любой период. Используй когда пользователь просит отчет за неделю, месяц, год или кастомный период. Примеры: 'отчет за ноябрь', 'отчет за последнюю неделю', 'дай отчет за сегодня'",
+        "workflowId": {
+          "__rl": true,
+          "value": "rr6ltNY972tMRHHZ",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rr6ltNY972tMRHHZ",
+          "cachedResultName": "AIAccounter — Helper AI Financer"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $json.user_id }}",
+            "query": "={{ $fromAI('query', 'Запрос пользователя о создании отчета. Передай полный текст запроса, например: отчет за неделю, отчет за ноябрь, отчет с 1 по 15 декабря', 'string') }}"
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        4160,
+        1056
+      ],
+      "id": "85feb495-3f09-43d4-b964-7cee3904bf65",
+      "name": "Generate Report"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Type Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type Switch": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [
+          {
+            "node": "Extract Voice Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text": {
+      "main": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Voice Text": {
+      "main": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Income Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expenses Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model (Income)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Income Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model (Expenses)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Expenses Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator (Income)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Income Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator (Expenses)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expenses Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Income Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Income Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expenses Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Expenses Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row in income": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row in expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a row in income": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a row in expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Income Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "Income Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Expenses Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expenses Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Income Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Income Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expenses Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expenses Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Income Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Income Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expenses Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Expenses Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Report": {
+      "ai_tool": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
+}
