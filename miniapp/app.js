@@ -4,7 +4,6 @@
 // ============================================================================
 
 const APP_VERSION = '3.0.4'; // Increment to invalidate all caches
-console.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
 
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
@@ -13,20 +12,30 @@ const tg = window.Telegram?.WebApp;
 const IS_LOCALHOST = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1';
 
+// Debug logger - only logs on localhost
+const debug = {
+    log: (...args) => IS_LOCALHOST && debug.log(...args),
+    warn: (...args) => IS_LOCALHOST && debug.warn(...args),
+    error: (...args) => console.error(...args), // Errors always logged
+    info: (...args) => IS_LOCALHOST && debug.info(...args)
+};
+
+debug.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
+
 if (tg) {
     tg.ready();
     tg.expand();
-    console.log('✅ Telegram WebApp initialized');
-    console.log('📱 Telegram user data:', tg.initDataUnsafe?.user);
+    debug.log('✅ Telegram WebApp initialized');
+    debug.log('📱 Telegram user data:', tg.initDataUnsafe?.user);
 } else {
-    console.warn('⚠️ Running without Telegram WebApp (browser mode)');
+    debug.warn('⚠️ Running without Telegram WebApp (browser mode)');
 }
 
 // ===== CONFIG =====
 const API_BASE = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') || 
     (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://aiaccounterbackend-production.up.railway.app');
 
-console.log('📡 API Base:', API_BASE);
+debug.log('📡 API Base:', API_BASE);
 
 // Для тестирования в браузере на localhost - используем тестовый ID
 const TEST_USER_ID = 1109421300;
@@ -67,7 +76,7 @@ const cache = {
                 version: this.version
             }));
         } catch (e) {
-            console.warn('Failed to save to localStorage:', e);
+            debug.warn('Failed to save to localStorage:', e);
         }
     },
     
@@ -90,14 +99,14 @@ const cache = {
                     if (Date.now() <= item.expires) {
                         // Восстанавливаем в memory cache
                         this.data.set(versionedKey, item);
-                        console.log('💾 Restored from localStorage:', key);
+                        debug.log('💾 Restored from localStorage:', key);
                     } else {
                         localStorage.removeItem(`cache_${versionedKey}`);
                         return null;
                     }
                 }
             } catch (e) {
-                console.warn('Failed to read from localStorage:', e);
+                debug.warn('Failed to read from localStorage:', e);
             }
         }
         
@@ -118,7 +127,7 @@ const cache = {
                 localStorage.removeItem(key);
             }
         });
-        console.log('🗑️ Cache cleared');
+        debug.log('🗑️ Cache cleared');
     },
     
     clearMatching(prefix) {
@@ -129,7 +138,7 @@ const cache = {
                 localStorage.removeItem(`cache_${key}`);
             }
         }
-        console.log(`🗑️ Cleared cache with prefix: ${prefix}`);
+        debug.log(`🗑️ Cleared cache with prefix: ${prefix}`);
     }
 };
 
@@ -142,7 +151,7 @@ async function loadExchangeRates() {
     const cachedRates = cache.get('exchange_rates');
     if (cachedRates) {
         exchangeRates = cachedRates;
-        console.log('💾 Exchange rates from cache:', Object.keys(exchangeRates).length, 'pairs');
+        debug.log('💾 Exchange rates from cache:', Object.keys(exchangeRates).length, 'pairs');
         return exchangeRates;
     }
     
@@ -156,7 +165,7 @@ async function loadExchangeRates() {
         
         // Кэшируем на 1 час (курсы обновляются редко)
         cache.set('exchange_rates', exchangeRates, 3600);
-        console.log('✅ Exchange rates loaded:', Object.keys(exchangeRates).length, 'pairs');
+        debug.log('✅ Exchange rates loaded:', Object.keys(exchangeRates).length, 'pairs');
         return exchangeRates;
     } catch (error) {
         console.error('❌ Failed to load exchange rates:', error);
@@ -186,7 +195,7 @@ function convertAmount(amount, fromCurrency, toCurrency) {
     } else if (exchangeRates[reverseKey]) {
         return amount / exchangeRates[reverseKey];
     } else {
-        console.warn(`⚠️ No exchange rate for ${fromCurrency} -> ${toCurrency}`);
+        debug.warn(`⚠️ No exchange rate for ${fromCurrency} -> ${toCurrency}`);
         return amount; // Возвращаем исходную сумму если нет курса
     }
 }
@@ -229,20 +238,20 @@ function showLoading() {
 
 // Устанавливает имя и аватар пользователя из Telegram
 function ensureUserIdentity() {
-    console.log('👤 Updating user identity...');
-    console.log('Telegram WebApp object:', window.Telegram?.WebApp);
-    console.log('initDataUnsafe:', tg?.initDataUnsafe);
+    debug.log('👤 Updating user identity...');
+    debug.log('Telegram WebApp object:', window.Telegram?.WebApp);
+    debug.log('initDataUnsafe:', tg?.initDataUnsafe);
     
     // Освежим данные из Telegram на всякий случай
     const tgUser = tg?.initDataUnsafe?.user || {};
-    console.log('Telegram user data:', tgUser);
+    debug.log('Telegram user data:', tgUser);
     
     if (tgUser && tgUser.id) {
         state.userId = tgUser.id;
         state.userName = tgUser.first_name || tgUser.username || 'Пользователь';
         state.userPhoto = tgUser.photo_url || null;
         
-        console.log('✅ User identity updated:', {
+        debug.log('✅ User identity updated:', {
             id: state.userId,
             name: state.userName,
             photo: state.userPhoto ? 'present' : 'absent'
@@ -250,16 +259,16 @@ function ensureUserIdentity() {
     } else if (IS_LOCALHOST && TEST_USER_ID) {
         // В браузере на localhost используем тестовый ID
         state.userId = TEST_USER_ID;
-        console.log('🧪 Using TEST_USER_ID for localhost:', TEST_USER_ID);
+        debug.log('🧪 Using TEST_USER_ID for localhost:', TEST_USER_ID);
     } else {
-        console.warn('⚠️ No Telegram user data available');
+        debug.warn('⚠️ No Telegram user data available');
     }
 
     const userNameEl = document.getElementById('user-name');
     if (userNameEl) {
         const displayName = (IS_LOCALHOST && !tgUser.id) ? `${state.userName} (TEST)` : state.userName;
         userNameEl.textContent = displayName;
-        console.log('📝 Username set to:', displayName);
+        debug.log('📝 Username set to:', displayName);
     }
 
     const avatarEl = document.getElementById('user-avatar');
@@ -269,14 +278,14 @@ function ensureUserIdentity() {
             avatarEl.style.backgroundSize = 'cover';
             avatarEl.style.backgroundPosition = 'center';
             avatarEl.innerHTML = '';
-            console.log('🖼️ Avatar image set');
+            debug.log('🖼️ Avatar image set');
         } else {
             // Вернём иконку, если фото нет
             if (!avatarEl.querySelector('i')) {
                 avatarEl.innerHTML = '<i class="fas fa-user-circle"></i>';
             }
             avatarEl.style.removeProperty('background-image');
-            console.log('👤 Using default avatar icon');
+            debug.log('👤 Using default avatar icon');
         }
     }
 }
@@ -369,7 +378,7 @@ function handleError(error, customMessage = 'Произошла ошибка') {
 
 // ===== NAVIGATION =====
 function switchScreen(screenName) {
-    console.log(`📍 Navigate to: ${screenName}`);
+    debug.log(`📍 Navigate to: ${screenName}`);
     
     // Hide all screens
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -416,21 +425,21 @@ function loadScreenData(screenName) {
 
 // ===== AUTHENTICATION =====
 async function authenticate() {
-    console.log('🔐 Authenticating...');
+    debug.log('🔐 Authenticating...');
     
     // Проверяем наличие токена
     const existingToken = localStorage.getItem('auth_token');
     if (existingToken) {
-        console.log('✅ Token found, setting...');
+        debug.log('✅ Token found, setting...');
         api.setToken(existingToken);
         
         // Проверим валидность токена простым запросом
         try {
             await api.getOverview({ period: 'week' });
-            console.log('✅ Token is valid');
+            debug.log('✅ Token is valid');
             return true;
         } catch (e) {
-            console.warn('⚠️ Token invalid, re-authenticating...');
+            debug.warn('⚠️ Token invalid, re-authenticating...');
             localStorage.removeItem('auth_token');
             // Продолжаем к новой авторизации ниже
         }
@@ -443,12 +452,12 @@ async function authenticate() {
         // Если нет userId из Telegram, используем тестовый на localhost
         if (!userId && IS_LOCALHOST && TEST_USER_ID) {
             userId = TEST_USER_ID;
-            console.log('🧪 Using TEST_USER_ID for authentication:', userId);
+            debug.log('🧪 Using TEST_USER_ID for authentication:', userId);
         }
         
         // Если всё ещё нет userId - показываем ошибку
         if (!userId) {
-            console.warn('⚠️ No Telegram user ID');
+            debug.warn('⚠️ No Telegram user ID');
             const errorMsg = window.Telegram?.WebApp 
                 ? 'Не удалось получить данные из Telegram' 
                 : 'Установите TEST_USER_ID в app.js для тестирования';
@@ -456,7 +465,7 @@ async function authenticate() {
             return false;
         }
         
-        console.log('🔄 Authenticating with Telegram ID:', userId);
+        debug.log('🔄 Authenticating with Telegram ID:', userId);
         
         const authData = {
             telegram_chat_id: String(userId),
@@ -466,23 +475,23 @@ async function authenticate() {
             language_code: telegramData?.user?.language_code || 'ru'
         };
         
-        console.log('Auth data:', authData);
+        debug.log('Auth data:', authData);
         
         const response = await api.authTelegram(authData);
         
-        console.log('Auth response:', response);
+        debug.log('Auth response:', response);
         
         if (response.access_token) {
             localStorage.setItem('auth_token', response.access_token);
             api.setToken(response.access_token);
             state.userId = userId;
             
-            console.log('✅ Authentication successful');
+            debug.log('✅ Authentication successful');
             
             // Подключаем WebSocket для real-time updates
             if (typeof wsManager !== 'undefined') {
                 wsManager.connect(response.access_token).catch(err => {
-                    console.warn('⚠️ WebSocket connection failed:', err);
+                    debug.warn('⚠️ WebSocket connection failed:', err);
                 });
             }
             
@@ -507,7 +516,7 @@ async function authenticate() {
 
 // ===== DASHBOARD (HOME) =====
 async function loadDashboard() {
-    console.log(`📊 Loading dashboard for period: ${state.currentPeriod}, currency: ${state.currency}`);
+    debug.log(`📊 Loading dashboard for period: ${state.currentPeriod}, currency: ${state.currency}`);
     
     const cacheKey = `dashboard:${state.currentPeriod}:${state.currency}`;
     const cached = cache.get(cacheKey);
@@ -515,8 +524,8 @@ async function loadDashboard() {
     // Preload analytics в фоне для быстрого перехода (только если нет кэша)
     if (!cache.get(`analytics:${state.currentPeriod}:${state.currency}`)) {
         setTimeout(() => {
-            console.log('📦 Preloading analytics in background...');
-            loadAnalytics().catch(e => console.warn('Preload analytics failed:', e));
+            debug.log('📦 Preloading analytics in background...');
+            loadAnalytics().catch(e => debug.warn('Preload analytics failed:', e));
         }, 2000);
     }
     
@@ -538,7 +547,7 @@ async function loadDashboard() {
     try {
         // Используем предзагруженные данные при первой загрузке
         if (!state.isInitialized && state.preloadedData) {
-            console.log('⚡ Using preloaded data');
+            debug.log('⚡ Using preloaded data');
             const { overview, topCategories, rates } = state.preloadedData;
             exchangeRates = rates;
             
@@ -564,14 +573,14 @@ async function loadDashboard() {
             cache.set(cacheKey, overview, 300);
             state.isInitialized = true;
             state.preloadedData = null;
-            console.log('✅ Dashboard loaded from preload');
+            debug.log('✅ Dashboard loaded from preload');
             return;
         }
         
         let dashboardData;
         
         if (cached) {
-            console.log('📦 Using cached dashboard data');
+            debug.log('📦 Using cached dashboard data');
             dashboardData = cached;
         } else {
             // Параллельная загрузка всех данных сразу
@@ -608,7 +617,7 @@ async function loadDashboard() {
         if (dashboardData.topCategories) {
             updateHomeTopCategories(dashboardData.topCategories);
         }
-        console.log('✅ Dashboard loaded');
+        debug.log('✅ Dashboard loaded');
     } catch (error) {
         handleError(error, 'Не удалось загрузить данные');
     } finally {
@@ -620,10 +629,10 @@ async function loadDashboard() {
 }
 
 function updateDashboardUI(data) {
-    console.log('🎨 Updating dashboard UI', data);
+    debug.log('🎨 Updating dashboard UI', data);
     
     if (!data || !data.balance) {
-        console.warn('⚠️ No balance data');
+        debug.warn('⚠️ No balance data');
         return;
     }
     
@@ -778,7 +787,7 @@ function applyCustomPeriod() {
 }
 
 async function loadAnalytics() {
-    console.log('📊 Loading analytics...');
+    debug.log('📊 Loading analytics...');
     
     try {
         const periodSelect = document.getElementById('analytics-period');
@@ -787,7 +796,7 @@ async function loadAnalytics() {
         if (periodSelect && periodSelect.value === 'month') {
             const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
             periodSelect.value = savedPeriod;
-            console.log('📊 Applied saved period to analytics:', savedPeriod);
+            debug.log('📊 Applied saved period to analytics:', savedPeriod);
         }
         
         const period = periodSelect?.value || 'month';
@@ -813,7 +822,7 @@ async function loadAnalytics() {
         let stats, topCategories;
         
         if (cached) {
-            console.log('📦 Using cached analytics data');
+            debug.log('📦 Using cached analytics data');
             ({ stats, topCategories } = cached);
         } else {
             [stats, topCategories] = await Promise.all([
@@ -837,8 +846,8 @@ async function loadAnalytics() {
             periodBadge.textContent = periodTexts[period] || 'За месяц';
         }
         
-        console.log('📊 Raw stats from API:', stats);
-        console.log('📊 Raw topCategories from API:', topCategories);
+        debug.log('📊 Raw stats from API:', stats);
+        debug.log('📊 Raw topCategories from API:', topCategories);
         
         // Конвертируем все суммы в выбранную валюту
         const origCurrency = stats.currency || 'KGS';
@@ -849,14 +858,14 @@ async function loadAnalytics() {
         
         // Конвертируем топ категории
         const convertedCategories = topCategories.map(cat => {
-            console.log('📊 Converting category:', cat);
+            debug.log('📊 Converting category:', cat);
             const catCurrency = cat.currency || 'KGS';
             // API возвращает total_amount, а не amount или total
             const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
             const convertedAmount = convertAmount(originalAmount, catCurrency, state.currency);
             // Очищаем название категории от лишних пробелов и переносов строк
             const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
-            console.log(`💱 ${cleanCategory}: ${originalAmount} ${catCurrency} -> ${convertedAmount} ${state.currency}`);
+            debug.log(`💱 ${cleanCategory}: ${originalAmount} ${catCurrency} -> ${convertedAmount} ${state.currency}`);
             return {
                 ...cat,
                 category: cleanCategory,
@@ -867,7 +876,7 @@ async function loadAnalytics() {
             };
         });
         
-        console.log('📊 Converted categories:', convertedCategories);
+        debug.log('📊 Converted categories:', convertedCategories);
         
         // Объединяем данные
         const analyticsData = {
@@ -880,7 +889,7 @@ async function loadAnalytics() {
         // Ленивая загрузка графиков - загружаем через небольшую задержку
         setTimeout(() => loadCharts(analyticsData), 100);
         
-        console.log('✅ Analytics loaded');
+        debug.log('✅ Analytics loaded');
     } catch (error) {
         handleError(error, 'Не удалось загрузить аналитику');
     }
@@ -905,10 +914,10 @@ function updateTopCategories(categories) {
     const container = document.getElementById('top-categories-list');
     if (!container) return;
     
-    console.log('📊 updateTopCategories called with:', categories);
+    debug.log('📊 updateTopCategories called with:', categories);
     
     if (!categories || categories.length === 0) {
-        console.warn('⚠️ No categories provided');
+        debug.warn('⚠️ No categories provided');
         container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных</p></div>';
         return;
     }
@@ -917,14 +926,14 @@ function updateTopCategories(categories) {
     // API может вернуть amount, total или total_amount
     const validCategories = categories.filter(cat => {
         const value = cat.total_amount || cat.amount || cat.total || 0;
-        console.log(`Category ${cat.category}: total_amount=${cat.total_amount}, amount=${cat.amount}, total=${cat.total}, value=${value}`);
+        debug.log(`Category ${cat.category}: total_amount=${cat.total_amount}, amount=${cat.amount}, total=${cat.total}, value=${value}`);
         return cat && value > 0;
     });
     
-    console.log('✅ Valid categories:', validCategories);
+    debug.log('✅ Valid categories:', validCategories);
     
     if (validCategories.length === 0) {
-        console.warn('⚠️ No valid categories after filtering');
+        debug.warn('⚠️ No valid categories after filtering');
         container.innerHTML = '<div class="empty-state"><i class="fas fa-chart-pie"></i><p>Нет данных</p></div>';
         return;
     }
@@ -1065,17 +1074,17 @@ function openFilters() {
 // История транзакций с pagination
 let historyState = {
     currentPage: 1,
-    pageSize: 12,
+    pageSize: 30,
     hasMore: true,
     loading: false,
     allTransactions: [] // Храним все загруженные транзакции
 };
 
 async function loadHistory(loadMore = false) {
-    console.log('📜 Loading history...', { loadMore, currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
+    debug.log('📜 Loading history...', { loadMore, currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
     
     if (historyState.loading) {
-        console.warn('⚠️ Already loading, skipping...');
+        debug.warn('⚠️ Already loading, skipping...');
         return;
     }
     
@@ -1119,7 +1128,7 @@ async function loadHistory(loadMore = false) {
         
         const data = await api.getTransactions(params);
         
-        console.log('📊 API Response:', { 
+        debug.log('📊 API Response:', { 
             count: data.items?.length || 0, 
             has_next: data.has_next, 
             total: data.total 
@@ -1156,7 +1165,7 @@ async function loadHistory(loadMore = false) {
         
         // Проверяем, есть ли еще данные
         historyState.hasMore = data.has_next;
-        console.log('🔄 hasMore:', historyState.hasMore);
+        debug.log('🔄 hasMore:', historyState.hasMore);
         
         // Увеличиваем номер страницы для следующей загрузки
         historyState.currentPage++;
@@ -1165,12 +1174,12 @@ async function loadHistory(loadMore = false) {
         historyState.loading = false;
         
         // Рендерим все транзакции
-        console.log('🎨 Rendering', historyState.allTransactions.length, 'transactions, hasMore:', historyState.hasMore);
+        debug.log('🎨 Rendering', historyState.allTransactions.length, 'transactions, hasMore:', historyState.hasMore);
         renderHistoryTransactions(historyState.allTransactions);
         
-        console.log('✅ Loading complete, new state:', { currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
+        debug.log('✅ Loading complete, new state:', { currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
         
-        console.log(`✅ History loaded. Page: ${historyState.currentPage - 1}, Has more: ${historyState.hasMore}`);
+        debug.log(`✅ History loaded. Page: ${historyState.currentPage - 1}, Has more: ${historyState.hasMore}`);
     } catch (error) {
         historyState.loading = false;
         handleError(error, 'Не удалось загрузить историю');
@@ -1243,7 +1252,7 @@ function updateHistoryUI(transactions) {
 
 // Render paginated transactions (always replace)
 function renderHistoryTransactions(transactions) {
-    console.log('🎨 renderHistoryTransactions called:', { count: transactions.length, hasMore: historyState.hasMore, loading: historyState.loading });
+    debug.log('🎨 renderHistoryTransactions called:', { count: transactions.length, hasMore: historyState.hasMore, loading: historyState.loading });
     const container = document.getElementById('transactions-history');
     if (!container) return;
     
@@ -1288,7 +1297,7 @@ function renderHistoryTransactions(transactions) {
     
     // Add load more button if there are more pages
     if (historyState.hasMore) {
-        console.log('➕ Adding "Load More" button');
+        debug.log('➕ Adding "Load More" button');
         const loadMoreBtn = document.createElement('button');
         loadMoreBtn.id = 'load-more-btn';
         loadMoreBtn.className = 'btn-load-more';
@@ -1298,15 +1307,15 @@ function renderHistoryTransactions(transactions) {
         loadMoreBtn.disabled = historyState.loading;
         loadMoreBtn.onclick = () => loadHistory(true);
         container.parentElement.appendChild(loadMoreBtn);
-        console.log('✅ Button added to DOM');
+        debug.log('✅ Button added to DOM');
     } else {
-        console.log('❌ No more pages, button not added');
+        debug.log('❌ No more pages, button not added');
     }
 }
 
 // ===== SETTINGS =====
 function loadSettings() {
-    console.log('⚙️ Loading settings...');
+    debug.log('⚙️ Loading settings...');
     
     // Load saved settings
     const savedCurrency = localStorage.getItem('currency') || 'KGS';
@@ -1348,12 +1357,12 @@ function loadSettings() {
         document.documentElement.setAttribute('data-theme', savedTheme);
     }
     
-    console.log('✅ Settings loaded:', { currency: savedCurrency, period: savedPeriod, theme: savedTheme });
+    debug.log('✅ Settings loaded:', { currency: savedCurrency, period: savedPeriod, theme: savedTheme });
 }
 
 // ===== REPORTS =====
 async function loadReports() {
-    console.log('📄 Loading reports...');
+    debug.log('📄 Loading reports...');
     
     const cacheKey = `reports:list`;
     const cached = cache.get(cacheKey);
@@ -1364,7 +1373,7 @@ async function loadReports() {
         let reports;
         
         if (cached) {
-            console.log('📦 Using cached reports data');
+            debug.log('📦 Using cached reports data');
             reports = cached;
         } else {
             if (container) {
@@ -1377,7 +1386,7 @@ async function loadReports() {
             }
             
             const response = await api.getReportsHistory();
-            console.log('Reports API response:', response);
+            debug.log('Reports API response:', response);
             
             // Обрабатываем разные форматы ответа
             if (Array.isArray(response)) {
@@ -1396,7 +1405,7 @@ async function loadReports() {
         }
         
         updateReportsUI(reports);
-        console.log('✅ Reports loaded:', reports.length);
+        debug.log('✅ Reports loaded:', reports.length);
     } catch (error) {
         console.error('Reports loading error:', error);
         if (container) {
@@ -1463,7 +1472,7 @@ function clearCache() {
 }
 
 function showSuccess(message) {
-    console.log('✅', message);
+    debug.log('✅', message);
     
     // Показываем toast вместо alert
     const toast = document.createElement('div');
@@ -1484,7 +1493,7 @@ function showSuccess(message) {
 
 // ===== EVENT LISTENERS =====
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🎯 DOM loaded, initializing...');
+    debug.log('🎯 DOM loaded, initializing...');
 
     // Применяем сохраненную тему НЕМЕДЛЕННО перед всем остальным
     const savedTheme = localStorage.getItem('theme') || 'auto';
@@ -1493,13 +1502,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.documentElement.setAttribute('data-theme', savedTheme);
     }
-    console.log('🎨 Theme applied early:', savedTheme);
+    debug.log('🎨 Theme applied early:', savedTheme);
 
     // Регистрируем Service Worker с автообновлением
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-                console.log('✅ Service Worker registered');
+                debug.log('✅ Service Worker registered');
                 
                 // Проверяем обновления каждые 30 секунд
                 setInterval(() => {
@@ -1509,30 +1518,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Автоматически обновляем при обнаружении новой версии
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
-                    console.log('🔄 New Service Worker found, updating...');
+                    debug.log('🔄 New Service Worker found, updating...');
                     
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('✅ New version available, reloading...');
+                            debug.log('✅ New version available, reloading...');
                             window.location.reload();
                         }
                     });
                 });
             })
-            .catch(err => console.warn('⚠️ Service Worker registration failed:', err));
+            .catch(err => debug.warn('⚠️ Service Worker registration failed:', err));
     }
 
     // Очищаем старые версии кэша из localStorage
     const storedVersion = localStorage.getItem('app_version');
     if (storedVersion !== APP_VERSION) {
-        console.log(`🔄 Version changed from ${storedVersion} to ${APP_VERSION}, clearing old cache...`);
+        debug.log(`🔄 Version changed from ${storedVersion} to ${APP_VERSION}, clearing old cache...`);
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith('cache_') && !key.includes(APP_VERSION)) {
                 localStorage.removeItem(key);
             }
         });
         localStorage.setItem('app_version', APP_VERSION);
-        console.log('✅ Old cache cleared');
+        debug.log('✅ Old cache cleared');
     }
 
     // Установим имя и аватарку пользователя
@@ -1551,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.currentPeriod = btn.dataset.period;
-            console.log('🔄 Period changed to:', state.currentPeriod);
+            debug.log('🔄 Period changed to:', state.currentPeriod);
             // Очищаем кэш для нового периода
             cache.clear();
             await loadDashboard();
@@ -1647,7 +1656,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (historyCategory) historyCategory.innerHTML = options.join('');
         } catch (e) {
-            console.warn('Не удалось загрузить категории для фильтра', e);
+            debug.warn('Не удалось загрузить категории для фильтра', e);
         }
     })();
     
@@ -1657,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currencySelect.addEventListener('change', async (e) => {
             state.currency = e.target.value;
             localStorage.setItem('currency', e.target.value);
-            console.log('💱 Currency changed to:', state.currency);
+            debug.log('💱 Currency changed to:', state.currency);
             
             // Очищаем только зависимые кэши
             cache.clearMatching('dashboard');
@@ -1688,7 +1697,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Форсируем перерисовку текущего экрана
-            console.log('🎨 Theme changed, reloading current screen...');
+            debug.log('🎨 Theme changed, reloading current screen...');
             setTimeout(() => {
                 if (state.currentScreen === 'home') {
                     loadDashboard();
@@ -1711,7 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     (async () => {
         // 1. Загружаем настройки СРАЗУ (до аутентификации)
-        console.log('⚙️ Applying saved settings...');
+        debug.log('⚙️ Applying saved settings...');
         const savedCurrency = localStorage.getItem('currency') || 'KGS';
         const savedTheme = localStorage.getItem('theme') || 'auto';
         const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
@@ -1726,11 +1735,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
-            console.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
+            debug.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
         });
         
         // 2. Аутентификация СНАЧАЛА (чтобы получить токен)
-        console.log('🔐 Starting authentication...');
+        debug.log('🔐 Starting authentication...');
         const authSuccess = await authenticate();
         
         if (!authSuccess) {
@@ -1738,10 +1747,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        console.log('✅ Authentication successful, token set');
+        debug.log('✅ Authentication successful, token set');
         
         // 3. Предзагрузка данных УЖЕ С ТОКЕНОМ
-        console.log('⚡ Starting data preload with token...');
+        debug.log('⚡ Starting data preload with token...');
         try {
             const range = getDateRangeFor(state.currentPeriod);
             const [rates, overview, topCategories] = await Promise.all([
@@ -1751,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const key = `${rate.from_currency}_${rate.to_currency}`;
                         ratesObj[key] = rate.rate;
                     });
-                    console.log('✅ Rates preloaded:', Object.keys(ratesObj).length, 'pairs');
+                    debug.log('✅ Rates preloaded:', Object.keys(ratesObj).length, 'pairs');
                     return ratesObj;
                 }),
                 api.getOverview({ period: state.currentPeriod }),
@@ -1759,9 +1768,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ]);
             
             state.preloadedData = { rates, overview, topCategories };
-            console.log('⚡ All data preloaded successfully');
+            debug.log('⚡ All data preloaded successfully');
         } catch (e) {
-            console.warn('⚠️ Preload failed, will load on demand:', e);
+            debug.warn('⚠️ Preload failed, will load on demand:', e);
         }
         
         // 4. Финальная инициализация
@@ -1779,4 +1788,5 @@ window.addEventListener('unhandledrejection', (e) => {
     console.error('💥 Unhandled rejection:', e.reason);
 });
 
-console.log('✅ App initialized');
+debug.log('✅ App initialized');
+

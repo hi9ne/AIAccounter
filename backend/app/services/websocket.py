@@ -24,7 +24,7 @@ class ConnectionManager:
             self.active_connections[user_id] = set()
         
         self.active_connections[user_id].add(websocket)
-        logger.info(f"✅ WebSocket connected: user_id={user_id}, total={len(self.active_connections[user_id])}")
+        logger.debug(f"WebSocket connected: user_id={user_id}, total={len(self.active_connections[user_id])}")
     
     def disconnect(self, websocket: WebSocket, user_id: int):
         """Отключить клиента"""
@@ -35,7 +35,7 @@ class ConnectionManager:
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
         
-        logger.info(f"❌ WebSocket disconnected: user_id={user_id}")
+        logger.debug(f"WebSocket disconnected: user_id={user_id}")
     
     async def send_personal_message(self, message: dict, user_id: int):
         """Отправить сообщение конкретному пользователю"""

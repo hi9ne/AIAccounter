@@ -4,10 +4,19 @@ from .config import settings
 from .api.v1 import router as api_v1_router
 from .services.cache import cache_service
 import logging
+import os
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
+# Настройка логирования - в продакшене только WARNING и выше
+log_level = logging.WARNING if not settings.DEBUG else logging.INFO
+logging.basicConfig(
+    level=log_level,
+    format='%(levelname)s: %(message)s'
+)
 logger = logging.getLogger(__name__)
+
+# Отключаем SQLAlchemy INFO логи в продакшене
+if not settings.DEBUG:
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
 # Создаём FastAPI приложение
 app = FastAPI(

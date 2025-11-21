@@ -1,5 +1,12 @@
-// API Helper для работы с FastAPI Backend
+﻿// API Helper для работы с FastAPI Backend
 // Использует конфигурацию из miniapp-config.js
+
+const IS_LOCALHOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const debug = {
+    log: (...args) => IS_LOCALHOST && console.log(...args),
+    warn: (...args) => IS_LOCALHOST && console.warn(...args),
+    error: (...args) => console.error(...args)
+};
 
 class APIHelper {
     constructor() {
@@ -11,10 +18,10 @@ class APIHelper {
 
     // Установить токен авторизации
     setToken(token) {
-        console.log('🔑 Setting token:', token ? token.substring(0, 20) + '...' : 'null');
+        debug.log('🔑 Setting token:', token ? token.substring(0, 20) + '...' : 'null');
         this.token = token;
         localStorage.setItem('auth_token', token);
-        console.log('🔑 Token set. Current token:', this.token ? 'exists' : 'null');
+        debug.log('🔑 Token set. Current token:', this.token ? 'exists' : 'null');
     }
 
     // Получить заголовки
@@ -46,7 +53,7 @@ class APIHelper {
         const requestKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
         
         if (!isAuthRequest && this.pendingRequests.has(requestKey)) {
-            console.log('⚡ Reusing pending request:', requestKey);
+            debug.log('⚡ Reusing pending request:', requestKey);
             return this.pendingRequests.get(requestKey);
         }
 
@@ -404,5 +411,7 @@ class APIHelper {
 // Создать глобальный экземпляр
 window.api = new APIHelper();
 
-console.log('✅ API Helper initialized');
-console.log('📡 Base URL:', window.api.baseUrl);
+debug.log('✅ API Helper initialized');
+debug.log('📡 Base URL:', window.api.baseUrl);
+
+

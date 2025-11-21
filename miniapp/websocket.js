@@ -1,7 +1,14 @@
-// ============================================================================
+﻿// ============================================================================
 // WebSocket Manager для AIAccounter Mini App
 // Real-time updates для транзакций
 // ============================================================================
+
+const IS_LOCALHOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const debug = {
+    log: (...args) => IS_LOCALHOST && debug.log(...args),
+    warn: (...args) => IS_LOCALHOST && debug.warn(...args),
+    error: (...args) => console.error(...args)
+};
 
 class WebSocketManager {
     constructor() {
@@ -19,7 +26,7 @@ class WebSocketManager {
      */
     async connect(token) {
         if (this.isConnecting || this.isConnected()) {
-            console.log('⚠️ WebSocket: Already connecting or connected');
+            debug.log('⚠️ WebSocket: Already connecting or connected');
             return;
         }
         
@@ -29,11 +36,11 @@ class WebSocketManager {
             const wsUrl = API_BASE.replace('http', 'ws') + '/api/v1/ws';
             const urlWithToken = `${wsUrl}?token=${encodeURIComponent(token)}`;
             
-            console.log('🔌 WebSocket: Connecting...');
+            debug.log('🔌 WebSocket: Connecting...');
             this.ws = new WebSocket(urlWithToken);
             
             this.ws.onopen = () => {
-                console.log('✅ WebSocket: Connected');
+                debug.log('✅ WebSocket: Connected');
                 this.isConnecting = false;
                 this.reconnectAttempts = 0;
                 this.startPingInterval();
@@ -43,7 +50,7 @@ class WebSocketManager {
             this.ws.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
-                    console.log('📨 WebSocket message:', message);
+                    debug.log('📨 WebSocket message:', message);
                     this.handleMessage(message);
                 } catch (e) {
                     console.error('❌ WebSocket: Failed to parse message', e);
@@ -51,7 +58,7 @@ class WebSocketManager {
             };
             
             this.ws.onclose = (event) => {
-                console.log('❌ WebSocket: Disconnected', event.code, event.reason);
+                debug.log('❌ WebSocket: Disconnected', event.code, event.reason);
                 this.isConnecting = false;
                 this.stopPingInterval();
                 this.emit('disconnected');
@@ -59,7 +66,7 @@ class WebSocketManager {
                 // Попытка переподключения
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
-                    console.log(`🔄 WebSocket: Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+                    debug.log(`🔄 WebSocket: Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
                     setTimeout(() => this.reconnect(token), this.reconnectDelay);
                 }
             };
@@ -107,7 +114,7 @@ class WebSocketManager {
      */
     send(data) {
         if (!this.isConnected()) {
-            console.warn('⚠️ WebSocket: Not connected, cannot send message');
+            debug.warn('⚠️ WebSocket: Not connected, cannot send message');
             return false;
         }
         
@@ -147,7 +154,7 @@ class WebSocketManager {
         
         switch (type) {
             case 'connection':
-                console.log('✅ WebSocket: Connection confirmed', data);
+                debug.log('✅ WebSocket: Connection confirmed', data);
                 break;
             
             case 'pong':
@@ -155,25 +162,25 @@ class WebSocketManager {
                 break;
             
             case 'transaction_created':
-                console.log('💰 WebSocket: Transaction created', data);
+                debug.log('💰 WebSocket: Transaction created', data);
                 this.emit('transaction_created', data);
                 this.refreshDashboard();
                 break;
             
             case 'transaction_deleted':
-                console.log('🗑️ WebSocket: Transaction deleted', data);
+                debug.log('🗑️ WebSocket: Transaction deleted', data);
                 this.emit('transaction_deleted', data);
                 this.refreshDashboard();
                 break;
             
             case 'budget_alert':
-                console.log('⚠️ WebSocket: Budget alert', data);
+                debug.log('⚠️ WebSocket: Budget alert', data);
                 this.emit('budget_alert', data);
                 this.showBudgetAlert(data);
                 break;
             
             default:
-                console.log('📨 WebSocket: Unknown message type', type, data);
+                debug.log('📨 WebSocket: Unknown message type', type, data);
         }
     }
     
@@ -251,4 +258,5 @@ if (typeof window !== 'undefined') {
     window.wsManager = wsManager;
 }
 
-console.log('✅ WebSocket Manager initialized');
+debug.log('✅ WebSocket Manager initialized');
+
