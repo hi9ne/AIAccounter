@@ -164,6 +164,31 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "отчет",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2280, 928],
+      "id": "check-report-command",
+      "name": "Check Report Command"
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -733,32 +758,56 @@
     },
     {
       "parameters": {
-        "descriptionType": "manual",
-        "toolDescription": "Генерирует отчет о доходах и расходах за период. Используй когда пользователь просит: 'отчет за сегодня' (period_type=today), 'отчет за неделю' (period_type=week), 'отчет за месяц' (period_type=month). После вызова скажи: 'Готовлю отчет, сейчас отправлю!'",
-        "method": "POST",
-        "url": "={{ 'https://aliklegion74.app.n8n.cloud/webhook/generate-report' }}",
-        "authentication": "none",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"user_id\": {{ $input.first().json.user_id }},\n  \"telegram_chat_id\": {{ $input.first().json.user_id }},\n  \"period_type\": \"{period_type}\"\n}",
-        "placeholderDefinitions": {
+        "jsCode": "// Определяем период из текста\nconst text = $input.first().json.text.toLowerCase();\nlet period = 'today';\n\nif (text.includes('неделю') || text.includes('неделя') || text.includes('week')) {\n  period = 'week';\n} else if (text.includes('месяц') || text.includes('month')) {\n  period = 'month';\n}\n\nreturn [{\n  json: {\n    user_id: $input.first().json.user_id,\n    text: $input.first().json.text,\n    period_type: period\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3960, 1056],
+      "id": "detect-period",
+      "name": "Detect Period"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "fields": {
           "values": [
             {
+              "name": "user_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
+              "name": "telegram_chat_id",
+              "value": "={{ $json.user_id }}"
+            },
+            {
               "name": "period_type",
-              "description": "Период: today (сегодня), week (неделя) или month (месяц)"
+              "value": "={{ $json.period_type }}"
             }
           ]
         },
-        "options": {}
+        "options": {
+          "waitForSubWorkflow": false
+        }
       },
-      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
-      "position": [
-        4160,
-        1056
-      ],
-      "id": "85feb495-3f09-43d4-b964-7cee3904bf65",
-      "name": "Generate Report"
+      "position": [4160, 1056],
+      "id": "generate-report-code",
+      "name": "Generate Report Direct"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    output: 'Готовлю отчет! 📊 Скоро отправлю в Telegram.'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4360, 1056],
+      "id": "format-report-response",
+      "name": "Format Report Response"
     }
   ],
   "connections": {
@@ -817,7 +866,58 @@
       "main": [
         [
           {
+            "node": "Check Report Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Report Command": {
+      "main": [
+        [
+          {
+            "node": "Detect Period",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Main AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Period": {
+      "main": [
+        [
+          {
+            "node": "Generate Report Direct",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Report Direct": {
+      "main": [
+        [
+          {
+            "node": "Format Report Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Report Response": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
             "type": "main",
             "index": 0
           }

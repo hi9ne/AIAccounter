@@ -6,7 +6,7 @@ const MINIAPP_CONFIG = {
     api: {
         // Автоматическое определение окружения
         baseUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:8000/api/v1'
+            ? 'http://127.0.0.1:8000/api/v1'
             : 'https://aiaccounterbackend-production.up.railway.app/api/v1',
         enabled: true
     },

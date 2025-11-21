@@ -44,6 +44,9 @@ let state = {
     preloadedData: null
 };
 
+// ===== API =====
+const api = window.api;
+
 // ===== CACHE =====
 const cache = {
     data: new Map(),
@@ -1062,15 +1065,19 @@ function openFilters() {
 // История транзакций с pagination
 let historyState = {
     currentPage: 1,
-    pageSize: 50,
+    pageSize: 12,
     hasMore: true,
-    loading: false
+    loading: false,
+    allTransactions: [] // Храним все загруженные транзакции
 };
 
 async function loadHistory(loadMore = false) {
-    console.log('📜 Loading history...');
+    console.log('📜 Loading history...', { loadMore, currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
     
-    if (historyState.loading) return;
+    if (historyState.loading) {
+        console.warn('⚠️ Already loading, skipping...');
+        return;
+    }
     
     const container = document.getElementById('transactions-history');
     
@@ -1084,7 +1091,7 @@ async function loadHistory(loadMore = false) {
                 container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
             }
         } else {
-            // Update load more button state
+            // Show loading state in existing button if present
             const loadMoreBtn = document.getElementById('load-more-btn');
             if (loadMoreBtn) {
                 loadMoreBtn.disabled = true;
@@ -1099,22 +1106,26 @@ async function loadHistory(loadMore = false) {
         
         const type = historyFilters.type;
         
-        // Загружаем с pagination
-        const [expensesData, incomeData] = await Promise.all([
-            type !== 'income' ? api.getExpenses({ 
-                page: historyState.currentPage, 
-                page_size: historyState.pageSize 
-            }) : Promise.resolve({ items: [], has_next: false }),
-            type !== 'expense' ? api.getIncome({ 
-                page: historyState.currentPage, 
-                page_size: historyState.pageSize 
-            }) : Promise.resolve({ items: [], has_next: false })
-        ]);
+        // Загружаем через единый endpoint /transactions
+        const params = { 
+            page: historyState.currentPage, 
+            page_size: historyState.pageSize
+        };
         
-        let newTransactions = [
-            ...(expensesData.items || []).map(t => ({ ...t, type: 'expense' })),
-            ...(incomeData.items || []).map(t => ({ ...t, type: 'income' }))
-        ];
+        // Добавляем type только если не 'all'
+        if (type && type !== 'all') {
+            params.type = type;
+        }
+        
+        const data = await api.getTransactions(params);
+        
+        console.log('📊 API Response:', { 
+            count: data.items?.length || 0, 
+            has_next: data.has_next, 
+            total: data.total 
+        });
+        
+        let newTransactions = data.items || [];
         
         // Конвертируем все транзакции в выбранную валюту
         newTransactions = newTransactions.map(t => {
@@ -1136,16 +1147,28 @@ async function loadHistory(loadMore = false) {
         // Сортировка
         newTransactions = sortTransactions(newTransactions, historyFilters.sortBy);
         
-        // Обновляем состояние pagination
-        historyState.hasMore = expensesData.has_next || incomeData.has_next;
+        // Обновляем массив всех транзакций
+        if (loadMore) {
+            historyState.allTransactions = [...historyState.allTransactions, ...newTransactions];
+        } else {
+            historyState.allTransactions = newTransactions;
+        }
         
-        // Рендерим транзакции (добавляем или заменяем)
-        renderHistoryTransactions(newTransactions, loadMore);
+        // Проверяем, есть ли еще данные
+        historyState.hasMore = data.has_next;
+        console.log('🔄 hasMore:', historyState.hasMore);
         
         // Увеличиваем номер страницы для следующей загрузки
         historyState.currentPage++;
         
+        // ВАЖНО: Устанавливаем loading = false ДО рендера
         historyState.loading = false;
+        
+        // Рендерим все транзакции
+        console.log('🎨 Rendering', historyState.allTransactions.length, 'transactions, hasMore:', historyState.hasMore);
+        renderHistoryTransactions(historyState.allTransactions);
+        
+        console.log('✅ Loading complete, new state:', { currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
         
         console.log(`✅ History loaded. Page: ${historyState.currentPage - 1}, Has more: ${historyState.hasMore}`);
     } catch (error) {
@@ -1218,8 +1241,9 @@ function updateHistoryUI(transactions) {
     `).join('');
 }
 
-// Render paginated transactions (append or replace)
-function renderHistoryTransactions(transactions, append = false) {
+// Render paginated transactions (always replace)
+function renderHistoryTransactions(transactions) {
+    console.log('🎨 renderHistoryTransactions called:', { count: transactions.length, hasMore: historyState.hasMore, loading: historyState.loading });
     const container = document.getElementById('transactions-history');
     if (!container) return;
     
@@ -1227,7 +1251,7 @@ function renderHistoryTransactions(transactions, append = false) {
     const existingBtn = document.getElementById('load-more-btn');
     if (existingBtn) existingBtn.remove();
     
-    if (transactions.length === 0 && !append) {
+    if (transactions.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><p>Нет транзакций</p></div>';
         return;
     }
@@ -1260,24 +1284,23 @@ function renderHistoryTransactions(transactions, append = false) {
         </div>
     `).join('');
     
-    if (append) {
-        container.insertAdjacentHTML('beforeend', html);
-    } else {
-        container.innerHTML = html;
-    }
+    container.innerHTML = html;
     
     // Add load more button if there are more pages
     if (historyState.hasMore) {
+        console.log('➕ Adding "Load More" button');
         const loadMoreBtn = document.createElement('button');
         loadMoreBtn.id = 'load-more-btn';
-        loadMoreBtn.className = 'btn-secondary';
-        loadMoreBtn.style.cssText = 'width: 100%; margin-top: 16px; padding: 12px;';
+        loadMoreBtn.className = 'btn-load-more';
         loadMoreBtn.innerHTML = historyState.loading 
-            ? '<i class="fas fa-spinner fa-spin"></i> Загрузка...' 
-            : 'Загрузить еще';
+            ? '<i class="fas fa-spinner fa-spin"></i> <span>Загрузка...</span>' 
+            : '<i class="fas fa-arrow-down"></i> <span>Загрузить еще</span>';
         loadMoreBtn.disabled = historyState.loading;
         loadMoreBtn.onclick = () => loadHistory(true);
         container.parentElement.appendChild(loadMoreBtn);
+        console.log('✅ Button added to DOM');
+    } else {
+        console.log('❌ No more pages, button not added');
     }
 }
 

@@ -11,8 +11,10 @@ class APIHelper {
 
     // Установить токен авторизации
     setToken(token) {
+        console.log('🔑 Setting token:', token ? token.substring(0, 20) + '...' : 'null');
         this.token = token;
         localStorage.setItem('auth_token', token);
+        console.log('🔑 Token set. Current token:', this.token ? 'exists' : 'null');
     }
 
     // Получить заголовки
@@ -39,10 +41,11 @@ class APIHelper {
             }
         };
 
-        // Предотвращаем дублирование одновременных запросов
+        // Предотвращаем дублирование одновременных запросов (кроме auth)
+        const isAuthRequest = endpoint.includes('/auth/');
         const requestKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
         
-        if (this.pendingRequests.has(requestKey)) {
+        if (!isAuthRequest && this.pendingRequests.has(requestKey)) {
             console.log('⚡ Reusing pending request:', requestKey);
             return this.pendingRequests.get(requestKey);
         }
@@ -137,6 +140,14 @@ class APIHelper {
 
     async getAllCategories() {
         return this.get('/categories/all');
+    }
+
+    // ===== TRANSACTIONS =====
+    
+    async getTransactions(params = {}) {
+        // Unified endpoint для expenses + income с правильной пагинацией
+        // Параметры: page, page_size, type (expense/income), category, start_date, end_date
+        return this.get('/transactions/', params);
     }
 
     // ===== EXPENSES =====

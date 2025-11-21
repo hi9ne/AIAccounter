@@ -1,19 +1,15 @@
 {
-  "name": "Report Generator",
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "generate-report",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "webhook-trigger",
-      "name": "Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [260, 300],
-      "webhookId": "report-generator-webhook"
+      "parameters": {},
+      "id": "8711bf3b-dfa6-4713-9373-8ac682c287a3",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2080,
+        336
+      ]
     },
     {
       "parameters": {
@@ -22,46 +18,46 @@
             {
               "id": "user_id",
               "name": "user_id",
-              "value": "={{ $json.body.user_id }}",
+              "value": "={{ $json.user_id }}",
               "type": "number"
             },
             {
               "id": "telegram_chat_id",
               "name": "telegram_chat_id",
-              "value": "={{ $json.body.telegram_chat_id || $json.body.user_id }}",
+              "value": "={{ $json.telegram_chat_id || $json.user_id }}",
               "type": "number"
             },
             {
               "id": "period_type",
               "name": "period_type",
-              "value": "={{ $json.body.period_type || 'today' }}",
-              "type": "string"
-            },
-            {
-              "id": "custom_query",
-              "name": "custom_query",
-              "value": "={{ $json.body.query || '' }}",
+              "value": "={{ $json.period_type || 'today' }}",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "parse-input",
+      "id": "c0e71eab-e6fa-47f8-893f-39c3bdb4f606",
       "name": "Parse Input",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [480, 300]
+      "position": [
+        -1856,
+        336
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Определяем период на основе типа\nconst periodType = $input.first().json.period_type;\nconst now = new Date();\nlet startDate, endDate, periodName;\n\nswitch(periodType) {\n  case 'today':\n    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);\n    periodName = 'сегодня';\n    break;\n    \n  case 'week':\n    // Неделя = последние 7 дней\n    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n    endDate = now;\n    periodName = 'последнюю неделю';\n    break;\n    \n  case 'month':\n    // Месяц = с 1 числа текущего месяца\n    startDate = new Date(now.getFullYear(), now.getMonth(), 1);\n    endDate = now;\n    periodName = 'текущий месяц';\n    break;\n    \n  default:\n    // По умолчанию - сегодня\n    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);\n    periodName = 'сегодня';\n}\n\nreturn {\n  json: {\n    user_id: $input.first().json.user_id,\n    telegram_chat_id: $input.first().json.telegram_chat_id,\n    start_date: startDate.toISOString(),\n    end_date: endDate.toISOString(),\n    period_name: periodName,\n    period_type: periodType\n  }\n};"
+        "jsCode": "// Определяем период на основе типа\nconst periodType = $input.first().json.period_type;\nconsole.log('DEBUG: period_type =', periodType);\nconst now = new Date();\nlet startDate, endDate, periodName;\n\nswitch(periodType) {\n  case 'today':\n    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);\n    periodName = 'сегодня';\n    break;\n    \n  case 'week':\n    // Неделя = последние 7 дней\n    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n    endDate = now;\n    periodName = 'последнюю неделю';\n    break;\n    \n  case 'month':\n    // Месяц = с 1 числа текущего месяца\n    startDate = new Date(now.getFullYear(), now.getMonth(), 1);\n    endDate = now;\n    periodName = 'текущий месяц';\n    break;\n    \n  default:\n    // По умолчанию - сегодня\n    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);\n    periodName = 'сегодня';\n}\n\nreturn {\n  json: {\n    user_id: $input.first().json.user_id,\n    telegram_chat_id: $input.first().json.telegram_chat_id,\n    start_date: startDate.toISOString(),\n    end_date: endDate.toISOString(),\n    period_name: periodName,\n    period_type: periodType\n  }\n};"
       },
-      "id": "calculate-period",
+      "id": "985f897e-b2e7-4a71-86f3-07435909e6e9",
       "name": "Calculate Period",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [700, 300]
+      "position": [
+        -1632,
+        336
+      ]
     },
     {
       "parameters": {
@@ -69,11 +65,14 @@
         "query": "=-- Получаем доходы\nWITH income_data AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_income,\n    COUNT(*) as income_count\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= '{{ $json.start_date }}'\n    AND date <= '{{ $json.end_date }}'\n),\n-- Получаем расходы\nexpense_data AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_expenses,\n    COUNT(*) as expense_count\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= '{{ $json.start_date }}'\n    AND date <= '{{ $json.end_date }}'\n)\nSELECT \n  i.total_income,\n  i.income_count,\n  e.total_expenses,\n  e.expense_count,\n  (i.total_income - e.total_expenses) as balance\nFROM income_data i, expense_data e;",
         "options": {}
       },
-      "id": "get-report-data",
+      "id": "f614a8fa-9d76-4353-8f43-53743dd181e1",
       "name": "Get Report Data",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
-      "position": [920, 300],
+      "position": [
+        -1408,
+        336
+      ],
       "credentials": {
         "postgres": {
           "id": "TKaoUfPabvnDB4Ak",
@@ -87,7 +86,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "conditions": [
             {
@@ -104,11 +103,14 @@
         },
         "options": {}
       },
-      "id": "check-has-data",
+      "id": "6241c715-2eef-4d0c-8793-31ccb82f5e40",
       "name": "Has Data?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1140, 300]
+      "position": [
+        -1184,
+        336
+      ]
     },
     {
       "parameters": {
@@ -130,11 +132,14 @@
         },
         "options": {}
       },
-      "id": "format-report",
+      "id": "0a67c84b-84fd-40dd-bdcd-cabe4de21a18",
       "name": "Format Report",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1360, 200]
+      "position": [
+        -960,
+        144
+      ]
     },
     {
       "parameters": {
@@ -156,11 +161,14 @@
         },
         "options": {}
       },
-      "id": "format-no-data",
+      "id": "64414857-b8d9-4adb-a08f-7049357649fb",
       "name": "Format No Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1360, 400]
+      "position": [
+        -960,
+        336
+      ]
     },
     {
       "parameters": {
@@ -170,11 +178,15 @@
           "parse_mode": "HTML"
         }
       },
-      "id": "send-telegram",
+      "id": "622bdcb4-226f-4d0f-97e0-dcc092e0a7be",
       "name": "Send to Telegram",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1580, 300],
+      "position": [
+        -736,
+        336
+      ],
+      "webhookId": "f3254a07-3173-4898-9850-38add5003d06",
       "credentials": {
         "telegramApi": {
           "id": "KYHLugYerbTJeC9p",
@@ -184,14 +196,240 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { success: true, message: $json.message, has_data: $json.has_data } }}"
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "check-week-or-month",
+              "leftValue": "={{ $('Calculate Period').first().json.period_type }}",
+              "rightValue": "today",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "id": "respond",
-      "name": "Respond",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [1800, 300]
+      "id": "db31eb33-e189-4a03-ae97-bf46990546c6",
+      "name": "Should Generate PDF?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Calculate Period').first().json.period_type }}",
+                    "rightValue": "week",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "week"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Calculate Period').first().json.period_type }}",
+                    "rightValue": "month",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "month"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": 3
+        }
+      },
+      "id": "cfa45e59-cfd4-4de5-98c6-e8542de79259",
+      "name": "Route PDF Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reportData = $('Get Report Data').first().json;\nconst periodData = $('Calculate Period').first().json;\n\nconst startDate = new Date(periodData.start_date);\nconst endDate = new Date(periodData.end_date);\n\nconst pdfData = {\n  title: '📊 Недельный финансовый отчет',\n  user_name: 'Пользователь',\n  period: startDate.toLocaleDateString('ru-RU') + ' - ' + endDate.toLocaleDateString('ru-RU'),\n  currency_symbol: 'KGS',\n  total_expenses: Number(reportData.total_expenses),\n  total_income: Number(reportData.total_income),\n  balance: Number(reportData.balance),\n  transaction_count: Number(reportData.income_count) + Number(reportData.expense_count),\n  expense_count: Number(reportData.expense_count),\n  income_count: Number(reportData.income_count),\n  avg_daily_expense: Math.round(Number(reportData.total_expenses) / 7),\n  avg_daily_income: Math.round(Number(reportData.total_income) / 7),\n  top_categories_table: [],\n  daily_details: []\n};\n\nreturn { json: { pdfData: pdfData } };"
+      },
+      "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+      "name": "Prepare Weekly PDF Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "5a677b23ed6c2fe6",
+        "jsonParameters": true,
+        "dataJson": "={{ $json.pdfData }}",
+        "options": {
+          "download": true,
+          "fileName": "={{ 'weekly_report_' + new Date().getTime() + '.pdf' }}"
+        }
+      },
+      "id": "32cbb9a7-198b-4d4b-9200-f0b8585ca9b1",
+      "name": "Generate Weekly PDF",
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        144
+      ],
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "NIFEHHMbU4WCVxC0",
+          "name": "PDF Report"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const reportData = $('Get Report Data').first().json;\nconst periodData = $('Calculate Period').first().json;\n\nconst startDate = new Date(periodData.start_date);\nconst endDate = new Date(periodData.end_date);\n\nconst pdfData = {\n  title: '📊 Месячный финансовый отчет',\n  month: startDate.toLocaleDateString('ru-RU', {month: 'long', year: 'numeric'}),\n  user_name: 'Пользователь',\n  period: startDate.toLocaleDateString('ru-RU') + ' - ' + endDate.toLocaleDateString('ru-RU'),\n  generated_date: new Date().toLocaleDateString('ru-RU'),\n  total_expenses: Number(reportData.total_expenses),\n  total_expenses_formatted: Number(reportData.total_expenses).toFixed(0) + ' KGS',\n  total_income: Number(reportData.total_income),\n  total_income_formatted: Number(reportData.total_income).toFixed(0) + ' KGS',\n  balance: Number(reportData.balance),\n  balance_formatted: Number(reportData.balance).toFixed(0) + ' KGS',\n  transaction_count: Number(reportData.income_count) + Number(reportData.expense_count),\n  expense_count: Number(reportData.expense_count),\n  income_count: Number(reportData.income_count),\n  currency_symbol: 'KGS',\n  avg_daily_expense: Math.round(Number(reportData.total_expenses) / 30),\n  avg_daily_expense_formatted: Math.round(Number(reportData.total_expenses) / 30) + ' KGS',\n  avg_daily_income: Math.round(Number(reportData.total_income) / 30),\n  avg_daily_income_formatted: Math.round(Number(reportData.total_income) / 30) + ' KGS',\n  category_breakdown_table: [],\n  top_3_categories: [],\n  weekly_data: []\n};\n\nreturn { json: { pdfData: pdfData } };"
+      },
+      "id": "b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e",
+      "name": "Prepare Monthly PDF Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "c1177b23eddd4e88",
+        "jsonParameters": true,
+        "dataJson": "={{ $json.pdfData }}",
+        "options": {
+          "download": true,
+          "fileName": "={{ 'monthly_report_' + new Date().getTime() + '.pdf' }}"
+        }
+      },
+      "id": "28bfd364-9749-447d-a0a8-b4689c90fb20",
+      "name": "Generate Monthly PDF",
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        336
+      ],
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "NIFEHHMbU4WCVxC0",
+          "name": "PDF Report"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const reportData = $('Get Report Data').first().json;\nconst periodData = $('Calculate Period').first().json;\n\nconst startDate = new Date(periodData.start_date);\nconst endDate = new Date(periodData.end_date);\nconst periodDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;\n\nconst pdfData = {\n  user_name: 'Пользователь',\n  period_start: startDate.toLocaleDateString('ru-RU'),\n  period_end: endDate.toLocaleDateString('ru-RU'),\n  period_days: periodDays,\n  currency_symbol: 'KGS',\n  total_expenses: Number(reportData.total_expenses),\n  total_expenses_formatted: Number(reportData.total_expenses).toFixed(0) + ' KGS',\n  total_income: Number(reportData.total_income),\n  total_income_formatted: Number(reportData.total_income).toFixed(0) + ' KGS',\n  balance: Number(reportData.balance),\n  balance_formatted: Number(reportData.balance).toFixed(0) + ' KGS',\n  transaction_count: Number(reportData.income_count) + Number(reportData.expense_count),\n  expense_count: Number(reportData.expense_count),\n  income_count: Number(reportData.income_count),\n  avg_expense_per_day: Math.round(Number(reportData.total_expenses) / periodDays),\n  avg_expense_per_day_formatted: Math.round(Number(reportData.total_expenses) / periodDays) + ' KGS',\n  avg_income_per_day: Math.round(Number(reportData.total_income) / periodDays),\n  avg_income_per_day_formatted: Math.round(Number(reportData.total_income) / periodDays) + ' KGS',\n  daily_data: [],\n  category_totals: []\n};\n\nreturn { json: { pdfData: pdfData } };"
+      },
+      "id": "c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f",
+      "name": "Prepare Period PDF Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "49c77b23ede0d4e6",
+        "jsonParameters": true,
+        "dataJson": "={{ $json.pdfData }}",
+        "options": {
+          "download": true,
+          "fileName": "={{ 'period_report_' + new Date().getTime() + '.pdf' }}"
+        }
+      },
+      "id": "dcc211b4-f4b8-42f4-9499-cb9e218c72f4",
+      "name": "Generate Period PDF",
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        528
+      ],
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "NIFEHHMbU4WCVxC0",
+          "name": "PDF Report"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Parse Input').first().json.telegram_chat_id }}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "📄 PDF отчет за {{ $('Calculate Period').first().json.period_name }}"
+        }
+      },
+      "id": "4862db00-a9d9-47bb-af0d-505967c4e4aa",
+      "name": "Send PDF to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        432
+      ],
+      "webhookId": "b2315f00-9916-49d6-869f-37252633a21f",
+      "credentials": {
+        "telegramApi": {
+          "id": "KYHLugYerbTJeC9p",
+          "name": "AIAccounter"
+        }
+      }
     },
     {
       "parameters": {
@@ -203,11 +441,14 @@
           ]
         }
       },
-      "id": "daily-trigger",
+      "id": "9b06af31-0ff4-4f21-ada1-4d3de3c16f8b",
       "name": "Daily Report (21:00)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [260, 500]
+      "position": [
+        -2528,
+        48
+      ]
     },
     {
       "parameters": {
@@ -220,11 +461,14 @@
           ]
         }
       },
-      "id": "weekly-trigger",
+      "id": "0f56113b-caa7-433e-a069-47e0f1d228cd",
       "name": "Weekly Report (Sun 21:00)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [260, 620]
+      "position": [
+        -2528,
+        240
+      ]
     },
     {
       "parameters": {
@@ -237,11 +481,14 @@
           ]
         }
       },
-      "id": "monthly-trigger",
+      "id": "f41f0042-7cda-4e9f-8a1a-ddb121edcdac",
       "name": "Monthly Report (1st 09:00)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [260, 740]
+      "position": [
+        -2528,
+        432
+      ]
     },
     {
       "parameters": {
@@ -249,11 +496,14 @@
         "query": "SELECT user_id, telegram_chat_id FROM users WHERE is_active = true AND telegram_chat_id IS NOT NULL;",
         "options": {}
       },
-      "id": "get-active-users",
+      "id": "42ad7635-29a6-4a46-b6de-e678b8776a28",
       "name": "Get Active Users",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
-      "position": [480, 620],
+      "position": [
+        -2304,
+        144
+      ],
       "credentials": {
         "postgres": {
           "id": "TKaoUfPabvnDB4Ak",
@@ -280,63 +530,304 @@
             {
               "id": "period_type",
               "name": "period_type",
-              "value": "={{ $('Daily Report (21:00)').first() ? 'today' : $('Weekly Report (Sun 21:00)').first() ? 'week' : 'month' }}",
+              "value": "={{ $json.period_type || 'today' }}",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "prepare-schedule-data",
+      "id": "7e7cdbc5-5793-4db5-8a50-e23d48db7de1",
       "name": "Prepare Schedule Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [700, 620]
+      "position": [
+        -1856,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Определяем период из source\nconst items = $input.all();\nlet periodType = 'today';\n\n// Проверяем откуда пришли данные\nif (items.some(item => item.pairedItem?.item === 0)) {\n  // От Daily trigger\n  periodType = 'today';\n} else if (items.some(item => item.pairedItem?.item === 1)) {\n  // От Weekly trigger\n  periodType = 'week';\n} else if (items.some(item => item.pairedItem?.item === 2)) {\n  // От Monthly trigger\n  periodType = 'month';\n}\n\nreturn items.map(item => ({\n  json: {\n    ...item.json,\n    period_type: periodType\n  }\n}));"
+      },
+      "id": "7e72c007-19ef-428c-b0e2-d296cef2c039",
+      "name": "Detect Schedule Type",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2080,
+        144
+      ]
     }
   ],
   "connections": {
-    "Webhook": {
-      "main": [[{"node": "Parse Input", "type": "main", "index": 0}]]
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Input": {
-      "main": [[{"node": "Calculate Period", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Calculate Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Calculate Period": {
-      "main": [[{"node": "Get Report Data", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Get Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Report Data": {
-      "main": [[{"node": "Has Data?", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Has Data?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has Data?": {
       "main": [
-        [{"node": "Format Report", "type": "main", "index": 0}],
-        [{"node": "Format No Data", "type": "main", "index": 0}]
+        [
+          {
+            "node": "Format Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format No Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Format Report": {
-      "main": [[{"node": "Send to Telegram", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Format No Data": {
-      "main": [[{"node": "Send to Telegram", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send to Telegram": {
-      "main": [[{"node": "Respond", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Should Generate PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Generate PDF?": {
+      "main": [
+        [
+          {
+            "node": "Route PDF Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route PDF Type": {
+      "main": [
+        [
+          {
+            "node": "Prepare Weekly PDF Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Monthly PDF Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Period PDF Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Weekly PDF Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Monthly PDF Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Monthly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Period PDF Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Period PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly PDF": {
+      "main": [
+        [
+          {
+            "node": "Send PDF to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Monthly PDF": {
+      "main": [
+        [
+          {
+            "node": "Send PDF to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Period PDF": {
+      "main": [
+        [
+          {
+            "node": "Send PDF to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Daily Report (21:00)": {
-      "main": [[{"node": "Get Active Users", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Weekly Report (Sun 21:00)": {
-      "main": [[{"node": "Get Active Users", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Monthly Report (1st 09:00)": {
-      "main": [[{"node": "Get Active Users", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Get Active Users",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Active Users": {
-      "main": [[{"node": "Prepare Schedule Data", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Detect Schedule Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Schedule Data": {
-      "main": [[{"node": "Calculate Period", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Calculate Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Schedule Type": {
+      "main": [
+        [
+          {
+            "node": "Prepare Schedule Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "pinData": {}
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+  }
 }

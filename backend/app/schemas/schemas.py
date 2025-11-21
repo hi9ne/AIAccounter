@@ -48,7 +48,7 @@ class User(UserBase):
 
 # Expense Schemas
 class ExpenseBase(BaseModel):
-    amount: float = Field(gt=0)
+    amount: float = Field(ge=0)
     currency: str = "KGS"
     category: str
     description: Optional[str] = None
@@ -60,7 +60,7 @@ class ExpenseCreate(ExpenseBase):
 
 
 class ExpenseUpdate(BaseModel):
-    amount: Optional[float] = Field(None, gt=0)
+    amount: Optional[float] = Field(None, ge=0)
     currency: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
@@ -78,7 +78,7 @@ class Expense(ExpenseBase):
 
 # Income Schemas
 class IncomeBase(BaseModel):
-    amount: float = Field(gt=0)
+    amount: float = Field(ge=0)
     currency: str = "KGS"
     category: str
     description: Optional[str] = None
@@ -90,7 +90,7 @@ class IncomeCreate(IncomeBase):
 
 
 class IncomeUpdate(BaseModel):
-    amount: Optional[float] = Field(None, gt=0)
+    amount: Optional[float] = Field(None, ge=0)
     currency: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None

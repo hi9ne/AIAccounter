@@ -22,6 +22,8 @@ from .schemas import (
     # Responses
     MessageResponse,
     ErrorResponse,
+    # Pagination
+    PaginatedResponse,
 )
 
 # Auth schemas
