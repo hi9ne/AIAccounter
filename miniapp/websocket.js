@@ -1,13 +1,12 @@
-п»ї// ============================================================================
-// WebSocket Manager РґР»СЏ AIAccounter Mini App
-// Real-time updates РґР»СЏ С‚СЂР°РЅР·Р°РєС†РёР№
+// ============================================================================
+// WebSocket Manager для AIAccounter Mini App
+// Real-time updates для транзакций
 // ============================================================================
 
-const IS_LOCALHOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const debug = {
-    log: (...args) => IS_LOCALHOST && debug.log(...args),
-    warn: (...args) => IS_LOCALHOST && debug.warn(...args),
-    error: (...args) => console.error(...args)
+const wsDebug = {
+    log: (...args) => window.IS_LOCALHOST && console.log('[WS]', ...args),
+    warn: (...args) => window.IS_LOCALHOST && console.warn('[WS]', ...args),
+    error: (...args) => console.error('[WS]', ...args)
 };
 
 class WebSocketManager {
@@ -22,11 +21,11 @@ class WebSocketManager {
     }
     
     /**
-     * РџРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє WebSocket
+     * Подключиться к WebSocket
      */
     async connect(token) {
         if (this.isConnecting || this.isConnected()) {
-            debug.log('вљ пёЏ WebSocket: Already connecting or connected');
+            wsDebug.log('?? WebSocket: Already connecting or connected');
             return;
         }
         
@@ -36,11 +35,11 @@ class WebSocketManager {
             const wsUrl = API_BASE.replace('http', 'ws') + '/api/v1/ws';
             const urlWithToken = `${wsUrl}?token=${encodeURIComponent(token)}`;
             
-            debug.log('рџ”Њ WebSocket: Connecting...');
+            wsDebug.log('?? WebSocket: Connecting...');
             this.ws = new WebSocket(urlWithToken);
             
             this.ws.onopen = () => {
-                debug.log('вњ… WebSocket: Connected');
+                wsDebug.log('? WebSocket: Connected');
                 this.isConnecting = false;
                 this.reconnectAttempts = 0;
                 this.startPingInterval();
@@ -50,40 +49,40 @@ class WebSocketManager {
             this.ws.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
-                    debug.log('рџ“Ё WebSocket message:', message);
+                    wsDebug.log('?? WebSocket message:', message);
                     this.handleMessage(message);
                 } catch (e) {
-                    console.error('вќЊ WebSocket: Failed to parse message', e);
+                    console.error('? WebSocket: Failed to parse message', e);
                 }
             };
             
             this.ws.onclose = (event) => {
-                debug.log('вќЊ WebSocket: Disconnected', event.code, event.reason);
+                wsDebug.log('? WebSocket: Disconnected', event.code, event.reason);
                 this.isConnecting = false;
                 this.stopPingInterval();
                 this.emit('disconnected');
                 
-                // РџРѕРїС‹С‚РєР° РїРµСЂРµРїРѕРґРєР»СЋС‡РµРЅРёСЏ
+                // Попытка переподключения
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
-                    debug.log(`рџ”„ WebSocket: Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+                    wsDebug.log(`?? WebSocket: Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
                     setTimeout(() => this.reconnect(token), this.reconnectDelay);
                 }
             };
             
             this.ws.onerror = (error) => {
-                console.error('вќЊ WebSocket error:', error);
+                console.error('? WebSocket error:', error);
                 this.emit('error', error);
             };
             
         } catch (error) {
-            console.error('вќЊ WebSocket: Connection failed', error);
+            console.error('? WebSocket: Connection failed', error);
             this.isConnecting = false;
         }
     }
     
     /**
-     * РџРµСЂРµРїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ
+     * Переподключиться
      */
     async reconnect(token) {
         this.disconnect();
@@ -91,7 +90,7 @@ class WebSocketManager {
     }
     
     /**
-     * РћС‚РєР»СЋС‡РёС‚СЊСЃСЏ
+     * Отключиться
      */
     disconnect() {
         if (this.ws) {
@@ -103,18 +102,18 @@ class WebSocketManager {
     }
     
     /**
-     * РџСЂРѕРІРµСЂРёС‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ СЃРѕРµРґРёРЅРµРЅРёСЏ
+     * Проверить состояние соединения
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
     
     /**
-     * РћС‚РїСЂР°РІРёС‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ
+     * Отправить сообщение
      */
     send(data) {
         if (!this.isConnected()) {
-            debug.warn('вљ пёЏ WebSocket: Not connected, cannot send message');
+            wsDebug.warn('?? WebSocket: Not connected, cannot send message');
             return false;
         }
         
@@ -122,13 +121,13 @@ class WebSocketManager {
             this.ws.send(typeof data === 'string' ? data : JSON.stringify(data));
             return true;
         } catch (e) {
-            console.error('вќЊ WebSocket: Failed to send message', e);
+            console.error('? WebSocket: Failed to send message', e);
             return false;
         }
     }
     
     /**
-     * Ping РґР»СЏ РїРѕРґРґРµСЂР¶Р°РЅРёСЏ СЃРѕРµРґРёРЅРµРЅРёСЏ
+     * Ping для поддержания соединения
      */
     startPingInterval() {
         this.stopPingInterval();
@@ -136,7 +135,7 @@ class WebSocketManager {
             if (this.isConnected()) {
                 this.send('ping');
             }
-        }, 30000); // РљР°Р¶РґС‹Рµ 30 СЃРµРєСѓРЅРґ
+        }, 30000); // Каждые 30 секунд
     }
     
     stopPingInterval() {
@@ -147,53 +146,53 @@ class WebSocketManager {
     }
     
     /**
-     * РћР±СЂР°Р±РѕС‚Р°С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ РѕС‚ СЃРµСЂРІРµСЂР°
+     * Обработать сообщение от сервера
      */
     handleMessage(message) {
         const { type, data } = message;
         
         switch (type) {
             case 'connection':
-                debug.log('вњ… WebSocket: Connection confirmed', data);
+                wsDebug.log('? WebSocket: Connection confirmed', data);
                 break;
             
             case 'pong':
-                console.debug('рџЏ“ WebSocket: Pong received');
+                console.debug('?? WebSocket: Pong received');
                 break;
             
             case 'transaction_created':
-                debug.log('рџ’° WebSocket: Transaction created', data);
+                wsDebug.log('?? WebSocket: Transaction created', data);
                 this.emit('transaction_created', data);
                 this.refreshDashboard();
                 break;
             
             case 'transaction_deleted':
-                debug.log('рџ—‘пёЏ WebSocket: Transaction deleted', data);
+                wsDebug.log('??? WebSocket: Transaction deleted', data);
                 this.emit('transaction_deleted', data);
                 this.refreshDashboard();
                 break;
             
             case 'budget_alert':
-                debug.log('вљ пёЏ WebSocket: Budget alert', data);
+                wsDebug.log('?? WebSocket: Budget alert', data);
                 this.emit('budget_alert', data);
                 this.showBudgetAlert(data);
                 break;
             
             default:
-                debug.log('рџ“Ё WebSocket: Unknown message type', type, data);
+                wsDebug.log('?? WebSocket: Unknown message type', type, data);
         }
     }
     
     /**
-     * РћР±РЅРѕРІРёС‚СЊ РґР°С€Р±РѕСЂРґ РїСЂРё РїРѕР»СѓС‡РµРЅРёРё РЅРѕРІС‹С… РґР°РЅРЅС‹С…
+     * Обновить дашборд при получении новых данных
      */
     refreshDashboard() {
-        // РћС‡РёСЃС‚РёС‚СЊ РєСЌС€
+        // Очистить кэш
         cache.clearMatching('stats');
         cache.clearMatching('top_categories');
         cache.clearMatching('overview');
         
-        // РџРµСЂРµР·Р°РіСЂСѓР·РёС‚СЊ С‚РµРєСѓС‰РёР№ СЌРєСЂР°РЅ
+        // Перезагрузить текущий экран
         if (state.currentScreen === 'home') {
             loadDashboard();
         } else if (state.currentScreen === 'analytics') {
@@ -204,14 +203,14 @@ class WebSocketManager {
     }
     
     /**
-     * РџРѕРєР°Р·Р°С‚СЊ СѓРІРµРґРѕРјР»РµРЅРёРµ Рѕ Р±СЋРґР¶РµС‚Рµ
+     * Показать уведомление о бюджете
      */
     showBudgetAlert(data) {
-        showNotification(`вљ пёЏ Р‘СЋРґР¶РµС‚: ${data.message}`, 'warning');
+        showNotification(`?? Бюджет: ${data.message}`, 'warning');
     }
     
     /**
-     * РџРѕРґРїРёСЃР°С‚СЊСЃСЏ РЅР° СЃРѕР±С‹С‚РёРµ
+     * Подписаться на событие
      */
     on(event, callback) {
         if (!this.listeners.has(event)) {
@@ -221,7 +220,7 @@ class WebSocketManager {
     }
     
     /**
-     * РћС‚РїРёСЃР°С‚СЊСЃСЏ РѕС‚ СЃРѕР±С‹С‚РёСЏ
+     * Отписаться от события
      */
     off(event, callback) {
         if (!this.listeners.has(event)) return;
@@ -234,7 +233,7 @@ class WebSocketManager {
     }
     
     /**
-     * Р’С‹Р·РІР°С‚СЊ СЃРѕР±С‹С‚РёРµ
+     * Вызвать событие
      */
     emit(event, data) {
         if (!this.listeners.has(event)) return;
@@ -244,19 +243,19 @@ class WebSocketManager {
             try {
                 callback(data);
             } catch (e) {
-                console.error(`вќЊ WebSocket: Error in event listener for ${event}`, e);
+                console.error(`? WebSocket: Error in event listener for ${event}`, e);
             }
         });
     }
 }
 
-// Р“Р»РѕР±Р°Р»СЊРЅС‹Р№ СЌРєР·РµРјРїР»СЏСЂ
+// Глобальный экземпляр
 const wsManager = new WebSocketManager();
 
-// Р­РєСЃРїРѕСЂС‚ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ
+// Экспорт для использования
 if (typeof window !== 'undefined') {
     window.wsManager = wsManager;
 }
 
-debug.log('вњ… WebSocket Manager initialized');
+wsDebug.log('? WebSocket Manager initialized');
 

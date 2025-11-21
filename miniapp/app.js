@@ -8,16 +8,16 @@ const APP_VERSION = '3.0.4'; // Increment to invalidate all caches
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
 
-// Определяем режим работы
-const IS_LOCALHOST = window.location.hostname === 'localhost' || 
-                     window.location.hostname === '127.0.0.1';
+// Определяем режим работы (глобально для всех скриптов)
+window.IS_LOCALHOST = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
 
 // Debug logger - only logs on localhost
 const debug = {
-    log: (...args) => IS_LOCALHOST && debug.log(...args),
-    warn: (...args) => IS_LOCALHOST && debug.warn(...args),
-    error: (...args) => console.error(...args), // Errors always logged
-    info: (...args) => IS_LOCALHOST && debug.info(...args)
+    log: (...args) => window.IS_LOCALHOST && console.log('[APP]', ...args),
+    warn: (...args) => window.IS_LOCALHOST && console.warn('[APP]', ...args),
+    error: (...args) => console.error('[APP]', ...args), // Errors always logged
+    info: (...args) => window.IS_LOCALHOST && console.info('[APP]', ...args)
 };
 
 debug.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);

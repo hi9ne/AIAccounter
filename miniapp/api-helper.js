@@ -1,11 +1,10 @@
-п»ї// API Helper РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ FastAPI Backend
-// РСЃРїРѕР»СЊР·СѓРµС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ РёР· miniapp-config.js
+// API Helper для работы с FastAPI Backend
+// Использует конфигурацию из miniapp-config.js
 
-const IS_LOCALHOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const debug = {
-    log: (...args) => IS_LOCALHOST && console.log(...args),
-    warn: (...args) => IS_LOCALHOST && console.warn(...args),
-    error: (...args) => console.error(...args)
+const apiDebug = {
+    log: (...args) => window.IS_LOCALHOST && console.log('[API]', ...args),
+    warn: (...args) => window.IS_LOCALHOST && console.warn('[API]', ...args),
+    error: (...args) => console.error('[API]', ...args)
 };
 
 class APIHelper {
@@ -13,18 +12,18 @@ class APIHelper {
         this.config = window.MiniAppConfig || {};
         this.baseUrl = this.config.api?.baseUrl || 'http://localhost:8000/api/v1';
         this.token = localStorage.getItem('auth_token');
-        this.pendingRequests = new Map(); // РљСЌС€ РґР»СЏ РїСЂРµРґРѕС‚РІСЂР°С‰РµРЅРёСЏ РґСѓР±Р»РёСЂСѓСЋС‰РёС…СЃСЏ Р·Р°РїСЂРѕСЃРѕРІ
+        this.pendingRequests = new Map(); // Кэш для предотвращения дублирующихся запросов
     }
 
-    // РЈСЃС‚Р°РЅРѕРІРёС‚СЊ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё
+    // Установить токен авторизации
     setToken(token) {
-        debug.log('рџ”‘ Setting token:', token ? token.substring(0, 20) + '...' : 'null');
+        apiDebug.log('?? Setting token:', token ? token.substring(0, 20) + '...' : 'null');
         this.token = token;
         localStorage.setItem('auth_token', token);
-        debug.log('рџ”‘ Token set. Current token:', this.token ? 'exists' : 'null');
+        apiDebug.log('?? Token set. Current token:', this.token ? 'exists' : 'null');
     }
 
-    // РџРѕР»СѓС‡РёС‚СЊ Р·Р°РіРѕР»РѕРІРєРё
+    // Получить заголовки
     getHeaders() {
         const headers = {
             'Content-Type': 'application/json',
@@ -37,7 +36,7 @@ class APIHelper {
         return headers;
     }
 
-    // Р‘Р°Р·РѕРІС‹Р№ Р·Р°РїСЂРѕСЃ
+    // Базовый запрос
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const config = {
@@ -48,12 +47,12 @@ class APIHelper {
             }
         };
 
-        // РџСЂРµРґРѕС‚РІСЂР°С‰Р°РµРј РґСѓР±Р»РёСЂРѕРІР°РЅРёРµ РѕРґРЅРѕРІСЂРµРјРµРЅРЅС‹С… Р·Р°РїСЂРѕСЃРѕРІ (РєСЂРѕРјРµ auth)
+        // Предотвращаем дублирование одновременных запросов (кроме auth)
         const isAuthRequest = endpoint.includes('/auth/');
         const requestKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
         
         if (!isAuthRequest && this.pendingRequests.has(requestKey)) {
-            debug.log('вљЎ Reusing pending request:', requestKey);
+            apiDebug.log('? Reusing pending request:', requestKey);
             return this.pendingRequests.get(requestKey);
         }
 
@@ -65,14 +64,14 @@ class APIHelper {
                     let errorMessage = `HTTP ${response.status}`;
                     try {
                         const error = await response.json();
-                        // РћР±СЂР°Р±РѕС‚РєР° РјР°СЃСЃРёРІР° РѕС€РёР±РѕРє FastAPI
+                        // Обработка массива ошибок FastAPI
                         if (Array.isArray(error)) {
                             errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
                         } else {
                             errorMessage = error.detail || error.message || errorMessage;
                         }
                     } catch (e) {
-                        // РќРµ JSON РѕС‚РІРµС‚
+                        // Не JSON ответ
                     }
                     console.error('API Error:', errorMessage);
                     throw new Error(errorMessage);
@@ -83,7 +82,7 @@ class APIHelper {
                 console.error('API Request failed:', error.message || error);
                 throw error;
             } finally {
-                // РЈРґР°Р»СЏРµРј РёР· РєСЌС€Р° РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ
+                // Удаляем из кэша после завершения
                 this.pendingRequests.delete(requestKey);
             }
         })();
@@ -92,7 +91,7 @@ class APIHelper {
         return requestPromise;
     }
 
-    // GET Р·Р°РїСЂРѕСЃ
+    // GET запрос
     async get(endpoint, params = {}) {
         const queryString = new URLSearchParams(params).toString();
         const url = queryString ? `${endpoint}?${queryString}` : endpoint;
@@ -102,7 +101,7 @@ class APIHelper {
         });
     }
 
-    // POST Р·Р°РїСЂРѕСЃ
+    // POST запрос
     async post(endpoint, data = {}) {
         return this.request(endpoint, {
             method: 'POST',
@@ -110,7 +109,7 @@ class APIHelper {
         });
     }
 
-    // PUT Р·Р°РїСЂРѕСЃ
+    // PUT запрос
     async put(endpoint, data = {}) {
         return this.request(endpoint, {
             method: 'PUT',
@@ -118,7 +117,7 @@ class APIHelper {
         });
     }
 
-    // DELETE Р·Р°РїСЂРѕСЃ
+    // DELETE запрос
     async delete(endpoint) {
         return this.request(endpoint, {
             method: 'DELETE'
@@ -152,8 +151,8 @@ class APIHelper {
     // ===== TRANSACTIONS =====
     
     async getTransactions(params = {}) {
-        // Unified endpoint РґР»СЏ expenses + income СЃ РїСЂР°РІРёР»СЊРЅРѕР№ РїР°РіРёРЅР°С†РёРµР№
-        // РџР°СЂР°РјРµС‚СЂС‹: page, page_size, type (expense/income), category, start_date, end_date
+        // Unified endpoint для expenses + income с правильной пагинацией
+        // Параметры: page, page_size, type (expense/income), category, start_date, end_date
         return this.get('/transactions', params);
     }
 
@@ -331,11 +330,11 @@ class APIHelper {
             end_date: endDate
         });
         
-        // Р”Р»СЏ СЃРєР°С‡РёРІР°РЅРёСЏ С„Р°Р№Р»Р° РёСЃРїРѕР»СЊР·СѓРµРј РїСЂСЏРјРѕР№ URL
+        // Для скачивания файла используем прямой URL
         const url = `${this.baseUrl}/reports/export/csv?${params}`;
         const token = localStorage.getItem('auth_token');
         
-        // РЎРєР°С‡РёРІР°РµРј С„Р°Р№Р» С‡РµСЂРµР· fetch СЃ blob
+        // Скачиваем файл через fetch с blob
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -408,10 +407,10 @@ class APIHelper {
     }
 }
 
-// РЎРѕР·РґР°С‚СЊ РіР»РѕР±Р°Р»СЊРЅС‹Р№ СЌРєР·РµРјРїР»СЏСЂ
+// Создать глобальный экземпляр
 window.api = new APIHelper();
 
-debug.log('вњ… API Helper initialized');
-debug.log('рџ“Ў Base URL:', window.api.baseUrl);
+apiDebug.log('? API Helper initialized');
+apiDebug.log('?? Base URL:', window.api.baseUrl);
 
 
