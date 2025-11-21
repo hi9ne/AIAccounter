@@ -736,7 +736,7 @@
         "descriptionType": "manual",
         "toolDescription": "Генерирует отчет о доходах и расходах за период. Используй когда пользователь просит: 'отчет за сегодня' (period_type=today), 'отчет за неделю' (period_type=week), 'отчет за месяц' (period_type=month). После вызова скажи: 'Готовлю отчет, сейчас отправлю!'",
         "method": "POST",
-        "url": "https://aliklegion74.app.n8n.cloud/webhook/generate-report",
+        "url": "={{ 'https://aliklegion74.app.n8n.cloud/webhook/generate-report' }}",
         "authentication": "none",
         "sendBody": true,
         "specifyBody": "json",

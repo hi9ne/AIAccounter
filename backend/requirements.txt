@@ -23,7 +23,7 @@ python-dotenv==1.0.0
 httpx==0.25.2
 openpyxl==3.1.5
 
-Redis (опционально для production)
+# Redis (опционально для production)
 redis==5.0.1
 
 requests
