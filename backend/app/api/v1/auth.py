@@ -22,17 +22,15 @@ async def telegram_auth(
     """
     Аутентификация через Telegram Mini App
     """
-    
     try:
         # Ищем пользователя по telegram_chat_id
-            query = select(User).where(User.telegram_chat_id == int(auth_data.telegram_chat_id))
+        query = select(User).where(User.telegram_chat_id == int(auth_data.telegram_chat_id))
         result = await db.execute(query)
         user = result.scalar_one_or_none()
         
-            
         # Если пользователя нет - создаём автоматически
         if not user:
-                    user = User(
+            user = User(
                 telegram_chat_id=int(auth_data.telegram_chat_id),
                 username=auth_data.username,
                 first_name=auth_data.first_name,
@@ -41,10 +39,10 @@ async def telegram_auth(
                 is_active=True,
             )
             db.add(user)
-                    await db.commit()
+            await db.commit()
             await db.refresh(user)
-                else:
-                    # Обновляем данные пользователя если изменились
+        else:
+            # Обновляем данные пользователя если изменились
             updated = False
             if auth_data.username and auth_data.username != user.username:
                 user.username = auth_data.username
@@ -57,23 +55,23 @@ async def telegram_auth(
                 updated = True
             
             if updated:
-                            await db.commit()
-                    
-            # Создаём JWT токен
+                await db.commit()
+        
+        # Создаём JWT токен
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": str(user.user_id)},
             expires_delta=access_token_expires
         )
         
-            
         return Token(
             access_token=access_token,
             token_type="bearer",
             expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60  # в секундах
         )
     except Exception as e:
-logger.error(f"[AUTH] Error: {str(e)}")logger.error(f"[AUTH] Error: {str(e)}")        import traceback
+        logger.error(f"[AUTH] Error: {str(e)}")
+        import traceback
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
