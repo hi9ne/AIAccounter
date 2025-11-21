@@ -147,7 +147,7 @@ class APIHelper {
     async getTransactions(params = {}) {
         // Unified endpoint для expenses + income с правильной пагинацией
         // Параметры: page, page_size, type (expense/income), category, start_date, end_date
-        return this.get('/transactions/', params);
+        return this.get('/transactions', params);
     }
 
     // ===== EXPENSES =====
