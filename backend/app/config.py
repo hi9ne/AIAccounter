@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Telegram
     TELEGRAM_BOT_TOKEN: str = ""
     
+    # Redis (опционально, только для production)
+    REDIS_URL: str = ""
+    
     # APITemplate.io (для генерации PDF отчётов)
     APITEMPLATE_API_KEY: str = ""
     WEEKLY_TEMPLATE_ID: str = ""

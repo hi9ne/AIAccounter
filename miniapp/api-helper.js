@@ -142,6 +142,7 @@ class APIHelper {
     // ===== EXPENSES =====
     
     async getExpenses(params = {}) {
+        // Pagination support: page, page_size
         return this.get('/expenses/', params);
     }
 
@@ -160,6 +161,7 @@ class APIHelper {
     // ===== INCOME =====
     
     async getIncome(params = {}) {
+        // Pagination support: page, page_size
         return this.get('/income/', params);
     }
 

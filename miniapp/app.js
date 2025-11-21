@@ -3,7 +3,7 @@
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '3.0.3'; // Increment to invalidate all caches
+const APP_VERSION = '3.0.4'; // Increment to invalidate all caches
 console.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
 
 // ===== TELEGRAM WEB APP =====
@@ -475,6 +475,14 @@ async function authenticate() {
             state.userId = userId;
             
             console.log('✅ Authentication successful');
+            
+            // Подключаем WebSocket для real-time updates
+            if (typeof wsManager !== 'undefined') {
+                wsManager.connect(response.access_token).catch(err => {
+                    console.warn('⚠️ WebSocket connection failed:', err);
+                });
+            }
+            
             return true;
         } else {
             console.error('❌ No access token in response');
@@ -1051,70 +1059,97 @@ function openFilters() {
     }
 }
 
-async function loadHistory() {
+// История транзакций с pagination
+let historyState = {
+    currentPage: 1,
+    pageSize: 50,
+    hasMore: true,
+    loading: false
+};
+
+async function loadHistory(loadMore = false) {
     console.log('📜 Loading history...');
     
-    const cacheKey = `history:${historyFilters.type}:${historyFilters.category}:${state.currency}`;
-    const cached = cache.get(cacheKey);
+    if (historyState.loading) return;
     
     const container = document.getElementById('transactions-history');
     
     try {
-        let allTransactions;
+        historyState.loading = true;
         
-        if (cached) {
-            console.log('📦 Using cached history data');
-            allTransactions = cached;
-        } else {
+        if (!loadMore) {
+            historyState.currentPage = 1;
+            historyState.hasMore = true;
             if (container) {
                 container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
             }
-            
-            // Загружаем курсы валют если еще не загружены
-            if (Object.keys(exchangeRates).length === 0) {
-                await loadExchangeRates();
+        } else {
+            // Update load more button state
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
             }
-            
-            const type = historyFilters.type;
-            
-            const [expenses, income] = await Promise.all([
-                type !== 'income' ? api.getExpenses() : Promise.resolve([]),
-                type !== 'expense' ? api.getIncome() : Promise.resolve([])
-            ]);
-            
-            allTransactions = [
-                ...(expenses || []).map(t => ({ ...t, type: 'expense' })),
-                ...(income || []).map(t => ({ ...t, type: 'income' }))
-            ];
-            
-            // Конвертируем все транзакции в выбранную валюту
-            allTransactions = allTransactions.map(t => {
-                const origCurrency = t.currency || 'KGS';
-                return {
-                    ...t,
-                    originalAmount: t.amount,
-                    originalCurrency: origCurrency,
-                    amount: convertAmount(t.amount, origCurrency, state.currency),
-                    currency: state.currency
-                };
-            });
-            
-            // Кэшируем на 3 минуты
-            cache.set(cacheKey, allTransactions, 180);
         }
+        
+        // Загружаем курсы валют если еще не загружены
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
+        }
+        
+        const type = historyFilters.type;
+        
+        // Загружаем с pagination
+        const [expensesData, incomeData] = await Promise.all([
+            type !== 'income' ? api.getExpenses({ 
+                page: historyState.currentPage, 
+                page_size: historyState.pageSize 
+            }) : Promise.resolve({ items: [], has_next: false }),
+            type !== 'expense' ? api.getIncome({ 
+                page: historyState.currentPage, 
+                page_size: historyState.pageSize 
+            }) : Promise.resolve({ items: [], has_next: false })
+        ]);
+        
+        let newTransactions = [
+            ...(expensesData.items || []).map(t => ({ ...t, type: 'expense' })),
+            ...(incomeData.items || []).map(t => ({ ...t, type: 'income' }))
+        ];
+        
+        // Конвертируем все транзакции в выбранную валюту
+        newTransactions = newTransactions.map(t => {
+            const origCurrency = t.currency || 'KGS';
+            return {
+                ...t,
+                originalAmount: t.amount,
+                originalCurrency: origCurrency,
+                amount: convertAmount(t.amount, origCurrency, state.currency),
+                currency: state.currency
+            };
+        });
         
         // Фильтрация по категории
         if (historyFilters.category !== 'all') {
-            allTransactions = allTransactions.filter(t => t.category === historyFilters.category);
+            newTransactions = newTransactions.filter(t => t.category === historyFilters.category);
         }
         
         // Сортировка
-        allTransactions = sortTransactions(allTransactions, historyFilters.sortBy);
+        newTransactions = sortTransactions(newTransactions, historyFilters.sortBy);
         
-        updateHistoryUI(allTransactions);
+        // Обновляем состояние pagination
+        historyState.hasMore = expensesData.has_next || incomeData.has_next;
         
-        console.log('✅ History loaded');
+        // Рендерим транзакции (добавляем или заменяем)
+        renderHistoryTransactions(newTransactions, loadMore);
+        
+        // Увеличиваем номер страницы для следующей загрузки
+        historyState.currentPage++;
+        
+        historyState.loading = false;
+        
+        console.log(`✅ History loaded. Page: ${historyState.currentPage - 1}, Has more: ${historyState.hasMore}`);
     } catch (error) {
+        historyState.loading = false;
         handleError(error, 'Не удалось загрузить историю');
     }
 }
@@ -1181,6 +1216,69 @@ function updateHistoryUI(transactions) {
             `).join('')}
         </div>
     `).join('');
+}
+
+// Render paginated transactions (append or replace)
+function renderHistoryTransactions(transactions, append = false) {
+    const container = document.getElementById('transactions-history');
+    if (!container) return;
+    
+    // Remove existing load more button if present
+    const existingBtn = document.getElementById('load-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    if (transactions.length === 0 && !append) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><p>Нет транзакций</p></div>';
+        return;
+    }
+    
+    // Group by date
+    const grouped = {};
+    transactions.forEach(t => {
+        const dateKey = formatDate(t.date);
+        if (!grouped[dateKey]) grouped[dateKey] = [];
+        grouped[dateKey].push(t);
+    });
+    
+    const html = Object.entries(grouped).map(([date, items]) => `
+        <div class="date-group">
+            <div class="date-header">${date}</div>
+            ${items.map(t => `
+                <div class="transaction-item">
+                    <div class="transaction-icon ${t.type}">
+                        <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+                    </div>
+                    <div class="transaction-info">
+                        <div class="transaction-category">${t.category || 'Без категории'}</div>
+                        <div class="transaction-description">${t.description || '—'}</div>
+                    </div>
+                    <div class="transaction-amount">
+                        <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `).join('');
+    
+    if (append) {
+        container.insertAdjacentHTML('beforeend', html);
+    } else {
+        container.innerHTML = html;
+    }
+    
+    // Add load more button if there are more pages
+    if (historyState.hasMore) {
+        const loadMoreBtn = document.createElement('button');
+        loadMoreBtn.id = 'load-more-btn';
+        loadMoreBtn.className = 'btn-secondary';
+        loadMoreBtn.style.cssText = 'width: 100%; margin-top: 16px; padding: 12px;';
+        loadMoreBtn.innerHTML = historyState.loading 
+            ? '<i class="fas fa-spinner fa-spin"></i> Загрузка...' 
+            : 'Загрузить еще';
+        loadMoreBtn.disabled = historyState.loading;
+        loadMoreBtn.onclick = () => loadHistory(true);
+        container.parentElement.appendChild(loadMoreBtn);
+    }
 }
 
 // ===== SETTINGS =====

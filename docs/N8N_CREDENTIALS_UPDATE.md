@@ -346,3 +346,6 @@ Telegram → ваш бот → "Привет"
 - [Telegram Bot Setup](https://core.telegram.org/bots/tutorial)
 - [OpenAI API Keys](https://platform.openai.com/api-keys)
 
+
+
+

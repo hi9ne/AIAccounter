@@ -34,3 +34,6 @@ COMMENT ON COLUMN n8n_chat_histories_reports.type IS 'Тип сообщения:
 COMMENT ON COLUMN n8n_chat_histories_reports.content IS 'Содержимое сообщения';
 COMMENT ON COLUMN n8n_chat_histories_reports.created_at IS 'Дата и время создания записи';
 
+
+
+

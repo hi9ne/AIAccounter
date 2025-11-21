@@ -545,3 +545,6 @@ CREATE TABLE n8n_chat_histories_tranzactions (
 
 Теперь у вас полностью настроенная система AI Financer с RAG, векторным поиском и Telegram интеграцией!
 
+
+
+

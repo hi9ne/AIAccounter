@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .api.v1 import router as api_v1_router
+from .services.cache import cache_service
 import logging
 
 # Настройка логирования
@@ -54,6 +55,20 @@ app.add_middleware(
 
 # Подключаем API роуты
 app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Инициализация при запуске"""
+    logger.info("🚀 Starting AIAccounter API...")
+    await cache_service.connect()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Очистка при остановке"""
+    logger.info("🛑 Shutting down AIAccounter API...")
+    await cache_service.disconnect()
 
 
 @app.get("/")

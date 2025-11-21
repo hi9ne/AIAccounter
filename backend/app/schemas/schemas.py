@@ -1,6 +1,19 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Generic, TypeVar, List
+
+# Generic type для pagination
+T = TypeVar('T')
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Схема для пагинированных ответов"""
+    items: List[T]
+    total: int
+    page: int
+    page_size: int
+    has_next: bool
+    has_prev: bool
 
 
 # User Schemas

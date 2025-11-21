@@ -18,6 +18,7 @@ from app.schemas.analytics import (
     BalanceTrendSchema
 )
 from app.utils.auth import get_current_user
+from app.services.cache import cache_service
 
 router = APIRouter()
 
@@ -32,6 +33,12 @@ async def get_income_expense_statistics(
     """
     Получить базовую статистику доходов и расходов
     """
+    # Проверяем кэш
+    cache_key = cache_service.make_key("stats", current_user.user_id, str(start_date), str(end_date))
+    cached = await cache_service.get(cache_key)
+    if cached:
+        return cached
+    
     # Direct SQL query with proper aggregation
     query = text("""
         SELECT 
@@ -84,13 +91,18 @@ async def get_income_expense_statistics(
             "expense_count": 0
         }
     
-    return {
+    result_data = {
         "total_income": float(stats[0]),
         "total_expense": float(stats[1]),
         "balance": float(stats[2]),
         "income_count": int(stats[3]),
         "expense_count": int(stats[4])
     }
+    
+    # Сохраняем в кэш (TTL: 5 минут)
+    await cache_service.set(cache_key, result_data, ttl=300)
+    
+    return result_data
 
 
 @router.get("/categories/top", response_model=list[TopCategorySchema])
@@ -104,6 +116,12 @@ async def get_top_expense_categories(
     """
     Получить топ категорий расходов
     """
+    # Проверяем кэш
+    cache_key = cache_service.make_key("top_categories", current_user.user_id, str(start_date), str(end_date), limit)
+    cached = await cache_service.get(cache_key)
+    if cached:
+        return cached
+    
     query = text("""
         WITH total AS (
             SELECT COALESCE(SUM(amount), 0) as total_amount
@@ -140,7 +158,7 @@ async def get_top_expense_categories(
     
     categories = result.fetchall()
     
-    return [
+    result_data = [
         {
             "category": cat[0],
             "total_amount": float(cat[1]),
@@ -149,6 +167,11 @@ async def get_top_expense_categories(
         }
         for cat in categories
     ]
+    
+    # Сохраняем в кэш (TTL: 5 минут)
+    await cache_service.set(cache_key, result_data, ttl=300)
+    
+    return result_data
 
 
 @router.get("/chart/balance-trend", response_model=list[BalanceTrendSchema])

@@ -6,8 +6,10 @@ from datetime import datetime, date
 
 from ...database import get_db
 from ...models import Income, User
-from ...schemas import IncomeCreate, IncomeUpdate, Income as IncomeSchema
+from ...schemas import IncomeCreate, IncomeUpdate, Income as IncomeSchema, PaginatedResponse
 from ...utils.auth import get_current_user
+from ...services.cache import cache_service
+from ...services.websocket import ws_manager
 
 router = APIRouter()
 
@@ -30,39 +32,74 @@ async def create_income(
     db.add(db_income)
     await db.commit()
     await db.refresh(db_income)
+    
+    # Инвалидация кэша
+    await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
+    await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+    
+    # WebSocket уведомление
+    await ws_manager.send_personal_message({
+        "type": "transaction_created",
+        "data": {
+            "transaction_type": "income",
+            "id": db_income.id,
+            "amount": db_income.amount,
+            "currency": db_income.currency,
+            "category": db_income.category,
+            "date": db_income.date.isoformat()
+        }
+    }, current_user.user_id)
+    
     return db_income
 
 
-@router.get("/", response_model=List[IncomeSchema])
+@router.get("/", response_model=PaginatedResponse[IncomeSchema])
 async def get_income_list(
     category: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Номер страницы"),
+    page_size: int = Query(50, ge=1, le=100, description="Размер страницы"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить список доходов с фильтрами"""
-    query = select(Income).where(
+    """Получить список доходов с пагинацией и фильтрами"""
+    # Базовый запрос
+    base_query = select(Income).where(
         and_(
             Income.user_id == current_user.user_id,
             Income.deleted_at.is_(None)
         )
     )
     
+    # Применяем фильтры
     if category:
-        query = query.where(Income.category == category)
+        base_query = base_query.where(Income.category == category)
     if start_date:
-        query = query.where(Income.date >= start_date)
+        base_query = base_query.where(Income.date >= start_date)
     if end_date:
-        query = query.where(Income.date <= end_date)
+        base_query = base_query.where(Income.date <= end_date)
     
-    query = query.order_by(Income.date.desc()).offset(skip).limit(limit)
+    # Получаем общее количество
+    count_query = select(func.count()).select_from(base_query.subquery())
+    result = await db.execute(count_query)
+    total = result.scalar()
+    
+    # Пагинированный запрос
+    skip = (page - 1) * page_size
+    query = base_query.order_by(Income.date.desc()).offset(skip).limit(page_size)
     
     result = await db.execute(query)
     income = result.scalars().all()
-    return income
+    
+    return {
+        "items": income,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_next": skip + page_size < total,
+        "has_prev": page > 1
+    }
 
 
 @router.get("/{income_id}", response_model=IncomeSchema)
@@ -140,5 +177,18 @@ async def delete_income(
     
     income.deleted_at = datetime.utcnow()
     await db.commit()
+    
+    # Инвалидация кэша
+    await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
+    await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+    
+    # WebSocket уведомление
+    await ws_manager.send_personal_message({
+        "type": "transaction_deleted",
+        "data": {
+            "transaction_type": "income",
+            "id": income_id
+        }
+    }, current_user.user_id)
     
     return {"message": "Income deleted successfully", "success": True}

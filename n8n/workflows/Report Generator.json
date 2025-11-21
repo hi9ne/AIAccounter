@@ -1,0 +1,342 @@
+{
+  "name": "Report Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-report",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "webhookId": "report-generator-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $json.body.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "telegram_chat_id",
+              "name": "telegram_chat_id",
+              "value": "={{ $json.body.telegram_chat_id || $json.body.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "period_type",
+              "name": "period_type",
+              "value": "={{ $json.body.period_type || 'today' }}",
+              "type": "string"
+            },
+            {
+              "id": "custom_query",
+              "name": "custom_query",
+              "value": "={{ $json.body.query || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "parse-input",
+      "name": "Parse Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Определяем период на основе типа\nconst periodType = $input.first().json.period_type;\nconst now = new Date();\nlet startDate, endDate, periodName;\n\nswitch(periodType) {\n  case 'today':\n    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);\n    periodName = 'сегодня';\n    break;\n    \n  case 'week':\n    // Неделя = последние 7 дней\n    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);\n    endDate = now;\n    periodName = 'последнюю неделю';\n    break;\n    \n  case 'month':\n    // Месяц = с 1 числа текущего месяца\n    startDate = new Date(now.getFullYear(), now.getMonth(), 1);\n    endDate = now;\n    periodName = 'текущий месяц';\n    break;\n    \n  default:\n    // По умолчанию - сегодня\n    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());\n    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);\n    periodName = 'сегодня';\n}\n\nreturn {\n  json: {\n    user_id: $input.first().json.user_id,\n    telegram_chat_id: $input.first().json.telegram_chat_id,\n    start_date: startDate.toISOString(),\n    end_date: endDate.toISOString(),\n    period_name: periodName,\n    period_type: periodType\n  }\n};"
+      },
+      "id": "calculate-period",
+      "name": "Calculate Period",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Получаем доходы\nWITH income_data AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_income,\n    COUNT(*) as income_count\n  FROM income\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= '{{ $json.start_date }}'\n    AND date <= '{{ $json.end_date }}'\n),\n-- Получаем расходы\nexpense_data AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total_expenses,\n    COUNT(*) as expense_count\n  FROM expenses\n  WHERE user_id = {{ $json.user_id }}\n    AND date >= '{{ $json.start_date }}'\n    AND date <= '{{ $json.end_date }}'\n)\nSELECT \n  i.total_income,\n  i.income_count,\n  e.total_expenses,\n  e.expense_count,\n  (i.total_income - e.total_expenses) as balance\nFROM income_data i, expense_data e;",
+        "options": {}
+      },
+      "id": "get-report-data",
+      "name": "Get Report Data",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [920, 300],
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-data",
+              "leftValue": "={{ $json.income_count + $json.expense_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-has-data",
+      "name": "Has Data?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1140, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "message",
+              "name": "message",
+              "value": "=📊 <b>Отчет за {{ $('Calculate Period').first().json.period_name }}</b>\n\n💰 <b>Доходы:</b> {{ $json.total_income }} KGS\n💸 <b>Расходы:</b> {{ $json.total_expenses }} KGS\n⚖️ <b>Баланс:</b> {{ $json.balance >= 0 ? '+' : '' }}{{ $json.balance }} KGS\n\n📈 <i>Транзакций:</i> {{ $json.income_count + $json.expense_count }}\n   • Доходов: {{ $json.income_count }}\n   • Расходов: {{ $json.expense_count }}",
+              "type": "string"
+            },
+            {
+              "id": "has_data",
+              "name": "has_data",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-report",
+      "name": "Format Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1360, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "message",
+              "name": "message",
+              "value": "=📊 <b>Отчет за {{ $('Calculate Period').first().json.period_name }}</b>\n\n🤷‍♂️ <i>К сожалению, за этот период нет данных.</i>\n\nДобавьте доходы или расходы, чтобы увидеть отчет!",
+              "type": "string"
+            },
+            {
+              "id": "has_data",
+              "name": "has_data",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "format-no-data",
+      "name": "Format No Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1360, 400]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Input').first().json.telegram_chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "send-telegram",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1580, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "KYHLugYerbTJeC9p",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: $json.message, has_data: $json.has_data } }}"
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1800, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "id": "daily-trigger",
+      "name": "Daily Report (21:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 500]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "id": "weekly-trigger",
+      "name": "Weekly Report (Sun 21:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 620]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "monthly-trigger",
+      "name": "Monthly Report (1st 09:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [260, 740]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT user_id, telegram_chat_id FROM users WHERE is_active = true AND telegram_chat_id IS NOT NULL;",
+        "options": {}
+      },
+      "id": "get-active-users",
+      "name": "Get Active Users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [480, 620],
+      "credentials": {
+        "postgres": {
+          "id": "TKaoUfPabvnDB4Ak",
+          "name": "AIAccounter supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "telegram_chat_id",
+              "name": "telegram_chat_id",
+              "value": "={{ $json.telegram_chat_id }}",
+              "type": "number"
+            },
+            {
+              "id": "period_type",
+              "name": "period_type",
+              "value": "={{ $('Daily Report (21:00)').first() ? 'today' : $('Weekly Report (Sun 21:00)').first() ? 'week' : 'month' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-schedule-data",
+      "name": "Prepare Schedule Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [700, 620]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Parse Input", "type": "main", "index": 0}]]
+    },
+    "Parse Input": {
+      "main": [[{"node": "Calculate Period", "type": "main", "index": 0}]]
+    },
+    "Calculate Period": {
+      "main": [[{"node": "Get Report Data", "type": "main", "index": 0}]]
+    },
+    "Get Report Data": {
+      "main": [[{"node": "Has Data?", "type": "main", "index": 0}]]
+    },
+    "Has Data?": {
+      "main": [
+        [{"node": "Format Report", "type": "main", "index": 0}],
+        [{"node": "Format No Data", "type": "main", "index": 0}]
+      ]
+    },
+    "Format Report": {
+      "main": [[{"node": "Send to Telegram", "type": "main", "index": 0}]]
+    },
+    "Format No Data": {
+      "main": [[{"node": "Send to Telegram", "type": "main", "index": 0}]]
+    },
+    "Send to Telegram": {
+      "main": [[{"node": "Respond", "type": "main", "index": 0}]]
+    },
+    "Daily Report (21:00)": {
+      "main": [[{"node": "Get Active Users", "type": "main", "index": 0}]]
+    },
+    "Weekly Report (Sun 21:00)": {
+      "main": [[{"node": "Get Active Users", "type": "main", "index": 0}]]
+    },
+    "Monthly Report (1st 09:00)": {
+      "main": [[{"node": "Get Active Users", "type": "main", "index": 0}]]
+    },
+    "Get Active Users": {
+      "main": [[{"node": "Prepare Schedule Data", "type": "main", "index": 0}]]
+    },
+    "Prepare Schedule Data": {
+      "main": [[{"node": "Calculate Period", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {}
+}

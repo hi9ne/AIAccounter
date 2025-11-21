@@ -6,8 +6,10 @@ from datetime import datetime, date
 
 from ...database import get_db
 from ...models import Expense, User
-from ...schemas import ExpenseCreate, ExpenseUpdate, Expense as ExpenseSchema
+from ...schemas import ExpenseCreate, ExpenseUpdate, Expense as ExpenseSchema, PaginatedResponse
 from ...utils.auth import get_current_user
+from ...services.cache import cache_service
+from ...services.websocket import ws_manager
 
 router = APIRouter()
 
@@ -30,39 +32,75 @@ async def create_expense(
     db.add(db_expense)
     await db.commit()
     await db.refresh(db_expense)
+    
+    # Инвалидация кэша аналитики
+    await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
+    await cache_service.delete_pattern(f"top_categories:{current_user.user_id}:*")
+    await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+    
+    # WebSocket уведомление
+    await ws_manager.send_personal_message({
+        "type": "transaction_created",
+        "data": {
+            "transaction_type": "expense",
+            "id": db_expense.id,
+            "amount": db_expense.amount,
+            "currency": db_expense.currency,
+            "category": db_expense.category,
+            "date": db_expense.date.isoformat()
+        }
+    }, current_user.user_id)
+    
     return db_expense
 
 
-@router.get("/", response_model=List[ExpenseSchema])
+@router.get("/", response_model=PaginatedResponse[ExpenseSchema])
 async def get_expenses(
     current_user: User = Depends(get_current_user),
     category: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1, description="Номер страницы"),
+    page_size: int = Query(50, ge=1, le=100, description="Размер страницы"),
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить список расходов с фильтрами"""
-    query = select(Expense).where(
+    """Получить список расходов с пагинацией и фильтрами"""
+    # Базовый запрос
+    base_query = select(Expense).where(
         and_(
             Expense.user_id == current_user.user_id,
             Expense.deleted_at.is_(None)
         )
     )
     
+    # Применяем фильтры
     if category:
-        query = query.where(Expense.category == category)
+        base_query = base_query.where(Expense.category == category)
     if start_date:
-        query = query.where(Expense.date >= start_date)
+        base_query = base_query.where(Expense.date >= start_date)
     if end_date:
-        query = query.where(Expense.date <= end_date)
+        base_query = base_query.where(Expense.date <= end_date)
     
-    query = query.order_by(Expense.date.desc()).offset(skip).limit(limit)
+    # Получаем общее количество
+    count_query = select(func.count()).select_from(base_query.subquery())
+    result = await db.execute(count_query)
+    total = result.scalar()
+    
+    # Пагинированный запрос
+    skip = (page - 1) * page_size
+    query = base_query.order_by(Expense.date.desc()).offset(skip).limit(page_size)
     
     result = await db.execute(query)
     expenses = result.scalars().all()
-    return expenses
+    
+    return {
+        "items": expenses,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_next": skip + page_size < total,
+        "has_prev": page > 1
+    }
 
 
 @router.get("/{expense_id}", response_model=ExpenseSchema)
@@ -141,7 +179,21 @@ async def delete_expense(
     expense.deleted_at = datetime.utcnow()
     await db.commit()
     
-    return {"message": "Expense deleted successfully", "success": True}
+    # Инвалидация кэша аналитики
+    await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
+    await cache_service.delete_pattern(f"top_categories:{current_user.user_id}:*")
+    await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+    
+    # WebSocket уведомление
+    await ws_manager.send_personal_message({
+        "type": "transaction_deleted",
+        "data": {
+            "transaction_type": "expense",
+            "id": expense_id
+        }
+    }, current_user.user_id)
+    
+    return {"message": "Expense deleted successfully"}
 
 
 @router.get("/stats/summary")
