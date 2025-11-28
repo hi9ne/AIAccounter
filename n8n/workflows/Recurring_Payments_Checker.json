@@ -15,10 +15,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
       "position": [
-        -304,
-        424
+        -896,
+        168
       ],
-      "id": "d5c00de5-66b4-4bb1-bca5-ea8c92a347e0"
+      "id": "deb748c2-1431-4e74-b715-6f58cd3d99d1"
     },
     {
       "parameters": {
@@ -30,16 +30,11 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
-        -80,
-        424
+        -672,
+        168
       ],
-      "id": "96c91675-6dba-4e72-8fb5-b3eea7619eb9",
-      "credentials": {
-        "postgres": {
-          "id": "TKaoUfPabvnDB4Ak",
-          "name": "AIAccounter supabase"
-        }
-      }
+      "id": "e84c2aa8-9b9e-452a-a629-4ac4a292a21a",
+      "credentials": {}
     },
     {
       "parameters": {
@@ -56,10 +51,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        144,
-        424
+        -448,
+        168
       ],
-      "id": "682e9fe1-89bc-41b0-a717-d1a5a44021bd"
+      "id": "de92616f-5cbb-4514-952d-faa155ec895f"
     },
     {
       "parameters": {
@@ -69,10 +64,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        368,
-        328
+        -224,
+        72
       ],
-      "id": "127a33fe-32f3-44a5-a7fa-ccb61bbc4c36"
+      "id": "8e640759-6f22-45e6-a6a9-3a29bba921c0"
     },
     {
       "parameters": {
@@ -82,10 +77,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
-        256
+        0,
+        0
       ],
-      "id": "eab382bc-af7e-40a1-938d-f499f720192f"
+      "id": "34d36042-7518-4cd1-bc16-60c56834ec4f"
     },
     {
       "parameters": {
@@ -99,14 +94,14 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
       "position": [
-        816,
-        256
+        224,
+        0
       ],
-      "id": "1f4fb0d2-ccec-4d77-9fa6-645176c29c69",
+      "id": "ece4989d-5d4f-4f09-b6a9-6ec12d062c05",
       "webhookId": "7f42e3f5-175a-4a1b-9638-4bdde53e0093",
       "credentials": {
         "telegramApi": {
-          "id": "KYHLugYerbTJeC9p",
+          "id": "VsCo0z8ZzisDZOpw",
           "name": "AIAccounter"
         }
       }
@@ -121,16 +116,11 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
-        1040,
-        328
+        448,
+        72
       ],
-      "id": "23da5120-528e-4ac4-9600-2178e044fc38",
-      "credentials": {
-        "postgres": {
-          "id": "TKaoUfPabvnDB4Ak",
-          "name": "AIAccounter supabase"
-        }
-      }
+      "id": "1ba43863-555f-495c-89c8-035dba7baf55",
+      "credentials": {}
     },
     {
       "parameters": {},
@@ -138,10 +128,10 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        368,
-        568
+        -224,
+        312
       ],
-      "id": "8965a4e4-ad86-4df1-ab81-ebfc9fb4cd92",
+      "id": "26cccce4-546d-4a55-84ad-735f519a6d56",
       "notes": "Нет напоминаний на сегодня"
     },
     {
@@ -152,10 +142,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
-        568
+        0,
+        312
       ],
-      "id": "e66b6000-5d90-4e0a-a60a-1119ad8fbfda"
+      "id": "9a156402-ac88-4284-81ec-cec3200835e7"
     },
     {
       "parameters": {
@@ -167,16 +157,11 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
-        816,
-        568
+        224,
+        312
       ],
-      "id": "49f1c2c3-1151-41cd-8897-a17789443799",
-      "credentials": {
-        "postgres": {
-          "id": "TKaoUfPabvnDB4Ak",
-          "name": "AIAccounter supabase"
-        }
-      },
+      "id": "07c82ad7-95d0-436f-84ed-8a52a4e2f196",
+      "credentials": {},
       "notes": "Логирование для мониторинга"
     }
   ],
@@ -291,6 +276,6 @@
   "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "2ece1bab2405716a7cfce686d1ebe9d72af95a53d05c0b295aab0a1ef9d0a512"
+    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
   }
 }

@@ -1,0 +1,1460 @@
+﻿{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reports-webhook",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1504,
+        624
+      ],
+      "id": "a7fd5923-87cd-40bd-ab65-ebcf3ce50f55",
+      "name": "Reports Webhook",
+      "webhookId": "reports-webhook-id"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rt",
+              "name": "report_type",
+              "value": "={{ $json.body.report_type }}",
+              "type": "string"
+            },
+            {
+              "id": "uid",
+              "name": "user_id",
+              "value": "={{ $json.body.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "cid",
+              "name": "chat_id",
+              "value": "={{ $json.body.chat_id }}",
+              "type": "number"
+            },
+            {
+              "id": "fn",
+              "name": "first_name",
+              "value": "={{ $json.body.first_name || 'Пользователь' }}",
+              "type": "string"
+            },
+            {
+              "id": "sd",
+              "name": "start_date",
+              "value": "={{ $json.body.start_date || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ed",
+              "name": "end_date",
+              "value": "={{ $json.body.end_date || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1280,
+        624
+      ],
+      "id": "4c63492e-59a5-4c22-a6b2-53c4d6bd980e",
+      "name": "Normalize Webhook Data"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 21 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1728,
+        48
+      ],
+      "id": "d3382f64-b4ef-4b78-ad0a-d29c94a1f3ef",
+      "name": "Daily 21:00"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 0"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1728,
+        240
+      ],
+      "id": "86b11487-670f-40c5-983d-56f6f9641517",
+      "name": "Weekly Sunday 10:00"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 1 * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1728,
+        432
+      ],
+      "id": "18f5d87a-08bd-411f-afcf-f993c301653f",
+      "name": "Monthly 1st 10:00"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT user_id, telegram_chat_id as chat_id, first_name FROM users WHERE is_active = true AND telegram_chat_id IS NOT NULL AND last_activity >= NOW() - INTERVAL '7 days'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1504,
+        48
+      ],
+      "id": "f2df28e2-e8a3-43f4-909c-bab0c058b3ce",
+      "name": "Get Users Daily",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT user_id, telegram_chat_id as chat_id, first_name FROM users WHERE is_active = true AND telegram_chat_id IS NOT NULL AND last_activity >= NOW() - INTERVAL '14 days'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1504,
+        240
+      ],
+      "id": "c20e3183-3978-4ee2-8711-a01233d89650",
+      "name": "Get Users Weekly",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT user_id, telegram_chat_id as chat_id, first_name FROM users WHERE is_active = true AND telegram_chat_id IS NOT NULL AND last_activity >= NOW() - INTERVAL '35 days'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1504,
+        432
+      ],
+      "id": "90e0c170-106d-4710-84cd-9abd6204a9f5",
+      "name": "Get Users Monthly",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rt",
+              "name": "report_type",
+              "value": "daily",
+              "type": "string"
+            },
+            {
+              "id": "uid",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "cid",
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}",
+              "type": "number"
+            },
+            {
+              "id": "fn",
+              "name": "first_name",
+              "value": "={{ $json.first_name || 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ' }}",
+              "type": "string"
+            },
+            {
+              "id": "sd",
+              "name": "start_date",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ed",
+              "name": "end_date",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1280,
+        48
+      ],
+      "id": "eff6734f-a122-4023-bc48-41b76b3d5f71",
+      "name": "Set Daily"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rt",
+              "name": "report_type",
+              "value": "weekly",
+              "type": "string"
+            },
+            {
+              "id": "uid",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "cid",
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}",
+              "type": "number"
+            },
+            {
+              "id": "fn",
+              "name": "first_name",
+              "value": "={{ $json.first_name || 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ' }}",
+              "type": "string"
+            },
+            {
+              "id": "sd",
+              "name": "start_date",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ed",
+              "name": "end_date",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1280,
+        240
+      ],
+      "id": "579ed6e2-c244-4ba1-ab18-3d538db2f03a",
+      "name": "Set Weekly"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rt",
+              "name": "report_type",
+              "value": "monthly",
+              "type": "string"
+            },
+            {
+              "id": "uid",
+              "name": "user_id",
+              "value": "={{ $json.user_id }}",
+              "type": "number"
+            },
+            {
+              "id": "cid",
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}",
+              "type": "number"
+            },
+            {
+              "id": "fn",
+              "name": "first_name",
+              "value": "={{ $json.first_name || 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ' }}",
+              "type": "string"
+            },
+            {
+              "id": "sd",
+              "name": "start_date",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "ed",
+              "name": "end_date",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1280,
+        432
+      ],
+      "id": "f20c113e-b560-47b4-8205-ab533bc47c7e",
+      "name": "Set Monthly"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "daily",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "daily"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "weekly",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "weekly"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "monthly",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "monthly"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "period",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "period"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1056,
+        304
+      ],
+      "id": "ce78d3a7-e233-43a4-b9a5-68882b444bab",
+      "name": "Report Router"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH today_expenses AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count,\n    COALESCE(json_agg(json_build_object(\n      'category', category,\n      'amount', amount,\n      'description', COALESCE(description, '')\n    ) ORDER BY amount DESC) FILTER (WHERE id IS NOT NULL), '[]'::json) as details\n  FROM expenses \n  WHERE user_id = {{ $json.user_id }} \n    AND DATE(date) = CURRENT_DATE \n    AND deleted_at IS NULL\n),\ntoday_income AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count\n  FROM income \n  WHERE user_id = {{ $json.user_id }} \n    AND DATE(date) = CURRENT_DATE \n    AND deleted_at IS NULL\n)\nSELECT \n  {{ $json.user_id }}::bigint as user_id,\n  {{ $json.chat_id }}::bigint as chat_id,\n  '{{ $json.first_name }}' as first_name,\n  'daily' as report_type,\n  TO_CHAR(CURRENT_DATE, 'DD.MM.YYYY') as period,\n  CURRENT_DATE as period_start,\n  CURRENT_DATE as period_end,\n  e.total as expenses_total,\n  e.count as expenses_count,\n  e.details as expenses_details,\n  i.total as income_total,\n  i.count as income_count,\n  i.total - e.total as balance\nFROM today_expenses e \nCROSS JOIN today_income i",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -832,
+        48
+      ],
+      "id": "cb5eb1f5-b03c-4453-b132-eb6b7a7489ab",
+      "name": "Get Daily Data",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH week_start AS (SELECT (CURRENT_DATE - INTERVAL '6 days')::date as start_dt),\nweek_expenses AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count,\n    COALESCE(json_agg(json_build_object(\n      'date', TO_CHAR(date, 'DD.MM'),\n      'category', category,\n      'amount', amount\n    ) ORDER BY date DESC) FILTER (WHERE id IS NOT NULL), '[]'::json) as details\n  FROM expenses, week_start ws\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= ws.start_dt\n    AND deleted_at IS NULL\n),\nweek_income AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count\n  FROM income, week_start ws\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= ws.start_dt\n    AND deleted_at IS NULL\n),\ncategory_stats AS (\n  SELECT \n    category,\n    SUM(amount) as total\n  FROM expenses, week_start ws\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= ws.start_dt\n    AND deleted_at IS NULL\n  GROUP BY category \n  ORDER BY total DESC \n  LIMIT 5\n),\ndaily_stats AS (\n  SELECT \n    TO_CHAR(date, 'DD.MM') as day,\n    SUM(amount) as expenses\n  FROM expenses, week_start ws\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= ws.start_dt\n    AND deleted_at IS NULL\n  GROUP BY date \n  ORDER BY date\n)\nSELECT \n  {{ $json.user_id }}::bigint as user_id,\n  {{ $json.chat_id }}::bigint as chat_id,\n  '{{ $json.first_name }}' as first_name,\n  'weekly' as report_type,\n  TO_CHAR(ws.start_dt, 'DD.MM.YYYY') as period_start,\n  TO_CHAR(CURRENT_DATE, 'DD.MM.YYYY') as period_end,\n  TO_CHAR(ws.start_dt, 'YYYY-MM-DD') as period_start_date,\n  TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as period_end_date,\n  e.total as expenses_total,\n  e.count as expenses_count,\n  e.details as expenses_details,\n  i.total as income_total,\n  i.count as income_count,\n  i.total - e.total as balance,\n  (SELECT COALESCE(json_agg(json_build_object('category', category, 'total', total, 'percent', ROUND(total * 100.0 / NULLIF(e.total, 0), 1))), '[]'::json) FROM category_stats) as top_categories,\n  (SELECT COALESCE(json_agg(json_build_object('day', day, 'expenses', expenses)), '[]'::json) FROM daily_stats) as daily_data,\n  ROUND(e.total / 7.0, 0) as avg_daily\nFROM week_start ws\nCROSS JOIN week_expenses e\nCROSS JOIN week_income i",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -832,
+        240
+      ],
+      "id": "569bf51a-589e-4cff-a088-3294de28be7c",
+      "name": "Get Weekly Data",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH month_bounds AS (\n  SELECT \n    DATE_TRUNC('month', CURRENT_DATE)::date as start_dt,\n    (DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month' - INTERVAL '1 day')::date as end_dt\n),\nmonth_expenses AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count,\n    COALESCE(json_agg(json_build_object(\n      'date', TO_CHAR(date, 'DD.MM'),\n      'category', category,\n      'amount', amount\n    ) ORDER BY date DESC) FILTER (WHERE id IS NOT NULL), '[]'::json) as details\n  FROM expenses, month_bounds mb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= mb.start_dt\n    AND date <= mb.end_dt\n    AND deleted_at IS NULL\n),\nmonth_income AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count\n  FROM income, month_bounds mb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= mb.start_dt\n    AND date <= mb.end_dt\n    AND deleted_at IS NULL\n),\ncategory_stats AS (\n  SELECT \n    category,\n    SUM(amount) as total,\n    COUNT(*) as cnt\n  FROM expenses, month_bounds mb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= mb.start_dt\n    AND date <= mb.end_dt\n    AND deleted_at IS NULL\n  GROUP BY category \n  ORDER BY total DESC\n),\nweekly_stats AS (\n  SELECT \n    CASE \n      WHEN EXTRACT(DAY FROM date) <= 7 THEN 1\n      WHEN EXTRACT(DAY FROM date) <= 14 THEN 2\n      WHEN EXTRACT(DAY FROM date) <= 21 THEN 3\n      ELSE 4\n    END as week_num,\n    SUM(amount) as expenses\n  FROM expenses, month_bounds mb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= mb.start_dt\n    AND date <= mb.end_dt\n    AND deleted_at IS NULL\n  GROUP BY week_num\n),\nweekly_income AS (\n  SELECT \n    CASE \n      WHEN EXTRACT(DAY FROM date) <= 7 THEN 1\n      WHEN EXTRACT(DAY FROM date) <= 14 THEN 2\n      WHEN EXTRACT(DAY FROM date) <= 21 THEN 3\n      ELSE 4\n    END as week_num,\n    SUM(amount) as income\n  FROM income, month_bounds mb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= mb.start_dt\n    AND date <= mb.end_dt\n    AND deleted_at IS NULL\n  GROUP BY week_num\n),\nall_weeks AS (\n  SELECT generate_series(1, 4) as week_num\n),\nweekly_combined AS (\n  SELECT \n    aw.week_num,\n    'РќРµРґРµР»СЏ ' || aw.week_num as label,\n    COALESCE(ws.expenses, 0) as expenses,\n    COALESCE(wi.income, 0) as income\n  FROM all_weeks aw\n  LEFT JOIN weekly_stats ws ON aw.week_num = ws.week_num\n  LEFT JOIN weekly_income wi ON aw.week_num = wi.week_num\n  ORDER BY aw.week_num\n),\nbudget_info AS (\n  SELECT budget_amount, currency \n  FROM budgets \n  WHERE user_id = {{ $json.user_id }} \n    AND month = TO_CHAR(CURRENT_DATE, 'YYYY-MM') \n  LIMIT 1\n)\nSELECT \n  {{ $json.user_id }}::bigint as user_id,\n  {{ $json.chat_id }}::bigint as chat_id,\n  '{{ $json.first_name }}' as first_name,\n  'monthly' as report_type,\n  TO_CHAR(mb.start_dt, 'DD.MM.YYYY') as period_start,\n  TO_CHAR(mb.end_dt, 'DD.MM.YYYY') as period_end,\n  TO_CHAR(mb.start_dt, 'YYYY-MM-DD') as period_start_date,\n  TO_CHAR(mb.end_dt, 'YYYY-MM-DD') as period_end_date,\n  TRIM(TO_CHAR(CURRENT_DATE, 'Month YYYY')) as month_name,\n  e.total as expenses_total,\n  e.count as expenses_count,\n  e.details as expenses_details,\n  i.total as income_total,\n  i.count as income_count,\n  i.total - e.total as balance,\n  (SELECT COALESCE(json_agg(json_build_object('category', category, 'total', total, 'percent', ROUND(total * 100.0 / NULLIF(e.total, 0), 1), 'count', cnt)), '[]'::json) FROM category_stats) as category_breakdown,\n  (SELECT COALESCE(json_agg(json_build_object('label', wc.label, 'expenses', wc.expenses, 'income', wc.income) ORDER BY wc.week_num), '[]'::json) FROM weekly_combined wc) as weekly_data,\n  COALESCE(b.budget_amount, 0) as budget_amount,\n  CASE WHEN COALESCE(b.budget_amount, 0) > 0 THEN ROUND(e.total * 100.0 / b.budget_amount, 1) ELSE 0 END as budget_used_percent,\n  ROUND(e.total / NULLIF(EXTRACT(DAY FROM CURRENT_DATE), 0), 0) as avg_daily,\n  ROUND(i.total / NULLIF(EXTRACT(DAY FROM CURRENT_DATE), 0), 0) as avg_daily_income\nFROM month_bounds mb\nCROSS JOIN month_expenses e\nCROSS JOIN month_income i\nLEFT JOIN budget_info b ON true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -832,
+        432
+      ],
+      "id": "fafe7e3a-043e-4db8-919e-bbf9c7feb1d9",
+      "name": "Get Monthly Data",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH period_bounds AS (\n  SELECT \n    '{{ $json.start_date }}'::date as start_dt,\n    '{{ $json.end_date }}'::date as end_dt\n),\nperiod_expenses AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count,\n    COALESCE(json_agg(json_build_object(\n      'date', TO_CHAR(date, 'DD.MM'),\n      'category', category,\n      'amount', amount,\n      'description', COALESCE(description, '')\n    ) ORDER BY date DESC) FILTER (WHERE id IS NOT NULL), '[]'::json) as details\n  FROM expenses, period_bounds pb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= pb.start_dt\n    AND date <= pb.end_dt\n    AND deleted_at IS NULL\n),\nperiod_income AS (\n  SELECT \n    COALESCE(SUM(amount), 0) as total,\n    COUNT(*) as count\n  FROM income, period_bounds pb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= pb.start_dt\n    AND date <= pb.end_dt\n    AND deleted_at IS NULL\n),\ncategory_stats AS (\n  SELECT \n    category,\n    SUM(amount) as total\n  FROM expenses, period_bounds pb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= pb.start_dt\n    AND date <= pb.end_dt\n    AND deleted_at IS NULL\n  GROUP BY category \n  ORDER BY total DESC\n),\ndaily_stats AS (\n  SELECT \n    TO_CHAR(date, 'DD.MM') as day,\n    SUM(amount) as expenses\n  FROM expenses, period_bounds pb\n  WHERE user_id = {{ $json.user_id }} \n    AND date >= pb.start_dt\n    AND date <= pb.end_dt\n    AND deleted_at IS NULL\n  GROUP BY date \n  ORDER BY date\n)\nSELECT \n  {{ $json.user_id }}::bigint as user_id,\n  {{ $json.chat_id }}::bigint as chat_id,\n  '{{ $json.first_name }}' as first_name,\n  'period' as report_type,\n  TO_CHAR(pb.start_dt, 'DD.MM.YYYY') as period_start,\n  TO_CHAR(pb.end_dt, 'DD.MM.YYYY') as period_end,\n  TO_CHAR(pb.start_dt, 'YYYY-MM-DD') as period_start_date,\n  TO_CHAR(pb.end_dt, 'YYYY-MM-DD') as period_end_date,\n  (pb.end_dt - pb.start_dt + 1) as period_days,\n  e.total as expenses_total,\n  e.count as expenses_count,\n  e.details as expenses_details,\n  i.total as income_total,\n  i.count as income_count,\n  i.total - e.total as balance,\n  (SELECT COALESCE(json_agg(json_build_object('category', category, 'total', total, 'percent', ROUND(total * 100.0 / NULLIF(e.total, 0), 1))), '[]'::json) FROM category_stats) as category_breakdown,\n  (SELECT COALESCE(json_agg(json_build_object('day', day, 'expenses', expenses)), '[]'::json) FROM daily_stats) as daily_data,\n  ROUND(e.total / NULLIF((pb.end_dt - pb.start_dt + 1), 0), 0) as avg_daily\nFROM period_bounds pb\nCROSS JOIN period_expenses e\nCROSS JOIN period_income i",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -832,
+        624
+      ],
+      "id": "f96076bd-c939-4c19-b0de-c5a36a34ac4c",
+      "name": "Get Period Data",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst details = d.expenses_details || [];\n\nlet detailsText = '';\nif (Array.isArray(details) && details.length > 0) {\n  detailsText = details.slice(0, 5).map(e => \n    `  • ${e.category}: ${Math.round(e.amount)} KGS${e.description ? ' — ' + e.description : ''}`\n  ).join('\\n');\n} else {\n  detailsText = '  📭 Нет расходов за сегодня';\n}\n\nconst balanceEmoji = d.balance >= 0 ? '📈' : '📉';\nconst balanceSign = d.balance >= 0 ? '+' : '';\n\nconst message = `🌙 <b>Ежедневный отчёт</b>\\n` +\n  `📅 ${d.period}\\n\\n` +\n  `💸 <b>Расходы:</b> ${Math.round(d.expenses_total).toLocaleString()} KGS (${d.expenses_count} операций)\\n` +\n  `💰 <b>Доходы:</b> ${Math.round(d.income_total).toLocaleString()} KGS (${d.income_count} операций)\\n` +\n  `${balanceEmoji} <b>Баланс:</b> ${balanceSign}${Math.round(d.balance).toLocaleString()} KGS\\n\\n` +\n  `📋 <b>Детали расходов:</b>\\n${detailsText}`;\n\nreturn { json: { ...d, message } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        48
+      ],
+      "id": "7a1ca3a7-32ae-4c24-9364-0ae909a44b1f",
+      "name": "Format Daily"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst details = d.expenses_details || [];\n\nlet detailsText = '';\nif (Array.isArray(details) && details.length > 0) {\n  detailsText = details.slice(0, 5).map(e => \n    `  • ${e.category}: ${Math.round(e.amount)} KGS${e.description ? ' — ' + e.description : ''}`\n  ).join('\\n');\n} else {\n  detailsText = '  📭 Нет расходов за сегодня';\n}\n\nconst balanceEmoji = d.balance >= 0 ? '📈' : '📉';\nconst balanceSign = d.balance >= 0 ? '+' : '';\n\nconst message = `🌙 <b>Ежедневный отчёт</b>\\n` +\n  `📅 ${d.period}\\n\\n` +\n  `💸 <b>Расходы:</b> ${Math.round(d.expenses_total).toLocaleString()} KGS (${d.expenses_count} операций)\\n` +\n  `💰 <b>Доходы:</b> ${Math.round(d.income_total).toLocaleString()} KGS (${d.income_count} операций)\\n` +\n  `${balanceEmoji} <b>Баланс:</b> ${balanceSign}${Math.round(d.balance).toLocaleString()} KGS\\n\\n` +\n  `📋 <b>Детали расходов:</b>\\n${detailsText}`;\n\nreturn { json: { ...d, message } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        240
+      ],
+      "id": "a4f61a87-e961-41ef-bcc5-11dc1dbdc8d1",
+      "name": "Format Weekly"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst cats = d.category_breakdown || [];\n\nlet catsText = '';\nif (Array.isArray(cats) && cats.length > 0) {\n  catsText = cats.slice(0, 7).map(c => `  • ${c.category}: ${Math.round(c.total).toLocaleString()} KGS (${c.percent || 0}%)`).join('\\n');\n} else {\n  catsText = '  📭 Нет данных';\n}\n\nlet budgetText = '';\nif (d.budget_amount > 0) {\n  const budgetEmoji = d.budget_used_percent > 100 ? '🚨' : (d.budget_used_percent > 80 ? '⚠️' : '✅');\n  budgetText = `${budgetEmoji} <b>Бюджет:</b> ${Math.round(d.expenses_total).toLocaleString()}/${Math.round(d.budget_amount).toLocaleString()} KGS (${d.budget_used_percent}%)\\n`;\n}\n\nconst balanceEmoji = d.balance >= 0 ? '📈' : '📉';\nconst balanceSign = d.balance >= 0 ? '+' : '';\n\nconst message = `📅 <b>Месячный отчёт</b>\\n` +\n  `🗓 ${(d.month_name || '').trim()}\\n\\n` +\n  `💸 <b>Расходы:</b> ${Math.round(d.expenses_total).toLocaleString()} KGS (${d.expenses_count} операций)\\n` +\n  `💰 <b>Доходы:</b> ${Math.round(d.income_total).toLocaleString()} KGS (${d.income_count} операций)\\n` +\n  `${balanceEmoji} <b>Баланс:</b> ${balanceSign}${Math.round(d.balance).toLocaleString()} KGS\\n` +\n  budgetText +\n  `📉 <b>Средний расход/день:</b> ${Math.round(d.avg_daily || 0).toLocaleString()} KGS\\n\\n` +\n  `🏆 <b>Расходы по категориям:</b>\\n${catsText}\\n\\n` +\n  `📄 <i>PDF отчёт формируется...</i>`;\n\nreturn { json: { ...d, message } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        432
+      ],
+      "id": "60967632-3696-491f-8f35-75cbdad45b46",
+      "name": "Format Monthly"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst cats = d.category_breakdown || [];\n\nlet catsText = '';\nif (Array.isArray(cats) && cats.length > 0) {\n  catsText = cats.slice(0, 7).map(c => `  • ${c.category}: ${Math.round(c.total).toLocaleString()} KGS (${c.percent || 0}%)`).join('\\n');\n} else {\n  catsText = '  📭 Нет данных';\n}\n\nconst balanceEmoji = d.balance >= 0 ? '📈' : '📉';\nconst balanceSign = d.balance >= 0 ? '+' : '';\n\nconst message = `📆 <b>Отчёт за период</b>\\n` +\n  `📅 ${d.period_start} — ${d.period_end} (${d.period_days} дней)\\n\\n` +\n  `💸 <b>Расходы:</b> ${Math.round(d.expenses_total).toLocaleString()} KGS (${d.expenses_count} операций)\\n` +\n  `💰 <b>Доходы:</b> ${Math.round(d.income_total).toLocaleString()} KGS (${d.income_count} операций)\\n` +\n  `${balanceEmoji} <b>Баланс:</b> ${balanceSign}${Math.round(d.balance).toLocaleString()} KGS\\n` +\n  `📉 <b>Средний расход/день:</b> ${Math.round(d.avg_daily || 0).toLocaleString()} KGS\\n\\n` +\n  `🏆 <b>Расходы по категориям:</b>\\n${catsText}\\n\\n` +\n  `📄 <i>PDF отчёт формируется...</i>`;\n\nreturn { json: { ...d, message } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        624
+      ],
+      "id": "0e4166b3-cea7-431f-b39f-5db5f2687410",
+      "name": "Format Period"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        48
+      ],
+      "id": "a0cf9b1d-c2d3-4e8d-917f-ec3ef3ceeed2",
+      "name": "Send Daily",
+      "webhookId": "677b78ed-9c07-4f47-9f16-635367fd12a1",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        240
+      ],
+      "id": "8ae06dc2-34a8-4be3-96a9-3c0a1e36c21f",
+      "name": "Send Weekly Text",
+      "webhookId": "dd603590-8658-4ae0-b907-1fb77d732709",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        432
+      ],
+      "id": "98664d9e-9a11-4e7d-8f3e-cfb62c65c693",
+      "name": "Send Monthly Text",
+      "webhookId": "278c1ae9-1475-4fbc-ba3a-1cf8f44ef794",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        624
+      ],
+      "id": "c031d022-b569-4a98-88b2-711e41f437ef",
+      "name": "Send Period Text",
+      "webhookId": "6492ee7f-5b71-49da-9d71-4b5d91aa939c",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "res",
+              "name": "result",
+              "value": "✅ Ежедневный отчёт отправлен",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        48
+      ],
+      "id": "eeb1b71d-ddaf-4f52-9a4a-eb79d094cba9",
+      "name": "Daily Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Get Weekly Data').first().json;\nconst cats = d.top_categories || [];\nconst daily = d.daily_data || [];\n\nreturn { json: {\n  user_name: d.first_name || 'Пользователь',\n  period: `${d.period_start} — ${d.period_end}`,\n  currency_symbol: 'KGS',\n  total_expenses: Math.round(Number(d.expenses_total) || 0),\n  total_expenses_formatted: `${Math.round(Number(d.expenses_total) || 0).toLocaleString('ru-RU')} KGS`,\n  total_income: Math.round(Number(d.income_total) || 0),\n  total_income_formatted: `${Math.round(Number(d.income_total) || 0).toLocaleString('ru-RU')} KGS`,\n  balance: Math.round(Number(d.balance) || 0),\n  balance_formatted: `${Math.round(Number(d.balance) || 0).toLocaleString('ru-RU')} KGS`,\n  transaction_count: (Number(d.expenses_count) || 0) + (Number(d.income_count) || 0),\n  avg_daily_expense: Math.round(Number(d.avg_daily) || 0),\n  avg_daily_expense_formatted: `${Math.round(Number(d.avg_daily) || 0).toLocaleString('ru-RU')} KGS`,\n  top_categories: Array.isArray(cats) ? cats.map(c => ({ name: c.category, amount: Math.round(Number(c.total) || 0), percentage: c.percent || 0 })) : [],\n  daily_data: Array.isArray(daily) ? daily.map(dd => ({ date: dd.day, expenses: Math.round(Number(dd.expenses) || 0) })) : []\n}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        240
+      ],
+      "id": "72916e48-e757-4eef-b709-92c7a52e8cd1",
+      "name": "Prep Weekly PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Get Monthly Data').first().json;\nconst cats = Array.isArray(d.category_breakdown) ? d.category_breakdown : [];\nconst weeks = Array.isArray(d.weekly_data) ? d.weekly_data : [];\n\nconst expTotal = Math.round(Number(d.expenses_total) || 0);\nconst incTotal = Math.round(Number(d.income_total) || 0);\nconst balance = Math.round(Number(d.balance) || 0);\nconst budgetAmt = Math.round(Number(d.budget_amount) || 0);\nconst budgetUsedPct = Math.round(Number(d.budget_used_percent) || 0);\nconst budgetRemaining = budgetAmt > 0 ? budgetAmt - expTotal : 0;\nconst avgDailyExp = Math.round(Number(d.avg_daily) || 0);\nconst avgDailyInc = Math.round(Number(d.avg_daily_income) || 0);\n\nreturn { json: {\n  user_name: d.first_name || 'Пользователь',\n  period: (d.month_name || '').trim(),\n  currency_symbol: 'KGS',\n  \n  total_expenses: expTotal,\n  total_expenses_formatted: expTotal.toLocaleString('ru-RU') + ' KGS',\n  total_income: incTotal,\n  total_income_formatted: incTotal.toLocaleString('ru-RU') + ' KGS',\n  balance: balance,\n  balance_formatted: (balance >= 0 ? '+' : '') + balance.toLocaleString('ru-RU') + ' KGS',\n  \n  transaction_count: (Number(d.expenses_count) || 0) + (Number(d.income_count) || 0),\n  \n  budget_amount: budgetAmt,\n  budget_amount_formatted: budgetAmt > 0 ? budgetAmt.toLocaleString('ru-RU') + ' KGS' : 'Не задан',\n  budget_used: expTotal,\n  budget_used_formatted: expTotal.toLocaleString('ru-RU') + ' KGS',\n  budget_used_percent: budgetUsedPct,\n  budget_remaining: budgetRemaining,\n  budget_remaining_formatted: budgetRemaining.toLocaleString('ru-RU') + ' KGS',\n  \n  avg_daily_expense: avgDailyExp,\n  avg_daily_expense_formatted: avgDailyExp.toLocaleString('ru-RU') + ' KGS',\n  avg_daily_income: avgDailyInc,\n  avg_daily_income_formatted: avgDailyInc.toLocaleString('ru-RU') + ' KGS',\n  \n  top_categories: cats.slice(0, 5).map(c => ({\n    name: c.category,\n    amount: Math.round(Number(c.total) || 0),\n    percentage: c.percent || 0\n  })),\n  \n  expense_breakdown: cats.map(c => ({\n    category: c.category,\n    amount: Math.round(Number(c.total) || 0),\n    amount_formatted: Math.round(Number(c.total) || 0).toLocaleString('ru-RU') + ' KGS',\n    percentage: c.percent || 0,\n    count: c.count || 0\n  })),\n  \n  weekly_data: weeks.map(w => ({\n    label: w.label,\n    expenses: Math.round(Number(w.expenses) || 0),\n    income: Math.round(Number(w.income) || 0)\n  })),\n  \n  forecast_expense: Math.round(avgDailyExp * 30),\n  forecast_expense_formatted: Math.round(avgDailyExp * 30).toLocaleString('ru-RU') + ' KGS',\n  forecast_income: Math.round(avgDailyInc * 30),\n  forecast_income_formatted: Math.round(avgDailyInc * 30).toLocaleString('ru-RU') + ' KGS',\n  forecast_balance: Math.round((avgDailyInc - avgDailyExp) * 30),\n  forecast_balance_formatted: Math.round((avgDailyInc - avgDailyExp) * 30).toLocaleString('ru-RU') + ' KGS'\n}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        432
+      ],
+      "id": "1ecb0dfe-4962-47bb-9036-719e3423b265",
+      "name": "Prep Monthly PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Get Period Data').first().json;\nconst cats = d.category_breakdown || [];\nconst daily = d.daily_data || [];\n\nreturn { json: {\n  user_name: d.first_name || 'Пользователь',\n  period: `${d.period_start} — ${d.period_end}`,\n  period_days: d.period_days,\n  currency_symbol: 'KGS',\n  total_expenses: Math.round(Number(d.expenses_total) || 0),\n  total_expenses_formatted: `${Math.round(Number(d.expenses_total) || 0).toLocaleString('ru-RU')} KGS`,\n  total_income: Math.round(Number(d.income_total) || 0),\n  total_income_formatted: `${Math.round(Number(d.income_total) || 0).toLocaleString('ru-RU')} KGS`,\n  balance: Math.round(Number(d.balance) || 0),\n  balance_formatted: `${Math.round(Number(d.balance) || 0).toLocaleString('ru-RU')} KGS`,\n  transaction_count: (Number(d.expenses_count) || 0) + (Number(d.income_count) || 0),\n  avg_daily_expense: Math.round(Number(d.avg_daily) || 0),\n  avg_daily_expense_formatted: `${Math.round(Number(d.avg_daily) || 0).toLocaleString('ru-RU')} KGS`,\n  category_totals: Array.isArray(cats) ? cats.map(c => ({ category: c.category, category_total: Math.round(Number(c.total) || 0), percentage: c.percent || 0 })) : [],\n  daily_data: Array.isArray(daily) ? daily.map(dd => ({ date: dd.day, expenses: Math.round(Number(dd.expenses) || 0) })) : []\n}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        624
+      ],
+      "id": "a0ee106a-9de1-42f8-9df0-67ad12ef3c84",
+      "name": "Prep Period PDF"
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "bad77b2358deda5e",
+        "jsonParameters": true,
+        "propertiesJson": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        64,
+        240
+      ],
+      "id": "8d6cae56-2f6b-49c5-a73d-05dd69cd0081",
+      "name": "Generate Weekly PDF",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "Qa32Fv2fVQLxXf6h",
+          "name": "APITemplate.io account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "90577b2358dd6f88",
+        "jsonParameters": true,
+        "propertiesJson": "={{ JSON.stringify($json) }}"
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        64,
+        432
+      ],
+      "id": "4258d105-cfeb-48cc-b49f-d101f8d6cb97",
+      "name": "Generate Monthly PDF",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "Qa32Fv2fVQLxXf6h",
+          "name": "APITemplate.io account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "49c77b23ede0d4e6"
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        64,
+        624
+      ],
+      "id": "2e1f52ce-fdaf-40e4-8b0e-e55b189997c1",
+      "name": "Generate Period PDF",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "Qa32Fv2fVQLxXf6h",
+          "name": "APITemplate.io account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Get Weekly Data').first().json.chat_id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {
+          "caption": "📊 Недельный отчёт (PDF)",
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        240
+      ],
+      "id": "20da04db-81d9-4321-bf10-ecc746b535b6",
+      "name": "Send Weekly PDF",
+      "webhookId": "46486394-7325-456c-ab04-a20d2b3b8776",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Get Monthly Data').first().json.chat_id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {
+          "caption": "📅 Месячный отчёт (PDF)",
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        432
+      ],
+      "id": "c2d069b0-d371-4299-822d-c84f7f3a36cb",
+      "name": "Send Monthly PDF",
+      "webhookId": "5aa7525e-2532-4ba8-8be4-c049bde8a190",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Get Period Data').first().json.chat_id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {
+          "caption": "📆 Отчёт за период (PDF)",
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        624
+      ],
+      "id": "798d9feb-45c1-460c-a02b-8a92810c311b",
+      "name": "Send Period PDF",
+      "webhookId": "967108b5-d356-47cc-a1d8-23c62b7dd37a",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO saved_reports (user_id, report_type, title, period_start, period_end, pdf_url, report_data) VALUES ({{ $('Get Weekly Data').first().json.user_id }}, 'weekly', 'РќРµРґРµР»СЊРЅС‹Р№ РѕС‚С‡С‘С‚', '{{ $('Get Weekly Data').first().json.period_start_date }}'::date, '{{ $('Get Weekly Data').first().json.period_end_date }}'::date, '{{ $json.download_url || '' }}', '{{ JSON.stringify($('Get Weekly Data').first().json).replace(/'/g, \"''\") }}'::jsonb) RETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        240
+      ],
+      "id": "e107f8c8-9b7a-428e-b00e-34c0ab2aeae7",
+      "name": "Save Weekly",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO saved_reports (user_id, report_type, title, period_start, period_end, pdf_url, report_data) VALUES ({{ $('Get Monthly Data').first().json.user_id }}, 'monthly', 'РњРµСЃСЏС‡РЅС‹Р№ РѕС‚С‡С‘С‚', '{{ $('Get Monthly Data').first().json.period_start_date }}'::date, '{{ $('Get Monthly Data').first().json.period_end_date }}'::date, '{{ $json.download_url || '' }}', '{{ JSON.stringify($('Get Monthly Data').first().json).replace(/'/g, \"''\") }}'::jsonb) RETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        432
+      ],
+      "id": "5d5607b4-d21a-436a-af90-154a716f4917",
+      "name": "Save Monthly",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO saved_reports (user_id, report_type, title, period_start, period_end, pdf_url, report_data) VALUES ({{ $('Get Period Data').first().json.user_id }}, 'period', 'РћС‚С‡С‘С‚ Р·Р° РїРµСЂРёРѕРґ', '{{ $('Get Period Data').first().json.period_start_date }}'::date, '{{ $('Get Period Data').first().json.period_end_date }}'::date, '{{ $json.download_url || '' }}', '{{ JSON.stringify($('Get Period Data').first().json).replace(/'/g, \"''\") }}'::jsonb) RETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        624
+      ],
+      "id": "adc6d213-712e-4964-9663-792995684bfa",
+      "name": "Save Period",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "res",
+              "name": "result",
+              "value": "✅ Недельный отчёт с PDF отправлен",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        240
+      ],
+      "id": "af61f82f-a4d0-4917-8c2e-b9c6f9288c03",
+      "name": "Weekly Result"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "res",
+              "name": "result",
+              "value": "✅ Месячный отчёт с PDF отправлен",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        432
+      ],
+      "id": "827bfcae-660f-4286-88e7-05545424ce3f",
+      "name": "Monthly Result"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "res",
+              "name": "result",
+              "value": "✅ Отчёт за период с PDF отправлен",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        624
+      ],
+      "id": "cbe7287a-1b6f-4dc2-84aa-518568d90295",
+      "name": "Period Result"
+    }
+  ],
+  "connections": {
+    "Reports Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Webhook Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Webhook Data": {
+      "main": [
+        [
+          {
+            "node": "Report Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 21:00": {
+      "main": [
+        [
+          {
+            "node": "Get Users Daily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Sunday 10:00": {
+      "main": [
+        [
+          {
+            "node": "Get Users Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monthly 1st 10:00": {
+      "main": [
+        [
+          {
+            "node": "Get Users Monthly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Users Daily": {
+      "main": [
+        [
+          {
+            "node": "Set Daily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Users Weekly": {
+      "main": [
+        [
+          {
+            "node": "Set Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Users Monthly": {
+      "main": [
+        [
+          {
+            "node": "Set Monthly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Daily": {
+      "main": [
+        [
+          {
+            "node": "Report Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Weekly": {
+      "main": [
+        [
+          {
+            "node": "Report Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Monthly": {
+      "main": [
+        [
+          {
+            "node": "Report Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report Router": {
+      "main": [
+        [
+          {
+            "node": "Get Daily Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Weekly Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Monthly Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Period Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Daily Data": {
+      "main": [
+        [
+          {
+            "node": "Format Daily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Data": {
+      "main": [
+        [
+          {
+            "node": "Format Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Monthly Data": {
+      "main": [
+        [
+          {
+            "node": "Format Monthly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Period Data": {
+      "main": [
+        [
+          {
+            "node": "Format Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Daily": {
+      "main": [
+        [
+          {
+            "node": "Send Daily",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Weekly": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Monthly": {
+      "main": [
+        [
+          {
+            "node": "Send Monthly Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Period": {
+      "main": [
+        [
+          {
+            "node": "Send Period Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Daily": {
+      "main": [
+        [
+          {
+            "node": "Daily Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Weekly Text": {
+      "main": [
+        [
+          {
+            "node": "Prep Weekly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Monthly Text": {
+      "main": [
+        [
+          {
+            "node": "Prep Monthly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Period Text": {
+      "main": [
+        [
+          {
+            "node": "Prep Period PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Weekly PDF": {
+      "main": [
+        [
+          {
+            "node": "Generate Weekly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Monthly PDF": {
+      "main": [
+        [
+          {
+            "node": "Generate Monthly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Period PDF": {
+      "main": [
+        [
+          {
+            "node": "Generate Period PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Weekly PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Monthly PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Monthly PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Period PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Period PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Weekly PDF": {
+      "main": [
+        [
+          {
+            "node": "Save Weekly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Monthly PDF": {
+      "main": [
+        [
+          {
+            "node": "Save Monthly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Period PDF": {
+      "main": [
+        [
+          {
+            "node": "Save Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Weekly": {
+      "main": [
+        [
+          {
+            "node": "Weekly Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Monthly": {
+      "main": [
+        [
+          {
+            "node": "Monthly Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Period": {
+      "main": [
+        [
+          {
+            "node": "Period Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
+  }
+}

@@ -1,0 +1,780 @@
+﻿{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -992,
+        -64
+      ],
+      "id": "b483d5a8-beb5-4b3c-b2f0-d07e2b19b6cb",
+      "name": "Telegram Trigger",
+      "webhookId": "7d5db243-2146-45ba-a9b7-d0d743f58df0",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -768,
+        -64
+      ],
+      "id": "6f46c419-0833-4327-b730-e72f0d95aaac",
+      "name": "Message Type"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -544,
+        -160
+      ],
+      "id": "c9d44e13-b678-44aa-a70c-61e60a2f32d4",
+      "name": "Download Voice",
+      "webhookId": "ebbba00f-fb0b-4458-ade5-3e826582610f",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        -320,
+        -160
+      ],
+      "id": "313d0288-8768-4166-afd2-bd29b9968fc0",
+      "name": "Whisper STT",
+      "credentials": {
+        "openAiApi": {
+          "id": "1T30bcIe2tfs32N6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "text",
+              "name": "text",
+              "value": "={{ $json.text",
+              "type": "string"
+            },
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.id",
+              "type": "number"
+            },
+            {
+              "id": "chat_id",
+              "name": "chat_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id",
+              "type": "number"
+            },
+            {
+              "id": "first_name",
+              "name": "first_name",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.first_name || 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        -160
+      ],
+      "id": "d6ee7742-ae21-40a7-a626-9b3ef61dbfa8",
+      "name": "Set Voice Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "text",
+              "name": "text",
+              "value": "={{ $json.message.text",
+              "type": "string"
+            },
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $json.message.from.id",
+              "type": "number"
+            },
+            {
+              "id": "chat_id",
+              "name": "chat_id",
+              "value": "={{ $json.message.chat.id",
+              "type": "number"
+            },
+            {
+              "id": "first_name",
+              "name": "first_name",
+              "value": "={{ $json.message.from.first_name || 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        32
+      ],
+      "id": "b2eba37e-16fd-47aa-93c7-fc8e30ddcca0",
+      "name": "Set Text Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User ID: {{ $json.user_id }}\nChat ID: {{ $json.chat_id }}\nРРјСЏ: {{ $json.first_name }}\nРЎРѕРѕР±С‰РµРЅРёРµ: {{ $json.text",
+        "options": {
+          "systemMessage": "РўС‹ вЂ” С„РёРЅР°РЅСЃРѕРІС‹Р№ AI-Р°СЃСЃРёСЃС‚РµРЅС‚ AIAccounter РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ Р»РёС‡РЅС‹РјРё С„РёРЅР°РЅСЃР°РјРё С‡РµСЂРµР· Telegram.\n\nрџЋЁ РћР¤РћР РњР›Р•РќРР• (Telegram HTML):\nвЂў РСЃРїРѕР»СЊР·СѓР№ HTML: <b>Р¶РёСЂРЅС‹Р№</b>, <i>РєСѓСЂСЃРёРІ</i>, <code>РєРѕРґ</code>\nвЂў Р”РѕР±Р°РІР»СЏР№ СЌРјРѕРґР·Рё РґР»СЏ РЅР°РіР»СЏРґРЅРѕСЃС‚Рё\n\nрџЋЇ Р—РђР”РђР§Рђ:\nР Р°СЃРїРѕР·РЅР°РІР°С‚СЊ РЅР°РјРµСЂРµРЅРёСЏ Рё РЎР РђР—РЈ РІС‹РїРѕР»РЅСЏС‚СЊ РґРµР№СЃС‚РІРёСЏ Р±РµР· Р»РёС€РЅРёС… РІРѕРїСЂРѕСЃРѕРІ.\n\nрџ“‹ РРќРЎРўР РЈРњР•РќРўР«:\n\nрџ’° РўР РђРќР—РђРљР¦РР:\nвЂў Get_Expenses вЂ” РїРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє СЂР°СЃС…РѕРґРѕРІ\nвЂў Get_Income вЂ” РїРѕР»СѓС‡РёС‚СЊ СЃРїРёСЃРѕРє РґРѕС…РѕРґРѕРІ\nвЂў Create_Expense вЂ” РґРѕР±Р°РІРёС‚СЊ СЂР°СЃС…РѕРґ\nвЂў Create_Income вЂ” РґРѕР±Р°РІРёС‚СЊ РґРѕС…РѕРґ\nвЂў Delete_Expense вЂ” СѓРґР°Р»РёС‚СЊ СЂР°СЃС…РѕРґ РїРѕ ID\nвЂў Delete_Income вЂ” СѓРґР°Р»РёС‚СЊ РґРѕС…РѕРґ РїРѕ ID\n\nрџ“Љ РћРўР§РЃРўР« (РћР‘РЇР—РђРўР•Р›Р¬РќРћ РёСЃРїРѕР»СЊР·СѓР№ СЌС‚Рё РёРЅСЃС‚СЂСѓРјРµРЅС‚С‹!):\nвЂў Report_Daily вЂ” РґР»СЏ: 'РѕС‚С‡С‘С‚', 'Р·Р° СЃРµРіРѕРґРЅСЏ', 'РґРµР№Р»Рё', 'daily'\nвЂў Report_Weekly вЂ” РґР»СЏ: 'РЅРµРґРµР»СЊРЅС‹Р№', 'Р·Р° РЅРµРґРµР»СЋ', 'weekly'\nвЂў Report_Monthly вЂ” РґР»СЏ: 'РјРµСЃСЏС‡РЅС‹Р№', 'Р·Р° РјРµСЃСЏС†', 'monthly'\nвЂў Report_Period вЂ” РґР»СЏ РєРѕРЅРєСЂРµС‚РЅС‹С… РґР°С‚: 'СЃ 1 РїРѕ 15', 'Р·Р° РѕРєС‚СЏР±СЂСЊ'\n\nрџљЁ РљР РРўРР§Р•РЎРљР Р’РђР–РќРћ Р”Р›РЇ РћРўР§РЃРўРћР’:\n1. Р’С‹Р·С‹РІР°Р№ Report_* РёРЅСЃС‚СЂСѓРјРµРЅС‚ РўРћР›Р¬РљРћ РћР”РРќ Р РђР—!\n2. РџРѕСЃР»Рµ РІС‹Р·РѕРІР° Report вЂ” РїСЂРѕСЃС‚Рѕ РѕС‚РІРµС‚СЊ 'РћС‚С‡С‘С‚ РѕС‚РїСЂР°РІР»РµРЅ!' РёР»Рё РїРѕРґРѕР±РЅРѕРµ\n3. РќР• РІС‹Р·С‹РІР°Р№ Report РїРѕРІС‚РѕСЂРЅРѕ, РќР• СЃСѓРјРјРёСЂСѓР№ РґР°РЅРЅС‹Рµ, РќР• Р°РЅР°Р»РёР·РёСЂСѓР№ СЂРµР·СѓР»СЊС‚Р°С‚\n4. Report СЃР°Рј РѕС‚РїСЂР°РІР»СЏРµС‚ СЃРѕРѕР±С‰РµРЅРёСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РЅР°РїСЂСЏРјСѓСЋ\n\nвљЎ РђР’РўРћРћРџР Р•Р”Р•Р›Р•РќРР• РўР РђРќР—РђРљР¦РР™:\n\nрџџў Р”РћРҐРћР” в†’ Create_Income:\n\"РџРѕР»СѓС‡РёР» Р·Р°СЂРїР»Р°С‚Сѓ 50000\", \"Р—Р°СЂР°Р±РѕС‚Р°Р» 30000\"\n\nрџ”ґ Р РђРЎРҐРћР” в†’ Create_Expense:\n\"РљСѓРїРёР» РїСЂРѕРґСѓРєС‚С‹ 2000\", \"РџРѕС‚СЂР°С‚РёР» РЅР° С‚Р°РєСЃРё 500\"\n\nрџљЁ РќР•РЎРљРћР›Р¬РљРћ РўР РђРќР—РђРљР¦РР™:\n\"200 С‚Р°РєСЃРё, 6000 РѕР±РµРґ\" в†’ РІС‹Р·РѕРІРё Create_Expense Р”Р›РЇ РљРђР–Р”РћР™ РѕС‚РґРµР»СЊРЅРѕ!\n\nвњ… РџР РђР’РР›Рђ:\n1. РќР• СЃРїСЂР°С€РёРІР°Р№ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ вЂ” СЃСЂР°Р·Сѓ РІС‹РїРѕР»РЅСЏР№\n2. РљР°С‚РµРіРѕСЂРёСЋ РѕРїСЂРµРґРµР»СЏР№ РїРѕ РєРѕРЅС‚РµРєСЃС‚Сѓ\n3. Р”Р°С‚Р° = СЃРµРіРѕРґРЅСЏ, РµСЃР»Рё РЅРµ СѓРєР°Р·Р°РЅР°\n4. Р’Р°Р»СЋС‚Р° = KGS РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ\n5. РџРѕСЃР»Рµ РґРѕР±Р°РІР»РµРЅРёСЏ С‚СЂР°РЅР·Р°РєС†РёРё: \"вњ… Р—Р°РїРёСЃР°Р»! рџ’ё СЃСѓРјРјР° KGS вЂ” РєР°С‚РµРіРѕСЂРёСЏ\"\n6. Р”Р»СЏ РѕС‚С‡С‘С‚Р° вЂ” РѕРґРёРЅ РІС‹Р·РѕРІ Report_*, РїРѕС‚РѕРј РєСЂР°С‚РєРёР№ РѕС‚РІРµС‚!\n\nрџ“‚ РљРђРўР•Р“РћР РР:\nР”РѕС…РѕРґС‹: Р—Р°СЂРїР»Р°С‚Р°, Р¤СЂРёР»Р°РЅСЃ, РРЅРІРµСЃС‚РёС†РёРё, РџРѕРґР°СЂРєРё, Р”СЂСѓРіРѕРµ\nР Р°СЃС…РѕРґС‹: РџСЂРѕРґСѓРєС‚С‹, РўСЂР°РЅСЃРїРѕСЂС‚, РљР°С„Рµ, Р–РёР»СЊС‘, РњРµРґРёС†РёРЅР°, РћРґРµР¶РґР°, Р Р°Р·РІР»РµС‡РµРЅРёСЏ, РћР±СЂР°Р·РѕРІР°РЅРёРµ, РџРѕРґРїРёСЃРєРё, Р”СЂСѓРіРѕРµ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        824,
+        -64
+      ],
+      "id": "80a27054-62c5-4006-b7a6-054f782d90b2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id",
+        "text": "={{ $json.output",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        -64
+      ],
+      "id": "64e0e5bf-c0f2-4665-b0a4-58baf9331869",
+      "name": "Send Reply",
+      "webhookId": "9c3b0626-7240-4ad1-a03e-14cee62b4802",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        160
+      ],
+      "id": "c54e8400-382d-415b-8b90-9f142a00381a",
+      "name": "GPT-4.1 Mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "1T30bcIe2tfs32N6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        160
+      ],
+      "id": "8eb62a1b-a003-4cdc-a7ce-6649c45a2d99",
+      "name": "Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РџРѕР»СѓС‡Р°РµС‚ СЂР°СЃС…РѕРґС‹ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє СЂР°СЃС…РѕРґРѕРІ СЃ id, date, category, amount, currency, description.",
+        "operation": "executeQuery",
+        "query": "=SELECT id, date, category, amount, currency, description FROM expenses WHERE user_id = {{ $('Telegram Trigger').item.json.message.from.id }} AND deleted_at IS NULL ORDER BY date DESC LIMIT 100",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        384,
+        160
+      ],
+      "id": "8e1883a6-bc24-43c1-9ec8-18462501fa95",
+      "name": "Get_Expenses",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РџРѕР»СѓС‡Р°РµС‚ РґРѕС…РѕРґС‹ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ. Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РґРѕС…РѕРґРѕРІ СЃ id, date, category, amount, currency, description.",
+        "operation": "executeQuery",
+        "query": "=SELECT id, date, category, amount, currency, description FROM income WHERE user_id = {{ $('Telegram Trigger').item.json.message.from.id }} AND deleted_at IS NULL ORDER BY date DESC LIMIT 100",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        160
+      ],
+      "id": "53c281fb-c86a-4e5a-ad3a-07a1d666e32d",
+      "name": "Get_Income",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІС‹Р№ СЂР°СЃС…РѕРґ. РСЃРїРѕР»СЊР·СѓР№ РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕС‚СЂР°С‚РёР» РґРµРЅСЊРіРё: РїРѕРєСѓРїРєР°, РѕРїР»Р°С‚Р°, С‚Р°РєСЃРё, РµРґР° Рё С‚.Рґ.",
+        "operation": "executeQuery",
+        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, '{{ $fromAI('date', 'Р”Р°С‚Р° YYYY-MM-DD, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ СЃРµРіРѕРґРЅСЏ', 'string') }}', '{{ $fromAI('category', 'РљР°С‚РµРіРѕСЂРёСЏ: РџСЂРѕРґСѓРєС‚С‹, РўСЂР°РЅСЃРїРѕСЂС‚, РљР°С„Рµ, Р–РёР»СЊС‘, РњРµРґРёС†РёРЅР°, РћРґРµР¶РґР°, Р Р°Р·РІР»РµС‡РµРЅРёСЏ, РћР±СЂР°Р·РѕРІР°РЅРёРµ, РџРѕРґРїРёСЃРєРё, Р”СЂСѓРіРѕРµ', 'string') }}', {{ $fromAI('amount', 'РЎСѓРјРјР° С‡РёСЃР»РѕРј', 'number') }}, '{{ $fromAI('currency', 'Р’Р°Р»СЋС‚Р° KGS/USD/EUR/RUB, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ KGS', 'string') }}', '{{ $fromAI('description', 'РљСЂР°С‚РєРѕРµ РѕРїРёСЃР°РЅРёРµ', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        160
+      ],
+      "id": "32023ca6-aa1f-435b-aef9-b49531591659",
+      "name": "Create_Expense",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Р”РѕР±Р°РІР»СЏРµС‚ РЅРѕРІС‹Р№ РґРѕС…РѕРґ. РСЃРїРѕР»СЊР·СѓР№ РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕР»СѓС‡РёР» РґРµРЅСЊРіРё: Р·Р°СЂРїР»Р°С‚Р°, С„СЂРёР»Р°РЅСЃ, РїСЂРѕРґР°Р¶Р°, РїРѕРґР°СЂРѕРє Рё С‚.Рґ.",
+        "operation": "executeQuery",
+        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, '{{ $fromAI('date', 'Р”Р°С‚Р° YYYY-MM-DD, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ СЃРµРіРѕРґРЅСЏ', 'string') }}', '{{ $fromAI('category', 'РљР°С‚РµРіРѕСЂРёСЏ: Р—Р°СЂРїР»Р°С‚Р°, Р¤СЂРёР»Р°РЅСЃ, РРЅРІРµСЃС‚РёС†РёРё, РџРѕРґР°СЂРєРё, Р”СЂСѓРіРѕРµ', 'string') }}', {{ $fromAI('amount', 'РЎСѓРјРјР° С‡РёСЃР»РѕРј', 'number') }}, '{{ $fromAI('currency', 'Р’Р°Р»СЋС‚Р° KGS/USD/EUR/RUB, РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ KGS', 'string') }}', '{{ $fromAI('description', 'РљСЂР°С‚РєРѕРµ РѕРїРёСЃР°РЅРёРµ', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        768,
+        160
+      ],
+      "id": "99578c06-ed88-4b71-ba35-ddd9b2718e6d",
+      "name": "Create_Income",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РЈРґР°Р»СЏРµС‚ СЂР°СЃС…РѕРґ РїРѕ ID. РСЃРїРѕР»СЊР·СѓР№ РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ С…РѕС‡РµС‚ СѓРґР°Р»РёС‚СЊ СЂР°СЃС…РѕРґ.",
+        "operation": "executeQuery",
+        "query": "=UPDATE expenses SET deleted_at = NOW() WHERE id = {{ $fromAI('id', 'ID СЂР°СЃС…РѕРґР° РґР»СЏ СѓРґР°Р»РµРЅРёСЏ', 'number') }} AND user_id = {{ $('Telegram Trigger').item.json.message.from.id }} RETURNING id, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        896,
+        160
+      ],
+      "id": "96a654a7-37c6-48e6-8288-ecd13fe2b58f",
+      "name": "Delete_Expense",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РЈРґР°Р»СЏРµС‚ РґРѕС…РѕРґ РїРѕ ID. РСЃРїРѕР»СЊР·СѓР№ РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ С…РѕС‡РµС‚ СѓРґР°Р»РёС‚СЊ РґРѕС…РѕРґ.",
+        "operation": "executeQuery",
+        "query": "=UPDATE income SET deleted_at = NOW() WHERE id = {{ $fromAI('id', 'ID РґРѕС…РѕРґР° РґР»СЏ СѓРґР°Р»РµРЅРёСЏ', 'number') }} AND user_id = {{ $('Telegram Trigger').item.json.message.from.id }} RETURNING id, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        160
+      ],
+      "id": "9058f269-0916-4a0c-a7d9-93900b3e132e",
+      "name": "Delete_Income",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        160
+      ],
+      "id": "7644050b-e1c1-421b-aa09-215a4d6439f1",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Р•Р¶РµРґРЅРµРІРЅС‹Р№ РѕС‚С‡С‘С‚ Р·Р° СЃРµРіРѕРґРЅСЏ (С‚РѕР»СЊРєРѕ С‚РµРєСЃС‚). РСЃРїРѕР»СЊР·СѓР№ РїСЂРё: 'РѕС‚С‡С‘С‚', 'Р·Р° СЃРµРіРѕРґРЅСЏ', 'РґРµР№Р»Рё', 'daily', 'С‡С‚Рѕ СЃРµРіРѕРґРЅСЏ РїРѕС‚СЂР°С‚РёР»'.",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"report_type\": \"daily\",\n  \"user_id\": {{ $json.user_id }},\n  \"chat_id\": {{ $json.chat_id }},\n  \"first_name\": \"{{ $json.first_name }}\",\n  \"start_date\": \"\",\n  \"end_date\": \"\"\n}",
+        "placeholderDefinitions": {
+          "values": []
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        160
+      ],
+      "id": "e930844c-0166-4327-aa6f-780350b67f9a",
+      "name": "Report_Daily"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РќРµРґРµР»СЊРЅС‹Р№ РѕС‚С‡С‘С‚ Р·Р° РїРѕСЃР»РµРґРЅРёРµ 7 РґРЅРµР№ СЃ PDF. РСЃРїРѕР»СЊР·СѓР№ РїСЂРё: 'РЅРµРґРµР»СЊРЅС‹Р№', 'Р·Р° РЅРµРґРµР»СЋ', 'weekly', 'РЅРµРґРµР»СЊРЅС‹Р№ РѕС‚С‡С‘С‚'.",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"report_type\": \"weekly\",\n  \"user_id\": {{ $json.user_id }},\n  \"chat_id\": {{ $json.chat_id }},\n  \"first_name\": \"{{ $json.first_name }}\",\n  \"start_date\": \"\",\n  \"end_date\": \"\"\n}",
+        "placeholderDefinitions": {
+          "values": []
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        160
+      ],
+      "id": "bb9747f0-dbd7-4960-b1f0-93503447355c",
+      "name": "Report_Weekly"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РњРµСЃСЏС‡РЅС‹Р№ РѕС‚С‡С‘С‚ Р·Р° С‚РµРєСѓС‰РёР№ РјРµСЃСЏС† СЃ PDF. РСЃРїРѕР»СЊР·СѓР№ РїСЂРё: 'РјРµСЃСЏС‡РЅС‹Р№', 'Р·Р° РјРµСЃСЏС†', 'monthly', 'РјРµСЃСЏС‡РЅС‹Р№ РѕС‚С‡С‘С‚'.",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"report_type\": \"monthly\",\n  \"user_id\": {{ $json.user_id }},\n  \"chat_id\": {{ $json.chat_id }},\n  \"first_name\": \"{{ $json.first_name }}\",\n  \"start_date\": \"\",\n  \"end_date\": \"\"\n}",
+        "placeholderDefinitions": {
+          "values": []
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1536,
+        160
+      ],
+      "id": "16b2c679-eec9-4281-9781-4d8920e4da80",
+      "name": "Report_Monthly"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "РћС‚С‡С‘С‚ Р·Р° РїСЂРѕРёР·РІРѕР»СЊРЅС‹Р№ РїРµСЂРёРѕРґ СЃ PDF. РСЃРїРѕР»СЊР·СѓР№ РїСЂРё СѓРєР°Р·Р°РЅРёРё РєРѕРЅРєСЂРµС‚РЅС‹С… РґР°С‚: 'СЃ 1 РїРѕ 15 РЅРѕСЏР±СЂСЏ', 'Р·Р° РѕРєС‚СЏР±СЂСЊ', 'СЃ 10 РїРѕ 20'. РћР‘РЇР—РђРўР•Р›Р¬РќРћ СѓРєР°Р¶Рё start_date Рё end_date РІ С„РѕСЂРјР°С‚Рµ YYYY-MM-DD.",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"report_type\": \"period\",\n  \"user_id\": {{ $json.user_id }},\n  \"chat_id\": {{ $json.chat_id }},\n  \"first_name\": \"{{ $json.first_name }}\",\n  \"start_date\": \"{{ $fromAI('start_date', 'Р”Р°С‚Р° РЅР°С‡Р°Р»Р° РїРµСЂРёРѕРґР° YYYY-MM-DD', 'string') }}\",\n  \"end_date\": \"{{ $fromAI('end_date', 'Р”Р°С‚Р° РєРѕРЅС†Р° РїРµСЂРёРѕРґР° YYYY-MM-DD', 'string') }}\"\n}",
+        "placeholderDefinitions": {
+          "values": []
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1664,
+        160
+      ],
+      "id": "c3d46a76-4e4c-40e6-b584-2e3b13d60c7f",
+      "name": "Report_Period"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Text Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Whisper STT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper STT": {
+      "main": [
+        [
+          {
+            "node": "Set Voice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Voice Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Text Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1 Mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete_Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete_Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Daily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Weekly": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Monthly": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Period": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
+  }
+}
+
+

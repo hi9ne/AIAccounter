@@ -1,0 +1,935 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -992,
+        -64
+      ],
+      "id": "b483d5a8-beb5-4b3c-b2f0-d07e2b19b6cb",
+      "name": "Telegram Trigger",
+      "webhookId": "7d5db243-2146-45ba-a9b7-d0d743f58df0",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -768,
+        -64
+      ],
+      "id": "6f46c419-0833-4327-b730-e72f0d95aaac",
+      "name": "Message Type"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -544,
+        -160
+      ],
+      "id": "c9d44e13-b678-44aa-a70c-61e60a2f32d4",
+      "name": "Download Voice",
+      "webhookId": "ebbba00f-fb0b-4458-ade5-3e826582610f",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.6,
+      "position": [
+        -320,
+        -160
+      ],
+      "id": "313d0288-8768-4166-afd2-bd29b9968fc0",
+      "name": "Whisper STT",
+      "credentials": {
+        "openAiApi": {
+          "id": "1T30bcIe2tfs32N6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "text",
+              "name": "text",
+              "value": "={{ $json.text",
+              "type": "string"
+            },
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.id",
+              "type": "number"
+            },
+            {
+              "id": "chat_id",
+              "name": "chat_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id",
+              "type": "number"
+            },
+            {
+              "id": "first_name",
+              "name": "first_name",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.first_name || 'Пользователь'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        -160
+      ],
+      "id": "d6ee7742-ae21-40a7-a626-9b3ef61dbfa8",
+      "name": "Set Voice Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "text",
+              "name": "text",
+              "value": "={{ $json.message.text",
+              "type": "string"
+            },
+            {
+              "id": "user_id",
+              "name": "user_id",
+              "value": "={{ $json.message.from.id",
+              "type": "number"
+            },
+            {
+              "id": "chat_id",
+              "name": "chat_id",
+              "value": "={{ $json.message.chat.id",
+              "type": "number"
+            },
+            {
+              "id": "first_name",
+              "name": "first_name",
+              "value": "={{ $json.message.from.first_name || 'Пользователь'",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -96,
+        32
+      ],
+      "id": "b2eba37e-16fd-47aa-93c7-fc8e30ddcca0",
+      "name": "Set Text Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User ID: {{ $json.user_id }}\nChat ID: {{ $json.chat_id }}\nИмя: {{ $json.first_name }}\nСообщение: {{ $json.text",
+        "options": {
+          "systemMessage": "Ты — финансовый AI-ассистент AIAccounter для управления личными финансами через Telegram.\n\n🎨 ОФОРМЛЕНИЕ (Telegram HTML):\n• Используй HTML: <b>жирный</b>, <i>курсив</i>, <code>код</code>\n• Добавляй эмодзи для наглядности\n\n🎯 ЗАДАЧА:\nРаспознавать намерения и СРАЗУ выполнять действия без лишних вопросов.\n\n📋 ИНСТРУМЕНТЫ:\n\n💰 ТРАНЗАКЦИИ:\n• Get_Expenses — получить список расходов\n• Get_Income — получить список доходов\n• Create_Expense — добавить расход\n• Create_Income — добавить доход\n• Delete_Expense — удалить расход по ID\n• Delete_Income — удалить доход по ID\n\n📊 ОТЧЁТЫ (ОБЯЗАТЕЛЬНО используй эти инструменты!):\n• Report_Daily — для: 'отчёт', 'за сегодня', 'дейли', 'daily'\n• Report_Weekly — для: 'недельный', 'за неделю', 'weekly'\n• Report_Monthly — для: 'месячный', 'за месяц', 'monthly'\n• Report_Period — для конкретных дат: 'с 1 по 15', 'за октябрь'\n\n🚨 КРИТИЧЕСКИ ВАЖНО ДЛЯ ОТЧЁТОВ:\n1. Вызывай Report_* инструмент ТОЛЬКО ОДИН РАЗ!\n2. После вызова Report — просто ответь 'Отчёт отправлен!' или подобное\n3. НЕ вызывай Report повторно, НЕ суммируй данные, НЕ анализируй результат\n4. Report сам отправляет сообщения пользователю напрямую\n\n⚡ АВТООПРЕДЕЛЕНИЕ ТРАНЗАКЦИЙ:\n\n🟢 ДОХОД → Create_Income:\n\"Получил зарплату 50000\", \"Заработал 30000\"\n\n🔴 РАСХОД → Create_Expense:\n\"Купил продукты 2000\", \"Потратил на такси 500\"\n\n🚨 НЕСКОЛЬКО ТРАНЗАКЦИЙ:\n\"200 такси, 6000 обед\" → вызови Create_Expense ДЛЯ КАЖДОЙ отдельно!\n\n✅ ПРАВИЛА:\n1. НЕ спрашивай подтверждение — сразу выполняй\n2. Категорию определяй по контексту\n3. Дата = сегодня, если не указана\n4. Валюта = KGS по умолчанию\n5. После добавления транзакции: \"✅ Записал! 💸 сумма KGS — категория\"\n6. Для отчёта — один вызов Report_*, потом краткий ответ!\n\n📂 КАТЕГОРИИ:\nДоходы: Зарплата, Фриланс, Инвестиции, Подарки, Другое\nРасходы: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки, Другое"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        824,
+        -64
+      ],
+      "id": "80a27054-62c5-4006-b7a6-054f782d90b2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id",
+        "text": "={{ $json.output",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        -64
+      ],
+      "id": "64e0e5bf-c0f2-4665-b0a4-58baf9331869",
+      "name": "Send Reply",
+      "webhookId": "9c3b0626-7240-4ad1-a03e-14cee62b4802",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        128,
+        160
+      ],
+      "id": "c54e8400-382d-415b-8b90-9f142a00381a",
+      "name": "GPT-4.1 Mini",
+      "credentials": {
+        "openAiApi": {
+          "id": "1T30bcIe2tfs32N6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.user_id",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        256,
+        160
+      ],
+      "id": "8eb62a1b-a003-4cdc-a7ce-6649c45a2d99",
+      "name": "Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Получает расходы текущего пользователя. Возвращает список расходов с id, date, category, amount, currency, description.",
+        "operation": "executeQuery",
+        "query": "=SELECT id, date, category, amount, currency, description FROM expenses WHERE user_id = {{ $('Telegram Trigger').item.json.message.from.id }} AND deleted_at IS NULL ORDER BY date DESC LIMIT 100",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        384,
+        160
+      ],
+      "id": "8e1883a6-bc24-43c1-9ec8-18462501fa95",
+      "name": "Get_Expenses",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Получает доходы текущего пользователя. Возвращает список доходов с id, date, category, amount, currency, description.",
+        "operation": "executeQuery",
+        "query": "=SELECT id, date, category, amount, currency, description FROM income WHERE user_id = {{ $('Telegram Trigger').item.json.message.from.id }} AND deleted_at IS NULL ORDER BY date DESC LIMIT 100",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        160
+      ],
+      "id": "53c281fb-c86a-4e5a-ad3a-07a1d666e32d",
+      "name": "Get_Income",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Добавляет новый расход. Используй когда пользователь потратил деньги: покупка, оплата, такси, еда и т.д.",
+        "operation": "executeQuery",
+        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, '{{ $fromAI('date', 'Дата YYYY-MM-DD, по умолчанию сегодня', 'string') }}', '{{ $fromAI('category', 'Категория: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        160
+      ],
+      "id": "32023ca6-aa1f-435b-aef9-b49531591659",
+      "name": "Create_Expense",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Добавляет новый доход. Используй когда пользователь получил деньги: зарплата, фриланс, продажа, подарок и т.д.",
+        "operation": "executeQuery",
+        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, '{{ $fromAI('date', 'Дата YYYY-MM-DD, по умолчанию сегодня', 'string') }}', '{{ $fromAI('category', 'Категория: Зарплата, Фриланс, Инвестиции, Подарки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        768,
+        160
+      ],
+      "id": "99578c06-ed88-4b71-ba35-ddd9b2718e6d",
+      "name": "Create_Income",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Удаляет расход по ID. Используй когда пользователь хочет удалить расход.",
+        "operation": "executeQuery",
+        "query": "=UPDATE expenses SET deleted_at = NOW() WHERE id = {{ $fromAI('id', 'ID расхода для удаления', 'number') }} AND user_id = {{ $('Telegram Trigger').item.json.message.from.id }} RETURNING id, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        896,
+        160
+      ],
+      "id": "96a654a7-37c6-48e6-8288-ecd13fe2b58f",
+      "name": "Delete_Expense",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Удаляет доход по ID. Используй когда пользователь хочет удалить доход.",
+        "operation": "executeQuery",
+        "query": "=UPDATE income SET deleted_at = NOW() WHERE id = {{ $fromAI('id', 'ID дохода для удаления', 'number') }} AND user_id = {{ $('Telegram Trigger').item.json.message.from.id }} RETURNING id, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        160
+      ],
+      "id": "9058f269-0916-4a0c-a7d9-93900b3e132e",
+      "name": "Delete_Income",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        160
+      ],
+      "id": "7644050b-e1c1-421b-aa09-215a4d6439f1",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "description": "Ежедневный отчёт за сегодня (только текст). Используй при: 'отчёт', 'за сегодня', 'дейли', 'daily', 'что сегодня потратил'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Y7JKIopBMq0rhGdX",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "assignments": {
+            "assignments": [
+              {
+                "id": "report_type",
+                "name": "report_type",
+                "value": "daily",
+                "type": "string"
+              },
+              {
+                "id": "user_id",
+                "name": "user_id",
+                "value": "={{ String($input.item.json.user_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "chat_id",
+                "name": "chat_id",
+                "value": "={{ String($input.item.json.chat_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "first_name",
+                "name": "first_name",
+                "value": "={{ $input.item.json.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "start_date",
+                "name": "start_date",
+                "value": "",
+                "type": "string"
+              },
+              {
+                "id": "end_date",
+                "name": "end_date",
+                "value": "",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        160
+      ],
+      "id": "e930844c-0166-4327-aa6f-780350b67f9a",
+      "name": "Report_Daily"
+    },
+    {
+      "parameters": {
+        "description": "Недельный отчёт за последние 7 дней с PDF. Используй при: 'недельный', 'за неделю', 'weekly', 'недельный отчёт'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Y7JKIopBMq0rhGdX",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "assignments": {
+            "assignments": [
+              {
+                "id": "report_type",
+                "name": "report_type",
+                "value": "weekly",
+                "type": "string"
+              },
+              {
+                "id": "user_id",
+                "name": "user_id",
+                "value": "={{ String($input.item.json.user_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "chat_id",
+                "name": "chat_id",
+                "value": "={{ String($input.item.json.chat_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "first_name",
+                "name": "first_name",
+                "value": "={{ $input.item.json.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "start_date",
+                "name": "start_date",
+                "value": "",
+                "type": "string"
+              },
+              {
+                "id": "end_date",
+                "name": "end_date",
+                "value": "",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        160
+      ],
+      "id": "bb9747f0-dbd7-4960-b1f0-93503447355c",
+      "name": "Report_Weekly"
+    },
+    {
+      "parameters": {
+        "description": "Месячный отчёт за текущий месяц с PDF. Используй при: 'месячный', 'за месяц', 'monthly', 'месячный отчёт'.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Y7JKIopBMq0rhGdX",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "assignments": {
+            "assignments": [
+              {
+                "id": "report_type",
+                "name": "report_type",
+                "value": "monthly",
+                "type": "string"
+              },
+              {
+                "id": "user_id",
+                "name": "user_id",
+                "value": "={{ String($input.item.json.user_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "chat_id",
+                "name": "chat_id",
+                "value": "={{ String($input.item.json.chat_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "first_name",
+                "name": "first_name",
+                "value": "={{ $input.item.json.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "start_date",
+                "name": "start_date",
+                "value": "",
+                "type": "string"
+              },
+              {
+                "id": "end_date",
+                "name": "end_date",
+                "value": "",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1536,
+        160
+      ],
+      "id": "16b2c679-eec9-4281-9781-4d8920e4da80",
+      "name": "Report_Monthly"
+    },
+    {
+      "parameters": {
+        "description": "Отчёт за произвольный период с PDF. Используй при указании конкретных дат: 'с 1 по 15 ноября', 'за октябрь', 'с 10 по 20'. ОБЯЗАТЕЛЬНО укажи start_date и end_date в формате YYYY-MM-DD.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Y7JKIopBMq0rhGdX",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "assignments": {
+            "assignments": [
+              {
+                "id": "report_type",
+                "name": "report_type",
+                "value": "period",
+                "type": "string"
+              },
+              {
+                "id": "user_id",
+                "name": "user_id",
+                "value": "={{ String($input.item.json.user_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "chat_id",
+                "name": "chat_id",
+                "value": "={{ String($input.item.json.chat_id) }}",
+                "type": "string"
+              },
+              {
+                "id": "first_name",
+                "name": "first_name",
+                "value": "={{ $input.item.json.first_name }}",
+                "type": "string"
+              },
+              {
+                "id": "start_date",
+                "name": "start_date",
+                "value": "={{ $fromAI('start_date', 'Дата начала периода YYYY-MM-DD', 'string') }}",
+                "type": "string"
+              },
+              {
+                "id": "end_date",
+                "name": "end_date",
+                "value": "={{ $fromAI('end_date', 'Дата конца периода YYYY-MM-DD', 'string') }}",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        1664,
+        160
+      ],
+      "id": "c3d46a76-4e4c-40e6-b584-2e3b13d60c7f",
+      "name": "Report_Period"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Text Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Whisper STT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Whisper STT": {
+      "main": [
+        [
+          {
+            "node": "Set Voice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Voice Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Text Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1 Mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create_Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete_Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete_Income": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Daily": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Weekly": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Monthly": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report_Period": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
+  }
+}
+
