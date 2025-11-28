@@ -572,11 +572,13 @@ async def get_dashboard_data(
     Использует asyncio.gather() для параллельного выполнения независимых запросов
     """
     import asyncio
+    from zoneinfo import ZoneInfo
     from app.models.models import Expense, Income, ExchangeRate
     from sqlalchemy import select, func, and_, desc
     
-    # Определяем даты на основе периода
-    today = datetime.now().date()
+    # Определяем даты на основе периода (в timezone пользователя)
+    user_tz = ZoneInfo("Asia/Bishkek")
+    today = datetime.now(user_tz).date()
     
     if period == "day":
         start_date = today

@@ -375,7 +375,7 @@
         "descriptionType": "manual",
         "toolDescription": "Добавляет новый расход. Используй когда пользователь потратил деньги: покупка, оплата, такси, еда и т.д.",
         "operation": "executeQuery",
-        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', ''), CURRENT_DATE), '{{ $fromAI('category', 'Категория: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bishkek')::date), '{{ $fromAI('category', 'Категория: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
@@ -398,7 +398,7 @@
         "descriptionType": "manual",
         "toolDescription": "Execute a SQL query in Postgres",
         "operation": "executeQuery",
-        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', ''), CURRENT_DATE), '{{ $fromAI('category', 'Категория: Зарплата, Фриланс, Инвестиции, Подарки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bishkek')::date), '{{ $fromAI('category', 'Категория: Зарплата, Фриланс, Инвестиции, Подарки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
