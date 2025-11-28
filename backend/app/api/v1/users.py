@@ -21,33 +21,22 @@ async def get_current_user_profile(
     Использует готовую функцию БД get_user_profile() для получения
     детальной информации включая статистику.
     """
-    # Используем готовую функцию PostgreSQL
-    query = text("""
-        SELECT * FROM get_user_profile(:user_id)
-    """)
+    # Пытаемся получить данные через функцию PostgreSQL
+    try:
+        query = text("""
+            SELECT * FROM get_user_profile(:user_id)
+        """)
+        
+        result = await db.execute(query, {"user_id": current_user.user_id})
+        profile_data = result.fetchone()
+    except Exception:
+        # Функция может не существовать или выбросить ошибку для нового пользователя
+        profile_data = None
     
-    result = await db.execute(query, {"user_id": current_user.user_id})
-    profile_data = result.fetchone()
-    
-    if profile_data:
-        # Функция возвращает подробную статистику
-        return {
-            "user_id": current_user.user_id,
-            "telegram_chat_id": str(current_user.telegram_chat_id),  # Конвертируем в строку
-            "username": current_user.username,
-            "first_name": current_user.first_name,
-            "last_name": current_user.last_name,
-            "language_code": current_user.language_code,
-            "timezone": current_user.timezone,
-            "is_active": current_user.is_active,
-            "last_activity": current_user.last_activity,
-            "created_at": current_user.last_activity,  # Используем last_activity как created_at
-        }
-    
-    # Если функция не вернула данные, возвращаем базовую информацию
+    # Возвращаем данные пользователя (функция может не вернуть данные для новых пользователей)
     return {
         "user_id": current_user.user_id,
-        "telegram_chat_id": str(current_user.telegram_chat_id),
+        "telegram_chat_id": str(current_user.telegram_chat_id),  # Конвертируем в строку
         "username": current_user.username,
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
@@ -55,7 +44,7 @@ async def get_current_user_profile(
         "timezone": current_user.timezone,
         "is_active": current_user.is_active,
         "last_activity": current_user.last_activity,
-        "created_at": current_user.last_activity,
+        "created_at": current_user.last_activity,  # Используем last_activity как created_at
     }
 
 @router.put("/me", response_model=UserSchema)
@@ -94,32 +83,49 @@ async def get_user_statistics(
     - Средние значения
     - Топ категории
     """
-    query = text("""
-        SELECT 
-            user_id,
-            first_name,
-            total_expenses,
-            total_income,
-            balance,
-            transaction_count,
-            expense_count,
-            income_count,
-            avg_expense,
-            avg_income,
-            top_expense_category,
-            top_expense_amount,
-            current_month_expenses,
-            current_month_income
-        FROM get_user_profile(:user_id)
-    """)
-    
-    result = await db.execute(query, {"user_id": current_user.user_id})
-    stats = result.fetchone()
+    try:
+        query = text("""
+            SELECT 
+                user_id,
+                first_name,
+                total_expenses,
+                total_income,
+                balance,
+                transaction_count,
+                expense_count,
+                income_count,
+                avg_expense,
+                avg_income,
+                top_expense_category,
+                top_expense_amount,
+                current_month_expenses,
+                current_month_income
+            FROM get_user_profile(:user_id)
+        """)
+        
+        result = await db.execute(query, {"user_id": current_user.user_id})
+        stats = result.fetchone()
+    except Exception:
+        # Функция может не существовать или выбросить ошибку
+        stats = None
     
     if not stats:
+        # Возвращаем пустую статистику для новых пользователей
         return {
-            "message": "No statistics available yet",
-            "user_id": current_user.user_id
+            "user_id": current_user.user_id,
+            "first_name": current_user.first_name,
+            "total_expenses": 0,
+            "total_income": 0,
+            "balance": 0,
+            "transaction_count": 0,
+            "expense_count": 0,
+            "income_count": 0,
+            "avg_expense": 0,
+            "avg_income": 0,
+            "top_expense_category": None,
+            "top_expense_amount": 0,
+            "current_month_expenses": 0,
+            "current_month_income": 0,
         }
     
     return {

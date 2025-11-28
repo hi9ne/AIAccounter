@@ -42,8 +42,8 @@ class User(UserBase):
     
     user_id: int
     is_active: bool
-    created_at: datetime
-    last_activity: datetime
+    created_at: Optional[datetime] = None
+    last_activity: Optional[datetime] = None
 
 
 # Expense Schemas

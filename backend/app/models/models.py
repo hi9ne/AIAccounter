@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text, Date, JSON
+from sqlalchemy import Column, Integer, BigInteger, String, Float, DateTime, Boolean, ForeignKey, Text, Date, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..database import Base
@@ -7,8 +7,8 @@ from ..database import Base
 class User(Base):
     __tablename__ = "users"
     
-    user_id = Column(Integer, primary_key=True, index=True)
-    telegram_chat_id = Column(Integer, unique=True, index=True, nullable=False)
+    user_id = Column(BigInteger, primary_key=True, index=True)
+    telegram_chat_id = Column(BigInteger, unique=True, index=True, nullable=False)
     username = Column(String, nullable=True)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
@@ -27,7 +27,7 @@ class Expense(Base):
     __tablename__ = "expenses"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     amount = Column(Float, nullable=False)
     currency = Column(String, default="KGS")
     category = Column(String, nullable=False)
@@ -45,7 +45,7 @@ class Income(Base):
     __tablename__ = "income"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     amount = Column(Float, nullable=False)
     currency = Column(String, default="KGS")
     category = Column(String, nullable=False)
@@ -63,7 +63,7 @@ class Budget(Base):
     __tablename__ = "budgets"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     month = Column(String, nullable=False)  # Format: YYYY-MM
     budget_amount = Column(Float, nullable=False)
     currency = Column(String, default="KGS")
@@ -89,7 +89,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     type = Column(String, nullable=False)  # budget_alert, recurring_payment, etc.
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
@@ -101,7 +101,7 @@ class RecurringPayment(Base):
     __tablename__ = "recurring_payments"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     name = Column(String, nullable=False)  # Netflix, Аренда, и т.д.
     amount = Column(Float, nullable=False)
     currency = Column(String, default="KGS")
@@ -119,7 +119,7 @@ class OnboardingState(Base):
     __tablename__ = "user_onboarding_answers"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     question_key = Column(String, nullable=False)
     answer_value = Column(Text, nullable=False)
     answered_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -129,7 +129,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     action_type = Column(String, nullable=False)  # create, update, delete, invite, etc.
     entity_type = Column(String, nullable=True)  # expense, income, budget, member, etc.
     entity_id = Column(Integer, nullable=True)
@@ -143,7 +143,7 @@ class AnalyticsCache(Base):
     __tablename__ = "analytics_cache"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     metric_type = Column(String, nullable=False)  # income_expense_stats, top_categories, etc.
     metric_data = Column(JSON, nullable=False)  # Кешированные данные
     period_start = Column(Date, nullable=True)
@@ -156,7 +156,7 @@ class UserPreferences(Base):
     __tablename__ = "user_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), unique=True, nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), unique=True, nullable=False)
     theme = Column(String, default="light")  # light, dark, auto
     language = Column(String, default="ru")
     timezone = Column(String, default="Asia/Bishkek")
@@ -171,7 +171,7 @@ class SavedReport(Base):
     __tablename__ = "saved_reports"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
     report_type = Column(String, nullable=False)  # weekly, monthly, period
     title = Column(String, nullable=False)
     period_start = Column(Date, nullable=False)
