@@ -178,7 +178,6 @@ class SavedReport(Base):
     period_end = Column(Date, nullable=False)
     pdf_url = Column(Text, nullable=True)  # URL от APITemplate.io
     format = Column(String, default="pdf")  # pdf, csv, excel
-    file_size = Column(Integer, nullable=True)  # размер в байтах
     report_data = Column(JSON, nullable=True)  # сохраненные данные отчета
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=True)  # когда истечет PDF URL
