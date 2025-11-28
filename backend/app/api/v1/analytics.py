@@ -562,6 +562,7 @@ async def compare_periods(
 
 @router.get("/dashboard")
 async def get_dashboard_data(
+    period: str = Query("month", description="Период: day, week, month, quarter, year"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -574,9 +575,22 @@ async def get_dashboard_data(
     from app.models.models import Expense, Income, ExchangeRate
     from sqlalchemy import select, func, and_, desc
     
-    # Даты текущего месяца
+    # Определяем даты на основе периода
     today = datetime.now().date()
-    start_of_month = date(today.year, today.month, 1)
+    
+    if period == "day":
+        start_date = today
+    elif period == "week":
+        start_date = today - timedelta(days=7)
+    elif period == "month":
+        start_date = today - timedelta(days=30)
+    elif period == "quarter":
+        start_date = today - timedelta(days=90)
+    elif period == "year":
+        start_date = today - timedelta(days=365)
+    else:
+        start_date = today - timedelta(days=30)  # default: month
+    
     week_ago = today - timedelta(days=7)
     
     try:
@@ -648,7 +662,7 @@ async def get_dashboard_data(
         
         # Выполняем все запросы ПАРАЛЛЕЛЬНО
         stats_result, expenses_result, income_result, rates_result = await asyncio.gather(
-            db.execute(stats_query, {"user_id": current_user.user_id, "start_date": start_of_month, "end_date": today}),
+            db.execute(stats_query, {"user_id": current_user.user_id, "start_date": start_date, "end_date": today}),
             db.execute(recent_expenses_query),
             db.execute(recent_income_query),
             db.execute(rates_query)
@@ -673,7 +687,7 @@ async def get_dashboard_data(
                 "income_count": int(stats[2]) if stats else 0,
                 "expense_count": int(stats[3]) if stats else 0,
                 "period": {
-                    "start": str(start_of_month),
+                    "start": str(start_date),
                     "end": str(today)
                 }
             },
