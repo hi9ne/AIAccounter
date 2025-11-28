@@ -11,13 +11,13 @@
           ]
         }
       },
-      "id": "d3f24f92-ea6c-4aec-927f-0f2e129d6265",
+      "id": "4cc72807-a217-4ba5-9e5f-15562b8c7ddf",
       "name": "Every Day at 10:00 AM",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1120,
-        96
+        -1424,
+        112
       ]
     },
     {
@@ -31,26 +31,27 @@
           }
         }
       },
-      "id": "376d9377-b6af-4a1a-9562-7e8facf77dcc",
+      "id": "25ebc8b1-ba19-48fc-80b2-778687b459f2",
       "name": "Get Exchange Rates (API)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -896,
-        96
-      ]
+        -1200,
+        112
+      ],
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "jsCode": "// Получаем курсы из API\nconst rates = $input.item.json.rates;\nconst date = $input.item.json.date;\n\n// Формируем массив для вставки в БД\nconst exchangeRates = [];\n\n// Курсы от KGS к другим валютам\nconst currencies = ['USD', 'EUR', 'RUB'];\n\nfor (const currency of currencies) {\n  if (rates[currency]) {\n    // Прямой курс (KGS -> валюта)\n    exchangeRates.push({\n      date: new Date().toISOString().split('T')[0],\n      from_currency: 'KGS',\n      to_currency: currency,\n      rate: rates[currency],\n      source: 'ExchangeRate-API'\n    });\n    \n    // Обратный курс (валюта -> KGS)\n    exchangeRates.push({\n      date: new Date().toISOString().split('T')[0],\n      from_currency: currency,\n      to_currency: 'KGS',\n      rate: 1 / rates[currency],\n      source: 'ExchangeRate-API'\n    });\n  }\n}\n\n// Добавляем курс KGS -> KGS = 1\nexchangeRates.push({\n  date: new Date().toISOString().split('T')[0],\n  from_currency: 'KGS',\n  to_currency: 'KGS',\n  rate: 1.0,\n  source: 'SYSTEM'\n});\n\n// Кросс-курсы между USD, EUR, RUB\nif (rates.USD && rates.EUR) {\n  // USD <-> EUR\n  exchangeRates.push({\n    date: new Date().toISOString().split('T')[0],\n    from_currency: 'USD',\n    to_currency: 'EUR',\n    rate: rates.EUR / rates.USD,\n    source: 'ExchangeRate-API_CROSS'\n  });\n  exchangeRates.push({\n    date: new Date().toISOString().split('T')[0],\n    from_currency: 'EUR',\n    to_currency: 'USD',\n    rate: rates.USD / rates.EUR,\n    source: 'ExchangeRate-API_CROSS'\n  });\n}\n\nif (rates.USD && rates.RUB) {\n  // USD <-> RUB\n  exchangeRates.push({\n    date: new Date().toISOString().split('T')[0],\n    from_currency: 'USD',\n    to_currency: 'RUB',\n    rate: rates.RUB / rates.USD,\n    source: 'ExchangeRate-API_CROSS'\n  });\n  exchangeRates.push({\n    date: new Date().toISOString().split('T')[0],\n    from_currency: 'RUB',\n    to_currency: 'USD',\n    rate: rates.USD / rates.RUB,\n    source: 'ExchangeRate-API_CROSS'\n  });\n}\n\nif (rates.EUR && rates.RUB) {\n  // EUR <-> RUB\n  exchangeRates.push({\n    date: new Date().toISOString().split('T')[0],\n    from_currency: 'EUR',\n    to_currency: 'RUB',\n    rate: rates.RUB / rates.EUR,\n    source: 'ExchangeRate-API_CROSS'\n  });\n  exchangeRates.push({\n    date: new Date().toISOString().split('T')[0],\n    from_currency: 'RUB',\n    to_currency: 'EUR',\n    rate: rates.EUR / rates.RUB,\n    source: 'ExchangeRate-API_CROSS'\n  });\n}\n\nreturn exchangeRates.map(rate => ({ json: rate }));"
       },
-      "id": "c37bf0f2-8064-4de9-84cd-27f6a94b9cb0",
+      "id": "dd5bcedd-1c1c-4559-9002-b46d3604a96c",
       "name": "Transform Rates Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -672,
-        96
+        -976,
+        112
       ]
     },
     {
@@ -59,47 +60,51 @@
         "query": "=INSERT INTO exchange_rates (date, from_currency, to_currency, rate, source)\nVALUES (\n  '{{ $json.date }}',\n  '{{ $json.from_currency }}',\n  '{{ $json.to_currency }}',\n  {{ $json.rate }},\n  '{{ $json.source }}'\n)\nON CONFLICT (date, from_currency, to_currency)\nDO UPDATE SET\n  rate = EXCLUDED.rate,\n  updated_at = NOW()\nRETURNING *;",
         "options": {}
       },
-      "id": "da293c4a-60df-49a6-8d8a-d1c270b39de8",
+      "id": "e00da040-f131-40cc-af00-e520bfa0a5c4",
       "name": "Save to Database",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -448,
-        96
+        -752,
+        112
       ],
-      "credentials": {}
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "// Подсчёт статистики\nconst items = $input.all();\nconst totalRates = items.length;\nconst currencies = new Set();\n\nitems.forEach(item => {\n  currencies.add(item.json.from_currency);\n  currencies.add(item.json.to_currency);\n});\n\nconst summary = {\n  date: new Date().toISOString().split('T')[0],\n  total_rates: totalRates,\n  currencies: Array.from(currencies).join(', '),\n  status: 'success',\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: summary }];"
       },
-      "id": "0e4a6883-2013-4a83-8de4-5c72e781fbe4",
+      "id": "b12985f4-137a-402b-8e37-c1b45bdc4b8b",
       "name": "Create Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -224,
-        96
+        -528,
+        112
       ]
     },
     {
       "parameters": {
-        "chatId": "{{ $('Set Admin Telegram ID').first().json.admin_chat_id }}",
+        "chatId": "1109421300",
         "text": "=✅ *Курсы валют обновлены*\n\n📅 Дата: {{ $json.date }}\n📊 Загружено курсов: {{ $json.total_rates }}\n💱 Валюты: {{ $json.currencies }}\n⏰ Время: {{ $json.timestamp }}\n\n_Следующее обновление: завтра в 10:00_",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "Markdown"
         }
       },
-      "id": "f948b28b-a056-4f9f-b29a-7e5cdd0ecd83",
-      "name": "Send Notification",
+      "id": "db922cfd-f089-434b-9d97-6dfa7a98cc8e",
+      "name": "Send Success Notification",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        0,
-        0
+        -304,
+        112
       ],
-      "webhookId": "44897d52-d6aa-4026-a93d-8b9c08fec505",
       "credentials": {
         "telegramApi": {
           "id": "VsCo0z8ZzisDZOpw",
@@ -109,68 +114,21 @@
     },
     {
       "parameters": {
-        "options": {}
-      },
-      "id": "52bef847-84ab-4e99-a7c6-96df5180bf41",
-      "name": "Set Admin Telegram ID",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        0,
-        192
-      ],
-      "notes": "Замените 123456789 на ваш Telegram ID для получения уведомлений"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "error-check",
-              "leftValue": "={{ $json.error }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notExists"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "1d029ba8-09cd-46a4-ab7f-ec958976a887",
-      "name": "Check if Success",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        224,
-        192
-      ]
-    },
-    {
-      "parameters": {
-        "chatId": "{{ $('Set Admin Telegram ID').first().json.admin_chat_id }}",
-        "text": "=⚠️ *Ошибка обновления курсов*\n\n❌ Не удалось загрузить курсы валют\n📅 Дата: {{ new Date().toISOString().split('T')[0] }}\n⏰ Время: {{ new Date().toISOString() }}\n\n_Проверьте подключение к API_",
+        "chatId": "1109421300",
+        "text": "=⚠️ *Ошибка обновления курсов*\n\n❌ Не удалось загрузить курсы валют\n📅 Дата: {{ $now.format('yyyy-MM-dd') }}\n⏰ Время: {{ $now.toISO() }}\n\n_Проверьте подключение к API_",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "Markdown"
         }
       },
-      "id": "c95c1d27-f89a-42a7-8938-baf0293d14db",
+      "id": "798e7d3c-8f13-4469-a9b0-0913af336f86",
       "name": "Send Error Notification",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        448,
-        192
+        -976,
+        300
       ],
-      "webhookId": "0be41100-260a-45e6-b711-b09223ad605f",
       "credentials": {
         "telegramApi": {
           "id": "VsCo0z8ZzisDZOpw",
@@ -196,6 +154,13 @@
         [
           {
             "node": "Transform Rates Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error Notification",
             "type": "main",
             "index": 0
           }
@@ -228,35 +193,7 @@
       "main": [
         [
           {
-            "node": "Send Notification",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Set Admin Telegram ID",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Admin Telegram ID": {
-      "main": [
-        [
-          {
-            "node": "Check if Success",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check if Success": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Send Error Notification",
+            "node": "Send Success Notification",
             "type": "main",
             "index": 0
           }
