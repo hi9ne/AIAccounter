@@ -10,10 +10,10 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1216,
-        -64
+        -1024,
+        -48
       ],
-      "id": "bd8ff081-7404-4ca8-b3ac-149903cc5d94",
+      "id": "59d3f061-6fca-4b68-8c48-cc9ed240991e",
       "name": "Telegram Trigger",
       "webhookId": "7d5db243-2146-45ba-a9b7-d0d743f58df0",
       "credentials": {
@@ -32,10 +32,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -992,
-        -64
+        -800,
+        -48
       ],
-      "id": "2dbc75e8-4d33-4f3c-ba2d-b0a32aad202b",
+      "id": "45a51f89-af42-44bc-9fa1-2cf492eee9e4",
       "name": "Ensure User",
       "credentials": {
         "postgres": {
@@ -103,10 +103,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -768,
-        -64
+        -576,
+        -48
       ],
-      "id": "7447ab94-2c1a-4e31-9c21-2cefa63079d8",
+      "id": "8bf8ef06-8761-4979-bf82-8abbea7e2b97",
       "name": "Message Type"
     },
     {
@@ -118,10 +118,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -544,
-        -160
+        -352,
+        -144
       ],
-      "id": "b8df8c3c-758b-4e6b-a1e9-eda2da15867e",
+      "id": "643d3614-6e12-4173-9606-17a6a48859e6",
       "name": "Download Voice",
       "webhookId": "ebbba00f-fb0b-4458-ade5-3e826582610f",
       "credentials": {
@@ -140,10 +140,10 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        -320,
-        -160
+        -128,
+        -144
       ],
-      "id": "3278ffb1-b55e-41f1-95b8-297c4cd1968b",
+      "id": "8b24184f-af9a-4756-9b04-1dd1998eca1e",
       "name": "Whisper STT",
       "credentials": {
         "openAiApi": {
@@ -187,10 +187,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -96,
-        -160
+        96,
+        -144
       ],
-      "id": "feb6202e-a7b5-4f5e-8cf0-4b0bf97f2247",
+      "id": "fe2478d9-e241-4e0c-b3e8-4794ee29cb08",
       "name": "Set Voice Data"
     },
     {
@@ -228,10 +228,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -96,
-        32
+        96,
+        48
       ],
-      "id": "ef6133ab-604b-4331-bab1-da03e1298c4d",
+      "id": "cf2da515-0bd2-439a-8cc2-3e079571ae00",
       "name": "Set Text Data"
     },
     {
@@ -246,10 +246,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        824,
-        -64
+        1016,
+        -48
       ],
-      "id": "c888bf49-a115-4fda-807f-f8b5caaa804f",
+      "id": "1add867b-4849-4761-ac50-1b646e90b4b4",
       "name": "AI Agent"
     },
     {
@@ -264,10 +264,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1872,
-        -64
+        2064,
+        -48
       ],
-      "id": "37b1a441-a6a2-4382-a9f7-0f9688382615",
+      "id": "bf876a96-3a6d-477d-b428-945e0aad5359",
       "name": "Send Reply",
       "webhookId": "9c3b0626-7240-4ad1-a03e-14cee62b4802",
       "credentials": {
@@ -292,10 +292,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        128,
-        160
+        320,
+        176
       ],
-      "id": "2d0d94cf-7ce4-4f2e-86dc-f641d29b3a91",
+      "id": "4f8c79c5-515c-4020-b534-171f71f4f870",
       "name": "GPT-4.1 Mini",
       "credentials": {
         "openAiApi": {
@@ -313,10 +313,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        256,
-        160
+        448,
+        176
       ],
-      "id": "1d7a3da9-b2a7-4d4e-b92b-8550466c7f0a",
+      "id": "4336f030-fb11-449a-bae7-ac7d29067be1",
       "name": "Chat Memory",
       "credentials": {
         "postgres": {
@@ -336,10 +336,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        384,
-        160
+        576,
+        176
       ],
-      "id": "5293ff95-0d1c-4a7e-ba7e-72f51524db6a",
+      "id": "06b10efc-9dfc-4e87-bd7c-9c7ae0d16083",
       "name": "Get_Expenses",
       "credentials": {
         "postgres": {
@@ -359,10 +359,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        512,
-        160
+        704,
+        176
       ],
-      "id": "058e9bc2-e351-40cd-a1b2-83a020d3a317",
+      "id": "eacd9a01-3bf0-4663-b8a3-7eec1c98bf10",
       "name": "Get_Income",
       "credentials": {
         "postgres": {
@@ -382,10 +382,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        640,
-        160
+        832,
+        176
       ],
-      "id": "f47d18c7-ab0a-42e5-953b-aa8224ef556d",
+      "id": "46552a53-bc38-4526-8331-b95116c92d3d",
       "name": "Create_Expense",
       "credentials": {
         "postgres": {
@@ -405,10 +405,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        768,
-        160
+        960,
+        176
       ],
-      "id": "e5cd2b04-5168-49b0-a944-c60683f56adc",
+      "id": "4647fe6c-cc3f-4c06-a664-0410f7e1576b",
       "name": "Create_Income",
       "credentials": {
         "postgres": {
@@ -428,10 +428,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        896,
-        160
+        1088,
+        176
       ],
-      "id": "80733e71-11df-45f9-9a56-057567838c87",
+      "id": "50b9245b-a675-4d9a-9f44-ed9130ee23a1",
       "name": "Delete_Expense",
       "credentials": {
         "postgres": {
@@ -451,10 +451,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1024,
-        160
+        1216,
+        176
       ],
-      "id": "f069497c-b98b-447f-a80d-9ebd86a31d71",
+      "id": "ae4c1810-b60d-4aec-8628-b70b016b4472",
       "name": "Delete_Income",
       "credentials": {
         "postgres": {
@@ -468,10 +468,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        1152,
-        160
+        1344,
+        176
       ],
-      "id": "6a5f4939-d71f-4d01-88fb-3f87c04f0f1b",
+      "id": "2df15059-cca4-439f-b64c-ffa5b710d415",
       "name": "Calculator"
     },
     {
@@ -487,15 +487,15 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1280,
-        160
+        1472,
+        176
       ],
-      "id": "67944a9f-ebb2-4d71-9f34-dd0c6dd6cd37",
-      "name": "Report _Daily"
+      "id": "f3bc5d99-5d38-4f0b-b53f-ea1826258cde",
+      "name": "Report_Daily"
     },
     {
       "parameters": {
-        "toolDescription": "Еженедельный отчёт ",
+        "toolDescription": "Генерирует отчёт за последнюю неделю. Используй когда пользователь просит: отчёт за неделю, недельный отчёт, за последнюю неделю, weekly report",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -506,15 +506,15 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1408,
-        160
+        1600,
+        176
       ],
-      "id": "9c36170c-c49b-499f-88c0-1511cf3751a1",
-      "name": "Report _Weekly"
+      "id": "e36cf98d-7b46-4167-95e3-3c3fbd2e4ecd",
+      "name": "Report_Weekly"
     },
     {
       "parameters": {
-        "toolDescription": "Eжемесячный отчёт ",
+        "toolDescription": "Генерирует отчёт за текущий месяц. Используй когда пользователь просит: отчёт за месяц, месячный отчёт, monthly report",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -525,15 +525,15 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1536,
-        160
+        1728,
+        176
       ],
-      "id": "02038847-8f63-4b97-bace-341bafff002c",
-      "name": "Report _Monthly"
+      "id": "3851f2e1-2bbb-4f0d-99a0-a274f1c88654",
+      "name": "Report_Monthly"
     },
     {
       "parameters": {
-        "toolDescription": "отчёт за период ",
+        "toolDescription": "Генерирует отчёт за произвольный период. Используй когда пользователь указывает конкретные даты: с 1 по 15 ноября, за прошлый месяц с датами",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -544,11 +544,11 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1664,
-        160
+        1856,
+        176
       ],
-      "id": "30afede9-d4ba-43a7-b28d-905c85d8c1ed",
-      "name": "Report _Period"
+      "id": "cfe26714-d52d-4611-bb53-e8afd840e330",
+      "name": "Report_Period"
     }
   ],
   "connections": {
@@ -746,7 +746,7 @@
         ]
       ]
     },
-    "Report _Daily": {
+    "Report_Daily": {
       "ai_tool": [
         [
           {
@@ -757,7 +757,7 @@
         ]
       ]
     },
-    "Report _Weekly": {
+    "Report_Weekly": {
       "ai_tool": [
         [
           {
@@ -768,7 +768,7 @@
         ]
       ]
     },
-    "Report _Monthly": {
+    "Report_Monthly": {
       "ai_tool": [
         [
           {
@@ -779,7 +779,7 @@
         ]
       ]
     },
-    "Report _Period": {
+    "Report_Period": {
       "ai_tool": [
         [
           {
