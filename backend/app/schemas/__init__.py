@@ -56,6 +56,23 @@ from .report import (
     ReportHistoryItem,
 )
 
+# Category schemas
+from .category import (
+    CategoryCreate,
+    CategoryUpdate,
+    CategoryResponse,
+    CategoryListResponse,
+)
+
+# Recurring Payment schemas
+from .recurring import (
+    RecurringPaymentCreate,
+    RecurringPaymentUpdate,
+    RecurringPaymentResponse,
+    RecurringPaymentListResponse,
+    MarkPaidRequest,
+)
+
 __all__ = [
     # User
     "UserBase",
@@ -99,6 +116,17 @@ __all__ = [
     "ReportRequest",
     "ReportResponse",
     "ReportHistoryItem",
+    # Categories
+    "CategoryCreate",
+    "CategoryUpdate",
+    "CategoryResponse",
+    "CategoryListResponse",
+    # Recurring Payments
+    "RecurringPaymentCreate",
+    "RecurringPaymentUpdate",
+    "RecurringPaymentResponse",
+    "RecurringPaymentListResponse",
+    "MarkPaidRequest",
     # Responses
     "MessageResponse",
     "ErrorResponse",

@@ -16,11 +16,23 @@ class User(Base):
     timezone = Column(String, default="Asia/Bishkek")
     is_active = Column(Boolean, default=True)
     last_activity = Column(DateTime)
+    registered_date = Column(DateTime, server_default=func.now())
+    preferred_currency = Column(String, default="KGS")
+    usage_type = Column(String, nullable=True)  # personal, business, freelance, family
+    monthly_budget = Column(Float, nullable=True)
+    occupation = Column(String, nullable=True)
+    country = Column(String, default="Кыргызстан")
+    onboarding_completed = Column(Boolean, default=False)
+    onboarding_step = Column(Integer, default=0)
+    onboarding_started_at = Column(DateTime(timezone=True), nullable=True)
+    onboarding_completed_at = Column(DateTime(timezone=True), nullable=True)
+    registration_source = Column(String, default="telegram")
     
     # Relationships
     expenses = relationship("Expense", back_populates="user")
     income = relationship("Income", back_populates="user")
     budgets = relationship("Budget", back_populates="user")
+    categories = relationship("Category", back_populates="user")
 
 
 class Expense(Base):
@@ -32,10 +44,13 @@ class Expense(Base):
     currency = Column(String, default="KGS")
     category = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    date = Column(DateTime(timezone=True), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    date = Column(Date, nullable=False)
+    operation_type = Column(String, default="расход")
+    source = Column(String, default="telegram")  # telegram, bank_parser, manual
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(DateTime, nullable=True)
+    deleted_by = Column(Integer, nullable=True)
     
     # Relationships
     user = relationship("User", back_populates="expenses")
@@ -50,13 +65,35 @@ class Income(Base):
     currency = Column(String, default="KGS")
     category = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    date = Column(DateTime(timezone=True), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    date = Column(Date, nullable=False)
+    operation_type = Column(String, default="доход")
+    source = Column(String, default="telegram")  # telegram, bank_parser, manual
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(DateTime, nullable=True)
+    deleted_by = Column(Integer, nullable=True)
     
     # Relationships
     user = relationship("User", back_populates="income")
+
+
+class Category(Base):
+    __tablename__ = "categories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=True)  # NULL для дефолтных
+    name = Column(String(100), nullable=False)
+    type = Column(String(20), nullable=False)  # 'expense' или 'income'
+    icon = Column(String(10), default="📁")
+    color = Column(String(7), default="#6B7280")
+    is_default = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="categories")
 
 
 class Budget(Base):
@@ -79,22 +116,32 @@ class ExchangeRate(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False)
-    from_currency = Column(String, default="KGS")
+    from_currency = Column(String, nullable=False)
     to_currency = Column(String, nullable=False)
     rate = Column(Float, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    source = Column(String, default="NBKR")  # NBKR, ExchangeRate-API, etc
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
 class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
-    type = Column(String, nullable=False)  # budget_alert, recurring_payment, etc.
+    user_id = Column(BigInteger, nullable=False)
+    notification_type = Column(String, nullable=False)  # budget_warning, recurring_reminder, etc.
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
+    related_transaction_id = Column(Integer, nullable=True)
+    related_recurring_id = Column(Integer, ForeignKey("recurring_payments.id"), nullable=True)
+    related_category = Column(String, nullable=True)
+    priority = Column(String, default="normal")  # low, normal, high, urgent
+    is_sent = Column(Boolean, default=False)
+    sent_at = Column(DateTime, nullable=True)
     is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    read_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    extra_data = Column("metadata", JSON, nullable=True)  # дополнительные данные
 
 
 class RecurringPayment(Base):
@@ -102,27 +149,30 @@ class RecurringPayment(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
-    name = Column(String, nullable=False)  # Netflix, Аренда, и т.д.
+    title = Column(String, nullable=False)  # Netflix, Аренда, и т.д.
     amount = Column(Float, nullable=False)
     currency = Column(String, default="KGS")
     category = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    transaction_type = Column(String, default="expense")  # expense или income
     frequency = Column(String, nullable=False)  # daily, weekly, monthly, yearly
+    interval_value = Column(Integer, default=1)  # каждые N периодов
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=True)
     next_payment_date = Column(Date, nullable=False)
-    reminder_days_before = Column(Integer, default=3)
-    last_reminded_at = Column(DateTime(timezone=True), nullable=True)
+    last_payment_date = Column(Date, nullable=True)
+    remind_days_before = Column(Integer, default=3)
+    auto_create = Column(Boolean, default=False)
+    last_reminder_sent_at = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, onupdate=func.now())
+    last_executed_at = Column(DateTime, nullable=True)
+    total_executions = Column(Integer, default=0)
 
 
-class OnboardingState(Base):
-    __tablename__ = "user_onboarding_answers"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
-    question_key = Column(String, nullable=False)
-    answer_value = Column(Text, nullable=False)
-    answered_at = Column(DateTime(timezone=True), server_default=func.now())
+# OnboardingState - таблица user_onboarding_answers не существует в БД
+# Онбординг хранится в полях users: onboarding_completed, onboarding_step, etc.
 
 
 class AuditLog(Base):
@@ -143,28 +193,25 @@ class AnalyticsCache(Base):
     __tablename__ = "analytics_cache"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.user_id"), nullable=False)
-    metric_type = Column(String, nullable=False)  # income_expense_stats, top_categories, etc.
-    metric_data = Column(JSON, nullable=False)  # Кешированные данные
-    period_start = Column(Date, nullable=True)
-    period_end = Column(Date, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    expires_at = Column(DateTime(timezone=True), nullable=False)
+    cache_key = Column(String, nullable=False)
+    cache_type = Column(String, nullable=False)
+    data = Column(JSON, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    expires_at = Column(DateTime, nullable=False)
 
 
 class UserPreferences(Base):
     __tablename__ = "user_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.user_id"), unique=True, nullable=False)
+    user_id = Column(BigInteger, unique=True, nullable=False)
     theme = Column(String, default="light")  # light, dark, auto
     language = Column(String, default="ru")
     timezone = Column(String, default="Asia/Bishkek")
-    preferred_currency = Column(String, default="KGS")
     notification_settings = Column(JSON, default={"email": False, "telegram": True, "push": True})
     ui_preferences = Column(JSON, default={})
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
 class SavedReport(Base):

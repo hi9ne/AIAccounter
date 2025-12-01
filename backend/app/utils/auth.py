@@ -97,6 +97,13 @@ async def get_current_active_user(
     return current_user
 
 
+async def get_current_user_id(
+    current_user: User = Depends(get_current_user)
+) -> int:
+    """Получить ID текущего пользователя"""
+    return current_user.user_id
+
+
 def create_telegram_token(telegram_chat_id: str, expires_delta: Optional[timedelta] = None) -> str:
     """
     Создание токена для Telegram пользователя

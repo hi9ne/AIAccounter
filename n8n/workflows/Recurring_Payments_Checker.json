@@ -23,7 +23,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM get_pending_reminders();",
+        "query": "SELECT \n  rp.id as recurring_id,\n  rp.user_id,\n  rp.name as title,\n  rp.amount,\n  rp.currency,\n  rp.category,\n  rp.next_payment_date,\n  rp.next_payment_date - CURRENT_DATE as days_until_payment,\n  COALESCE(rp.reminder_days_before, 3) as reminder_days,\n  false as auto_create\nFROM recurring_payments rp\nWHERE rp.is_active = true\n  AND rp.next_payment_date - CURRENT_DATE <= COALESCE(rp.reminder_days_before, 3)\n  AND rp.next_payment_date >= CURRENT_DATE\n  AND (rp.last_reminded_at IS NULL \n       OR DATE(rp.last_reminded_at AT TIME ZONE 'Asia/Bishkek') < CURRENT_DATE)\nORDER BY rp.next_payment_date;",
         "options": {}
       },
       "name": "Get Pending Reminders",
@@ -34,7 +34,12 @@
         168
       ],
       "id": "e84c2aa8-9b9e-452a-a629-4ac4a292a21a",
-      "credentials": {}
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
     },
     {
       "parameters": {
@@ -109,7 +114,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT mark_reminder_sent({{ $json.recurring_id }});",
+        "query": "UPDATE recurring_payments SET last_reminded_at = NOW() WHERE id = {{ $json.recurring_id }};",
         "options": {}
       },
       "name": "Mark Sent",
@@ -120,7 +125,12 @@
         72
       ],
       "id": "1ba43863-555f-495c-89c8-035dba7baf55",
-      "credentials": {}
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
     },
     {
       "parameters": {},
@@ -150,7 +160,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO notifications (user_id, notification_type, title, message, priority, is_sent, sent_at)\\nVALUES (\\n  1109421300, -- admin user_id\\n  'custom',\\n  '🔔 Recurring Payments Check',\\n  '{{ $json.summary }}',\\n  'low',\\n  TRUE,\\n  NOW()\\n);",
+        "query": "INSERT INTO notifications (user_id, type, title, message, is_read, created_at)\nVALUES (\n  1109421300,\n  'system',\n  'Recurring Payments Check',\n  '{{ $json.summary }}',\n  false,\n  NOW()\n);",
         "options": {}
       },
       "name": "Log to DB",
@@ -161,7 +171,12 @@
         312
       ],
       "id": "07c82ad7-95d0-436f-84ed-8a52a4e2f196",
-      "credentials": {},
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      },
       "notes": "Логирование для мониторинга"
     }
   ],

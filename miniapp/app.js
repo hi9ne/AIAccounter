@@ -3,7 +3,7 @@
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '3.0.4'; // Increment to invalidate all caches
+const APP_VERSION = '4.0.0'; // Major UI redesign
 
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
@@ -390,7 +390,7 @@ function switchScreen(screenName) {
     }
     
     // Update navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.nav-btn').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.screen === screenName) {
             item.classList.add('active');
@@ -410,6 +410,8 @@ function loadScreenData(screenName) {
             break;
         case 'analytics':
             loadAnalytics();
+            // Загружаем AI инсайты после основной аналитики
+            setTimeout(() => loadAIInsights(), 500);
             break;
         case 'history':
             loadHistory();
@@ -419,6 +421,15 @@ function loadScreenData(screenName) {
             break;
         case 'reports':
             loadReports();
+            break;
+        case 'categories':
+            loadCategories();
+            break;
+        case 'recurring':
+            loadRecurringPayments();
+            break;
+        case 'debts':
+            loadDebts();
             break;
     }
 }
@@ -1336,8 +1347,8 @@ function loadSettings() {
         defaultPeriodSelect.value = savedPeriod;
     }
     
-    // Update period buttons on home screen
-    document.querySelectorAll('.period-btn').forEach(btn => {
+    // Update period pills on home screen
+    document.querySelectorAll('.pill[data-period]').forEach(btn => {
         if (btn.dataset.period === savedPeriod) {
             btn.classList.add('active');
         } else {
@@ -1548,16 +1559,16 @@ document.addEventListener('DOMContentLoaded', () => {
     ensureUserIdentity();
     
     // Navigation
-    document.querySelectorAll('.nav-item[data-screen]').forEach(btn => {
+    document.querySelectorAll('.nav-btn[data-screen]').forEach(btn => {
         btn.addEventListener('click', () => {
             switchScreen(btn.dataset.screen);
         });
     });
     
-    // Period selector
-    document.querySelectorAll('.period-btn').forEach(btn => {
+    // Period selector (pills)
+    document.querySelectorAll('.pill[data-period]').forEach(btn => {
         btn.addEventListener('click', async () => {
-            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.currentPeriod = btn.dataset.period;
             debug.log('🔄 Period changed to:', state.currentPeriod);
@@ -1779,6 +1790,817 @@ document.addEventListener('DOMContentLoaded', () => {
     })();
 });
 
+// ===== CATEGORIES =====
+let categoriesState = {
+    currentType: 'expense',
+    allCategories: [],
+    loading: false
+};
+
+async function loadCategories() {
+    debug.log('📁 Loading categories...');
+    
+    if (categoriesState.loading) return;
+    categoriesState.loading = true;
+    
+    try {
+        const data = await api.getAllCategories();
+        debug.log('📁 Categories loaded:', data);
+        
+        categoriesState.allCategories = [
+            ...data.expense_categories.map(c => ({ ...c, type: 'expense' })),
+            ...data.income_categories.map(c => ({ ...c, type: 'income' }))
+        ];
+        
+        renderCategories();
+    } catch (error) {
+        handleError(error, 'Не удалось загрузить категории');
+    } finally {
+        categoriesState.loading = false;
+    }
+}
+
+function switchCategoryTab(type) {
+    categoriesState.currentType = type;
+    
+    // Update tabs
+    document.querySelectorAll('.category-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.type === type);
+    });
+    
+    renderCategories();
+}
+
+function renderCategories() {
+    const type = categoriesState.currentType;
+    const categories = categoriesState.allCategories.filter(c => c.type === type);
+    
+    const defaultCategories = categories.filter(c => c.is_default);
+    const userCategories = categories.filter(c => !c.is_default);
+    
+    // Update counts
+    document.getElementById('default-categories-count').textContent = defaultCategories.length;
+    document.getElementById('user-categories-count').textContent = userCategories.length;
+    
+    // Render default categories
+    const defaultList = document.getElementById('default-categories-list');
+    defaultList.innerHTML = defaultCategories.map(cat => `
+        <div class="category-card">
+            <div class="category-icon">${cat.icon || '📁'}</div>
+            <div class="category-name">${cat.name}</div>
+        </div>
+    `).join('');
+    
+    // Render user categories
+    const userList = document.getElementById('user-categories-list');
+    const noUserCats = document.getElementById('no-user-categories');
+    
+    if (userCategories.length === 0) {
+        userList.innerHTML = '';
+        noUserCats.style.display = 'block';
+    } else {
+        noUserCats.style.display = 'none';
+        userList.innerHTML = userCategories.map(cat => `
+            <div class="category-card user-category" onclick="confirmDeleteCategory(${cat.id}, '${cat.name}')">
+                <div class="category-icon">${cat.icon || '📁'}</div>
+                <div class="category-name">${cat.name}</div>
+                <button class="delete-btn" onclick="event.stopPropagation(); confirmDeleteCategory(${cat.id}, '${cat.name}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+}
+
+function openAddCategoryModal() {
+    const modal = document.getElementById('add-category-modal');
+    modal.style.display = 'flex';
+    
+    // Set default type based on current tab
+    document.getElementById('new-category-type').value = categoriesState.currentType;
+    
+    // Reset form
+    document.getElementById('new-category-name').value = '';
+    document.getElementById('new-category-icon').value = '📁';
+    
+    // Reset emoji picker
+    document.querySelectorAll('.emoji-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.emoji === '📁');
+    });
+    
+    // Setup emoji picker
+    document.querySelectorAll('.emoji-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('new-category-icon').value = btn.dataset.emoji;
+        };
+    });
+}
+
+function closeAddCategoryModal() {
+    document.getElementById('add-category-modal').style.display = 'none';
+}
+
+async function submitAddCategory(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('new-category-name').value.trim();
+    const type = document.getElementById('new-category-type').value;
+    const icon = document.getElementById('new-category-icon').value;
+    
+    if (!name) {
+        showError('Введите название категории');
+        return;
+    }
+    
+    try {
+        await api.createCategory({ name, type, icon });
+        showSuccess(`Категория "${name}" добавлена`);
+        closeAddCategoryModal();
+        
+        // Reload categories
+        await loadCategories();
+        
+        // Switch to the type of newly created category
+        switchCategoryTab(type);
+    } catch (error) {
+        handleError(error, 'Не удалось создать категорию');
+    }
+}
+
+function confirmDeleteCategory(id, name) {
+    if (confirm(`Удалить категорию "${name}"?`)) {
+        deleteCategory(id, name);
+    }
+}
+
+async function deleteCategory(id, name) {
+    try {
+        await api.deleteCategory(id);
+        showSuccess(`Категория "${name}" удалена`);
+        await loadCategories();
+    } catch (error) {
+        handleError(error, 'Не удалось удалить категорию');
+    }
+}
+
+// ===== RECURRING PAYMENTS =====
+
+const recurringState = {
+    items: [],
+    loading: false,
+    editingId: null
+};
+
+async function loadRecurringPayments() {
+    const listEl = document.getElementById('recurring-list');
+    const emptyEl = document.getElementById('recurring-empty');
+    const loadingEl = document.getElementById('recurring-loading');
+    
+    if (!listEl) return;
+    
+    try {
+        recurringState.loading = true;
+        loadingEl.style.display = 'flex';
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'none';
+        
+        const response = await api.getRecurringPayments(true);
+        recurringState.items = response.items || [];
+        
+        // Update summary
+        const summary = await api.getUpcomingSummary(30);
+        updateRecurringSummary(summary);
+        
+        loadingEl.style.display = 'none';
+        
+        if (recurringState.items.length === 0) {
+            emptyEl.style.display = 'flex';
+            return;
+        }
+        
+        renderRecurringPayments(recurringState.items);
+        
+    } catch (error) {
+        loadingEl.style.display = 'none';
+        handleError(error, 'Не удалось загрузить подписки');
+    } finally {
+        recurringState.loading = false;
+    }
+}
+
+function updateRecurringSummary(summary) {
+    const totalEl = document.getElementById('recurring-upcoming-total');
+    const countEl = document.getElementById('recurring-active-count');
+    
+    if (totalEl && summary.totals_by_currency) {
+        const parts = Object.entries(summary.totals_by_currency)
+            .map(([currency, amount]) => formatCurrency(amount, currency));
+        totalEl.textContent = parts.join(' + ') || '0 сом';
+    }
+    
+    if (countEl) {
+        countEl.textContent = summary.total_payments || '0';
+    }
+}
+
+function renderRecurringPayments(items) {
+    const listEl = document.getElementById('recurring-list');
+    if (!listEl) return;
+    
+    const currencySymbols = { KGS: 'с', USD: '$', EUR: '€', RUB: '₽' };
+    const frequencyLabels = {
+        daily: 'ежедневно',
+        weekly: 'еженедельно',
+        monthly: 'ежемесячно',
+        yearly: 'ежегодно'
+    };
+    
+    listEl.innerHTML = items.map(item => {
+        const daysUntil = item.days_until_payment;
+        let statusClass = '';
+        let dateText = '';
+        
+        if (daysUntil < 0) {
+            statusClass = 'overdue';
+            dateText = `просрочено ${Math.abs(daysUntil)} дн.`;
+        } else if (daysUntil === 0) {
+            statusClass = 'due-soon';
+            dateText = 'сегодня';
+        } else if (daysUntil === 1) {
+            statusClass = 'due-soon';
+            dateText = 'завтра';
+        } else if (daysUntil <= 3) {
+            statusClass = 'due-soon';
+            dateText = `через ${daysUntil} дн.`;
+        } else {
+            dateText = `через ${daysUntil} дн.`;
+        }
+        
+        const symbol = currencySymbols[item.currency] || item.currency;
+        const freq = frequencyLabels[item.frequency] || item.frequency;
+        
+        return `
+            <div class="recurring-item ${statusClass}">
+                <div class="recurring-item-main">
+                    <div class="recurring-icon">🔄</div>
+                    <div class="recurring-info">
+                        <div class="recurring-name">${escapeHtml(item.title)}</div>
+                        <div class="recurring-meta">
+                            <span class="recurring-category">
+                                <i class="fas fa-tag"></i> ${escapeHtml(item.category)}
+                            </span>
+                            <span class="recurring-frequency">${freq}</span>
+                        </div>
+                    </div>
+                    <div class="recurring-amount">
+                        <div class="amount">${formatCurrency(item.amount, item.currency)}</div>
+                        <div class="next-date ${statusClass}">${dateText}</div>
+                    </div>
+                </div>
+                <div class="recurring-actions">
+                    <button class="btn-mark-paid" onclick="markRecurringPaid(${item.id})">
+                        <i class="fas fa-check"></i> Оплачено
+                    </button>
+                    <button class="btn-edit" onclick="editRecurring(${item.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-delete" onclick="confirmDeleteRecurring(${item.id}, '${escapeHtml(item.title)}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function openAddRecurringModal() {
+    recurringState.editingId = null;
+    
+    const modal = document.getElementById('recurring-modal');
+    const title = document.getElementById('recurring-modal-title');
+    const submitBtn = document.getElementById('recurring-submit-btn');
+    
+    title.textContent = 'Новая подписка';
+    submitBtn.textContent = 'Добавить';
+    
+    // Reset form
+    document.getElementById('recurring-edit-id').value = '';
+    document.getElementById('recurring-name').value = '';
+    document.getElementById('recurring-amount').value = '';
+    document.getElementById('recurring-currency').value = 'KGS';
+    document.getElementById('recurring-category').value = 'Подписки';
+    document.getElementById('recurring-frequency').value = 'monthly';
+    document.getElementById('recurring-reminder-days').value = '3';
+    
+    // Set default next date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('recurring-next-date').value = today;
+    
+    modal.style.display = 'flex';
+}
+
+function closeRecurringModal() {
+    document.getElementById('recurring-modal').style.display = 'none';
+    recurringState.editingId = null;
+}
+
+async function editRecurring(id) {
+    const item = recurringState.items.find(i => i.id === id);
+    if (!item) return;
+    
+    recurringState.editingId = id;
+    
+    const modal = document.getElementById('recurring-modal');
+    const title = document.getElementById('recurring-modal-title');
+    const submitBtn = document.getElementById('recurring-submit-btn');
+    
+    title.textContent = 'Редактировать';
+    submitBtn.textContent = 'Сохранить';
+    
+    // Fill form
+    document.getElementById('recurring-edit-id').value = id;
+    document.getElementById('recurring-name').value = item.title;
+    document.getElementById('recurring-amount').value = item.amount;
+    document.getElementById('recurring-currency').value = item.currency;
+    document.getElementById('recurring-category').value = item.category;
+    document.getElementById('recurring-frequency').value = item.frequency;
+    document.getElementById('recurring-next-date').value = item.next_payment_date;
+    document.getElementById('recurring-reminder-days').value = item.remind_days_before || 3;
+    
+    modal.style.display = 'flex';
+}
+
+async function submitRecurring(event) {
+    event.preventDefault();
+    
+    const data = {
+        title: document.getElementById('recurring-name').value.trim(),
+        amount: parseFloat(document.getElementById('recurring-amount').value),
+        currency: document.getElementById('recurring-currency').value,
+        category: document.getElementById('recurring-category').value,
+        frequency: document.getElementById('recurring-frequency').value,
+        next_payment_date: document.getElementById('recurring-next-date').value,
+        remind_days_before: parseInt(document.getElementById('recurring-reminder-days').value) || 3
+    };
+    
+    if (!data.title || !data.amount || !data.next_payment_date) {
+        showError('Заполните все обязательные поля');
+        return;
+    }
+    
+    try {
+        if (recurringState.editingId) {
+            await api.updateRecurringPayment(recurringState.editingId, data);
+            showSuccess('Подписка обновлена');
+        } else {
+            await api.createRecurringPayment(data);
+            showSuccess('Подписка добавлена');
+        }
+        
+        closeRecurringModal();
+        await loadRecurringPayments();
+        
+    } catch (error) {
+        handleError(error, 'Не удалось сохранить подписку');
+    }
+}
+
+async function markRecurringPaid(id) {
+    const item = recurringState.items.find(i => i.id === id);
+    if (!item) return;
+    
+    const createExpense = confirm('Создать расход автоматически?');
+    
+    try {
+        await api.markRecurringPaymentPaid(id, createExpense);
+        showSuccess(`"${item.title}" отмечено как оплаченное`);
+        await loadRecurringPayments();
+    } catch (error) {
+        handleError(error, 'Не удалось отметить как оплаченное');
+    }
+}
+
+function confirmDeleteRecurring(id, name) {
+    if (confirm(`Удалить подписку "${name}"?`)) {
+        deleteRecurring(id);
+    }
+}
+
+async function deleteRecurring(id) {
+    try {
+        await api.deleteRecurringPayment(id);
+        showSuccess('Подписка удалена');
+        await loadRecurringPayments();
+    } catch (error) {
+        handleError(error, 'Не удалось удалить подписку');
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ===== DEBTS FUNCTIONALITY =====
+
+const debtsState = {
+    items: [],
+    filter: 'all',
+    editingId: null
+};
+
+async function loadDebts() {
+    try {
+        const [debtsData, summaryData] = await Promise.all([
+            api.getDebts(false),
+            api.getDebtSummary()
+        ]);
+        
+        debtsState.items = debtsData.items || [];
+        updateDebtsSummary(summaryData);
+        renderDebts();
+        
+    } catch (error) {
+        handleError(error, 'Не удалось загрузить долги');
+    }
+}
+
+function updateDebtsSummary(summary) {
+    const givenEl = document.getElementById('debt-given-total');
+    const receivedEl = document.getElementById('debt-received-total');
+    const balanceEl = document.getElementById('debt-net-balance');
+    
+    if (givenEl) givenEl.textContent = formatCurrency(summary.total_given_remaining);
+    if (receivedEl) receivedEl.textContent = formatCurrency(summary.total_received_remaining);
+    if (balanceEl) {
+        const balance = summary.net_balance;
+        balanceEl.textContent = (balance >= 0 ? '+' : '') + formatCurrency(balance);
+        balanceEl.style.color = balance >= 0 ? 'var(--success)' : 'var(--danger)';
+    }
+}
+
+function renderDebts() {
+    const listEl = document.getElementById('debts-list');
+    const emptyEl = document.getElementById('debts-empty');
+    if (!listEl) return;
+    
+    let items = debtsState.items;
+    
+    // Фильтруем
+    if (debtsState.filter === 'given') {
+        items = items.filter(d => d.debt_type === 'given');
+    } else if (debtsState.filter === 'received') {
+        items = items.filter(d => d.debt_type === 'received');
+    }
+    
+    if (items.length === 0) {
+        listEl.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = 'block';
+        return;
+    }
+    
+    if (emptyEl) emptyEl.style.display = 'none';
+    
+    listEl.innerHTML = items.map(debt => {
+        const isGiven = debt.debt_type === 'given';
+        const typeLabel = isGiven ? 'Мне должны' : 'Я должен';
+        const initial = debt.person_name.charAt(0).toUpperCase();
+        const progress = debt.paid_percentage || 0;
+        
+        let dueDateHtml = '';
+        if (debt.due_date) {
+            const dueClass = debt.is_overdue ? 'overdue' : '';
+            const dueText = debt.is_overdue 
+                ? `Просрочено на ${Math.abs(debt.days_until_due)} дн.`
+                : `До ${formatDate(debt.due_date)}`;
+            dueDateHtml = `<span class="debt-due-date ${dueClass}">${dueText}</span>`;
+        }
+        
+        return `
+            <div class="debt-item ${debt.is_settled ? 'settled' : ''} ${debt.is_overdue ? 'overdue' : ''}">
+                <div class="debt-item-header">
+                    <div class="debt-person">
+                        <div class="debt-avatar ${debt.debt_type}">${initial}</div>
+                        <div>
+                            <div class="debt-name">${escapeHtml(debt.person_name)}</div>
+                            <span class="debt-type-badge ${debt.debt_type}">${typeLabel}</span>
+                        </div>
+                    </div>
+                    <div class="debt-amount-info">
+                        <div class="debt-amount ${debt.debt_type}">${formatCurrency(debt.original_amount, debt.currency)}</div>
+                        ${!debt.is_settled ? `<div class="debt-remaining">Осталось: ${formatCurrency(debt.remaining_amount, debt.currency)}</div>` : '<div class="debt-remaining">✓ Погашен</div>'}
+                    </div>
+                </div>
+                
+                ${!debt.is_settled ? `
+                <div class="debt-progress">
+                    <div class="debt-progress-bar ${debt.debt_type}" style="width: ${progress}%"></div>
+                </div>
+                ` : ''}
+                
+                <div class="debt-meta">
+                    <span>${debt.description || 'Без описания'}</span>
+                    ${dueDateHtml}
+                </div>
+                
+                ${!debt.is_settled ? `
+                <div class="debt-actions">
+                    <button class="btn-add-payment" onclick="openDebtPaymentModal(${debt.id})">
+                        <i class="fas fa-plus"></i> Внести платёж
+                    </button>
+                    <button class="btn-settle" onclick="settleDebt(${debt.id})">
+                        <i class="fas fa-check"></i> Погасить
+                    </button>
+                    <button class="btn-debt-delete" onclick="confirmDeleteDebt(${debt.id}, '${escapeHtml(debt.person_name)}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function setupDebtTabs() {
+    document.querySelectorAll('.debt-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.debt-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            debtsState.filter = tab.dataset.filter;
+            renderDebts();
+        });
+    });
+}
+
+function openAddDebtModal() {
+    debtsState.editingId = null;
+    
+    const modal = document.getElementById('debt-modal');
+    document.getElementById('debt-modal-title').textContent = 'Новый долг';
+    document.getElementById('debt-submit-btn').textContent = 'Добавить';
+    
+    // Reset form
+    document.getElementById('debt-edit-id').value = '';
+    document.getElementById('debt-type').value = 'given';
+    document.getElementById('debt-person').value = '';
+    document.getElementById('debt-amount').value = '';
+    document.getElementById('debt-currency').value = 'KGS';
+    document.getElementById('debt-due-date').value = '';
+    document.getElementById('debt-description').value = '';
+    
+    // Reset type buttons
+    document.querySelectorAll('.debt-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === 'given');
+    });
+    
+    modal.style.display = 'flex';
+}
+
+function closeDebtModal() {
+    document.getElementById('debt-modal').style.display = 'none';
+    debtsState.editingId = null;
+}
+
+function setupDebtTypeButtons() {
+    document.querySelectorAll('.debt-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.debt-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('debt-type').value = btn.dataset.type;
+        });
+    });
+}
+
+async function submitDebt(event) {
+    event.preventDefault();
+    
+    const data = {
+        debt_type: document.getElementById('debt-type').value,
+        person_name: document.getElementById('debt-person').value.trim(),
+        original_amount: parseFloat(document.getElementById('debt-amount').value),
+        currency: document.getElementById('debt-currency').value,
+        due_date: document.getElementById('debt-due-date').value || null,
+        description: document.getElementById('debt-description').value.trim() || null
+    };
+    
+    if (!data.person_name || !data.original_amount) {
+        showError('Заполните обязательные поля');
+        return;
+    }
+    
+    try {
+        if (debtsState.editingId) {
+            await api.updateDebt(debtsState.editingId, data);
+            showSuccess('Долг обновлён');
+        } else {
+            await api.createDebt(data);
+            showSuccess('Долг добавлен');
+        }
+        
+        closeDebtModal();
+        await loadDebts();
+        
+    } catch (error) {
+        handleError(error, 'Не удалось сохранить долг');
+    }
+}
+
+function openDebtPaymentModal(debtId) {
+    const debt = debtsState.items.find(d => d.id === debtId);
+    if (!debt) return;
+    
+    document.getElementById('debt-payment-id').value = debtId;
+    document.getElementById('debt-payment-amount').value = '';
+    document.getElementById('debt-payment-amount').max = debt.remaining_amount;
+    document.getElementById('debt-remaining-hint').textContent = `Остаток: ${formatCurrency(debt.remaining_amount, debt.currency)}`;
+    document.getElementById('debt-payment-note').value = '';
+    document.getElementById('debt-create-transaction').checked = true;
+    
+    document.getElementById('debt-payment-modal').style.display = 'flex';
+}
+
+function closeDebtPaymentModal() {
+    document.getElementById('debt-payment-modal').style.display = 'none';
+}
+
+async function submitDebtPayment(event) {
+    event.preventDefault();
+    
+    const debtId = parseInt(document.getElementById('debt-payment-id').value);
+    const data = {
+        amount: parseFloat(document.getElementById('debt-payment-amount').value),
+        note: document.getElementById('debt-payment-note').value.trim() || null,
+        create_transaction: document.getElementById('debt-create-transaction').checked
+    };
+    
+    if (!data.amount || data.amount <= 0) {
+        showError('Укажите сумму платежа');
+        return;
+    }
+    
+    try {
+        await api.addDebtPayment(debtId, data);
+        showSuccess('Платёж добавлен');
+        closeDebtPaymentModal();
+        await loadDebts();
+    } catch (error) {
+        handleError(error, 'Не удалось добавить платёж');
+    }
+}
+
+async function settleDebt(id) {
+    const debt = debtsState.items.find(d => d.id === id);
+    if (!debt) return;
+    
+    if (!confirm(`Отметить долг "${debt.person_name}" как полностью погашенный?`)) return;
+    
+    try {
+        await api.settleDebt(id);
+        showSuccess('Долг погашен');
+        await loadDebts();
+    } catch (error) {
+        handleError(error, 'Не удалось погасить долг');
+    }
+}
+
+function confirmDeleteDebt(id, name) {
+    if (confirm(`Удалить долг "${name}"?`)) {
+        deleteDebt(id);
+    }
+}
+
+async function deleteDebt(id) {
+    try {
+        await api.deleteDebt(id);
+        showSuccess('Долг удалён');
+        await loadDebts();
+    } catch (error) {
+        handleError(error, 'Не удалось удалить долг');
+    }
+}
+
+// ===== AI INSIGHTS (integrated into Analytics) =====
+
+const aiState = {
+    insights: [],
+    recommendations: [],
+    loading: false
+};
+
+async function loadAIInsights() {
+    if (aiState.loading) return;
+    
+    const container = document.getElementById('ai-insights-container');
+    const loadingEl = document.getElementById('ai-loading');
+    const listEl = document.getElementById('ai-insights-list');
+    
+    if (!container) return;
+    
+    aiState.loading = true;
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (listEl) listEl.innerHTML = '';
+    
+    try {
+        const [analysis, insights] = await Promise.all([
+            api.getAIAnalysis(30).catch(() => null),
+            api.getAIInsights(5).catch(() => ({ items: [] }))
+        ]);
+        
+        aiState.insights = insights.items || [];
+        aiState.recommendations = analysis?.recommendations || [];
+        
+        renderIntegratedAIInsights();
+        
+    } catch (error) {
+        console.error('AI Insights error:', error);
+        if (listEl) {
+            listEl.innerHTML = '<p class="empty-text">Не удалось загрузить инсайты</p>';
+        }
+    } finally {
+        aiState.loading = false;
+        if (loadingEl) loadingEl.style.display = 'none';
+    }
+}
+
+function renderIntegratedAIInsights() {
+    const listEl = document.getElementById('ai-insights-list');
+    if (!listEl) return;
+    
+    const allInsights = [];
+    
+    // Add insights
+    aiState.insights.forEach(insight => {
+        allInsights.push({
+            icon: getInsightIcon(insight.insight_type),
+            title: insight.title,
+            message: insight.message,
+            priority: insight.priority || 'normal'
+        });
+    });
+    
+    // Add recommendations
+    aiState.recommendations.forEach(rec => {
+        allInsights.push({
+            icon: getRecommendationIcon(rec.type),
+            title: rec.title,
+            message: rec.message,
+            priority: rec.priority || 'normal',
+            saving: rec.potential_saving
+        });
+    });
+    
+    if (!allInsights.length) {
+        listEl.innerHTML = `
+            <div class="ai-insight-card empty">
+                <i class="fas fa-check-circle"></i>
+                <span>Всё отлично! Продолжайте в том же духе 👍</span>
+            </div>
+        `;
+        return;
+    }
+    
+    listEl.innerHTML = allInsights.slice(0, 5).map(insight => `
+        <div class="ai-insight-card ${insight.priority}">
+            <div class="insight-icon">${insight.icon}</div>
+            <div class="insight-content">
+                <div class="insight-title">${escapeHtml(insight.title)}</div>
+                <div class="insight-message">${escapeHtml(insight.message)}</div>
+                ${insight.saving ? `<div class="insight-saving">💰 Экономия: ${formatCurrency(insight.saving)}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getInsightIcon(type) {
+    const icons = {
+        'savings_rate': '💰',
+        'frequency': '📊',
+        'trend': '📈',
+        'anomaly': '⚠️',
+        'budget': '🎯'
+    };
+    return icons[type] || '💡';
+}
+
+function getRecommendationIcon(type) {
+    const icons = {
+        'budget_alert': '🚨',
+        'saving_opportunity': '💰',
+        'pattern_insight': '📊'
+    };
+    return icons[type] || '💡';
+}
+
+// Initialize debt tabs and type buttons
+document.addEventListener('DOMContentLoaded', () => {
+    setupDebtTabs();
+    setupDebtTypeButtons();
+});
+
 // ===== GLOBAL ERROR HANDLER =====
 window.addEventListener('error', (e) => {
     console.error('💥 Global error:', e.error);
@@ -1789,4 +2611,3 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 debug.log('✅ App initialized');
-

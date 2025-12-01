@@ -10,10 +10,10 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1024,
-        -48
+        -3024,
+        -64
       ],
-      "id": "59d3f061-6fca-4b68-8c48-cc9ed240991e",
+      "id": "498ee8ee-3bb0-4913-b634-c81760ec1d1c",
       "name": "Telegram Trigger",
       "webhookId": "7d5db243-2146-45ba-a9b7-d0d743f58df0",
       "credentials": {
@@ -32,10 +32,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -800,
-        -48
+        -2800,
+        -64
       ],
-      "id": "45a51f89-af42-44bc-9fa1-2cf492eee9e4",
+      "id": "59aab3a5-af04-42c3-8aee-c16b868c7167",
       "name": "Ensure User",
       "credentials": {
         "postgres": {
@@ -103,10 +103,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -576,
-        -48
+        -2576,
+        -64
       ],
-      "id": "8bf8ef06-8761-4979-bf82-8abbea7e2b97",
+      "id": "11007d98-1dae-493c-babe-cf0edd339e77",
       "name": "Message Type"
     },
     {
@@ -118,10 +118,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -352,
-        -144
+        -2352,
+        -160
       ],
-      "id": "643d3614-6e12-4173-9606-17a6a48859e6",
+      "id": "09140052-8396-4a9a-983b-fff50b599670",
       "name": "Download Voice",
       "webhookId": "ebbba00f-fb0b-4458-ade5-3e826582610f",
       "credentials": {
@@ -140,10 +140,10 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        -128,
-        -144
+        -2128,
+        -160
       ],
-      "id": "8b24184f-af9a-4756-9b04-1dd1998eca1e",
+      "id": "33d131ba-3d1c-44c3-a1b0-7c63f0c58fbd",
       "name": "Whisper STT",
       "credentials": {
         "openAiApi": {
@@ -187,10 +187,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        96,
-        -144
+        -1904,
+        -160
       ],
-      "id": "fe2478d9-e241-4e0c-b3e8-4794ee29cb08",
+      "id": "b68b8dd7-effd-45f5-b6c7-839c0c0d9557",
       "name": "Set Voice Data"
     },
     {
@@ -228,10 +228,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        96,
-        48
+        -1904,
+        32
       ],
-      "id": "cf2da515-0bd2-439a-8cc2-3e079571ae00",
+      "id": "4f78efcb-baa2-4f57-bd7f-38a55aee9c6e",
       "name": "Set Text Data"
     },
     {
@@ -239,17 +239,17 @@
         "promptType": "define",
         "text": "=User ID: {{ $json.user_id }}\nChat ID: {{ $json.chat_id }}\nИмя: {{ $json.first_name }}\nСообщение: {{ $json.text }}",
         "options": {
-          "systemMessage": "Ты — AIAccounter, финансовый ассистент в Telegram.\n\n🚨 ИГНОРИРУЙ МУСОР В ИСТОРИИ:\n• Если в истории видишь [Used tools:...], [functions...], Input, Result — это технический мусор, ИГНОРИРУЙ его полностью\n• Каждое сообщение пользователя обрабатывай как НОВЫЙ запрос\n• НЕ повторяй действия из истории\n\n⚡ ПРАВИЛО: Выполняй команду ОДИН РАЗ!\n\n📊 ОТЧЁТЫ:\n• 'отчёт/за сегодня' → Report_Daily\n• 'за неделю/недельный' → Report_Weekly  \n• 'за месяц' → Report_Monthly\n• 'с [дата] по [дата]' → Report_Period\nОтвет: '📊 Отчёт отправлен!'\n\n💰 ТРАНЗАКЦИИ:\n• Расход → Create_Expense\n• Доход → Create_Income\nОтвет: '✅ Записал! 💸 сумма — категория'\n\n✅ ФОРМАТ ОТВЕТА:\n• Пиши ТОЛЬКО красивое сообщение с эмодзи\n• НИКОГДА не пиши [Used tools], Input, Result\n• Кратко и дружелюбно\n\n📂 КАТЕГОРИИ:\nРасходы: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки, Другое\nДоходы: Зарплата, Фриланс, Инвестиции, Подарки, Другое",
+          "systemMessage": "Ты — AIAccounter, финансовый ассистент в Telegram.\n\n🚫 СТРОГО ЗАПРЕЩЕНО:\n• [Used tools: ...], Tool:, Input:, Result:, {json} — НЕ включай в ответ!\n• Отвечать 'Вот твой отчёт' БЕЗ вызова инструмента — ЗАПРЕЩЕНО!\n\n⚠️ КРИТИЧЕСКОЕ ПРАВИЛО ДЛЯ ОТЧЁТОВ:\nКогда пользователь просит ЛЮБОЙ отчёт — ТЫ ОБЯЗАН вызвать соответствующий инструмент!\nНЕ отвечай текстом типа 'Вот твой отчёт' — ВЫЗОВИ ИНСТРУМЕНТ!\n\n📊 ОТЧЁТЫ (ОБЯЗАТЕЛЬНО вызывай инструмент!):\n• 'отчёт за сегодня/сегодняшний/дневной' → ВЫЗОВИ Report_Daily\n• 'отчёт за неделю/недельный/последняя неделя' → ВЫЗОВИ Report_Weekly\n• 'отчёт за месяц/месячный' → ВЫЗОВИ Report_Monthly\n• 'с [дата] по [дата]' → ВЫЗОВИ Report_Period\n\n💰 ТРАНЗАКЦИИ:\n• Расход (потратил, купил, заплатил) → Create_Expense\n• Доход (получил, заработал) → Create_Income\n\n📁 КАТЕГОРИИ:\n• 'мои категории' → Category_Manager(action: list)\n• 'добавь категорию' → Category_Manager(action: add)\n• 'удали категорию' → Category_Manager(action: delete)\n\n✅ После вызова инструмента отчёта — НЕ ОТВЕЧАЙ НИЧЕГО! Отчёт сам отправится пользователю.\n\n✅ Для транзакций отвечай коротко: 'Записал расход X KGS на категорию Y'",
           "maxIterations": 3
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        1016,
-        -48
+        -920,
+        -64
       ],
-      "id": "1add867b-4849-4761-ac50-1b646e90b4b4",
+      "id": "7999a291-dc51-4663-a953-4b66593a7cfa",
       "name": "AI Agent"
     },
     {
@@ -264,10 +264,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2064,
-        -48
+        192,
+        -64
       ],
-      "id": "bf876a96-3a6d-477d-b428-945e0aad5359",
+      "id": "4dadea02-0cbf-418c-838a-db33260d2dd7",
       "name": "Send Reply",
       "webhookId": "9c3b0626-7240-4ad1-a03e-14cee62b4802",
       "credentials": {
@@ -292,10 +292,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        320,
-        176
+        -1680,
+        160
       ],
-      "id": "4f8c79c5-515c-4020-b534-171f71f4f870",
+      "id": "71e43918-92d3-4fb3-a105-5b24b5bce575",
       "name": "GPT-4.1 Mini",
       "credentials": {
         "openAiApi": {
@@ -313,10 +313,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        448,
-        176
+        -1552,
+        160
       ],
-      "id": "4336f030-fb11-449a-bae7-ac7d29067be1",
+      "id": "d77ae2c5-e09e-4495-8105-2bd032be3f22",
       "name": "Chat Memory",
       "credentials": {
         "postgres": {
@@ -336,10 +336,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        576,
-        176
+        -1424,
+        160
       ],
-      "id": "06b10efc-9dfc-4e87-bd7c-9c7ae0d16083",
+      "id": "5c419fbc-9230-4b9f-831f-4b109404fa7d",
       "name": "Get_Expenses",
       "credentials": {
         "postgres": {
@@ -359,10 +359,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        704,
-        176
+        -1296,
+        160
       ],
-      "id": "eacd9a01-3bf0-4663-b8a3-7eec1c98bf10",
+      "id": "d5f6bec9-cd9c-4918-b88f-826b82a57852",
       "name": "Get_Income",
       "credentials": {
         "postgres": {
@@ -374,18 +374,18 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Добавляет новый расход. Используй когда пользователь потратил деньги: покупка, оплата, такси, еда и т.д.",
+        "toolDescription": "Добавляет новый расход. Используй когда пользователь потратил деньги: покупка, оплата, такси, еда и т.д. Категорию выбирай по смыслу трат.",
         "operation": "executeQuery",
-        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bishkek')::date), '{{ $fromAI('category', 'Категория: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "query": "=INSERT INTO expenses (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bishkek')::date), '{{ $fromAI('category', 'Категория расходов по смыслу: Продукты, Транспорт, Кафе, Жильё, Медицина, Одежда, Развлечения, Образование, Подписки или кастомная', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        832,
-        176
+        -1168,
+        160
       ],
-      "id": "46552a53-bc38-4526-8331-b95116c92d3d",
+      "id": "6cb65c94-12f4-45dc-9cde-bd4020361ea0",
       "name": "Create_Expense",
       "credentials": {
         "postgres": {
@@ -397,18 +397,18 @@
     {
       "parameters": {
         "descriptionType": "manual",
-        "toolDescription": "Execute a SQL query in Postgres",
+        "toolDescription": "Добавляет новый доход. Используй когда пользователь получил деньги: зарплата, перевод, продажа и т.д. Категорию выбирай по смыслу дохода.",
         "operation": "executeQuery",
-        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bishkek')::date), '{{ $fromAI('category', 'Категория: Зарплата, Фриланс, Инвестиции, Подарки, Другое', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
+        "query": "=INSERT INTO income (user_id, date, category, amount, currency, description, source) VALUES ({{ $('Telegram Trigger').item.json.message.from.id }}, COALESCE(NULLIF('{{ $fromAI('date', 'Дата YYYY-MM-DD, пустая строка если не указана', 'string') }}', '')::date, (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bishkek')::date), '{{ $fromAI('category', 'Категория доходов по смыслу: Зарплата, Фриланс, Инвестиции, Подарки, Продажи или кастомная', 'string') }}', {{ $fromAI('amount', 'Сумма числом', 'number') }}, '{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}', '{{ $fromAI('description', 'Краткое описание', 'string') }}', 'telegram') RETURNING id, date, category, amount, currency",
         "options": {}
       },
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        960,
-        176
+        -1040,
+        160
       ],
-      "id": "4647fe6c-cc3f-4c06-a664-0410f7e1576b",
+      "id": "19d92818-0fde-4fe5-a365-9b76659cf247",
       "name": "Create_Income",
       "credentials": {
         "postgres": {
@@ -428,10 +428,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1088,
-        176
+        -912,
+        160
       ],
-      "id": "50b9245b-a675-4d9a-9f44-ed9130ee23a1",
+      "id": "01e4b503-39ab-4f5c-bc56-9aa48c9c42e3",
       "name": "Delete_Expense",
       "credentials": {
         "postgres": {
@@ -451,10 +451,10 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1216,
-        176
+        -784,
+        160
       ],
-      "id": "ae4c1810-b60d-4aec-8628-b70b016b4472",
+      "id": "0bc68b88-2c4e-46da-85b3-3909c089b006",
       "name": "Delete_Income",
       "credentials": {
         "postgres": {
@@ -468,15 +468,15 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        1344,
-        176
+        -656,
+        160
       ],
-      "id": "2df15059-cca4-439f-b64c-ffa5b710d415",
+      "id": "7080160a-e6d6-4f57-8b12-c17efb385779",
       "name": "Calculator"
     },
     {
       "parameters": {
-        "toolDescription": "Ежедневный отчёт за сегодня",
+        "toolDescription": "ОБЯЗАТЕЛЬНО вызови этот инструмент когда пользователь просит: отчёт за сегодня, дневной отчёт, сегодняшний отчёт, что я потратил сегодня. Отправляет ежедневный финансовый отчёт с расходами и доходами за текущий день.",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -487,15 +487,15 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1472,
-        176
+        -528,
+        160
       ],
-      "id": "f3bc5d99-5d38-4f0b-b53f-ea1826258cde",
+      "id": "5737063d-299d-43f7-a3a6-b7daf162d309",
       "name": "Report_Daily"
     },
     {
       "parameters": {
-        "toolDescription": "Генерирует отчёт за последнюю неделю. Используй когда пользователь просит: отчёт за неделю, недельный отчёт, за последнюю неделю, weekly report",
+        "toolDescription": "ОБЯЗАТЕЛЬНО вызови этот инструмент когда пользователь просит: отчёт за неделю, недельный отчёт, за последнюю неделю, за 7 дней, weekly report. Отправляет недельный финансовый отчёт с топ категориями и балансом.",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -506,15 +506,15 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1600,
-        176
+        -400,
+        160
       ],
-      "id": "e36cf98d-7b46-4167-95e3-3c3fbd2e4ecd",
+      "id": "b9b6d8c3-70be-4977-8d42-f4d7bc3ad4e7",
       "name": "Report_Weekly"
     },
     {
       "parameters": {
-        "toolDescription": "Генерирует отчёт за текущий месяц. Используй когда пользователь просит: отчёт за месяц, месячный отчёт, monthly report",
+        "toolDescription": "ОБЯЗАТЕЛЬНО вызови этот инструмент когда пользователь просит: отчёт за месяц, месячный отчёт, за этот месяц, monthly report. Отправляет месячный финансовый отчёт с категориями и бюджетом.",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -525,15 +525,15 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1728,
-        176
+        -272,
+        160
       ],
-      "id": "3851f2e1-2bbb-4f0d-99a0-a274f1c88654",
+      "id": "2e1285d3-695d-449a-81fd-6620ba20e849",
       "name": "Report_Monthly"
     },
     {
       "parameters": {
-        "toolDescription": "Генерирует отчёт за произвольный период. Используй когда пользователь указывает конкретные даты: с 1 по 15 ноября, за прошлый месяц с датами",
+        "toolDescription": "ОБЯЗАТЕЛЬНО вызови этот инструмент когда пользователь указывает конкретные даты для отчёта: с 1 по 15 ноября, за прошлый месяц, с такой-то даты по такую-то. Отправляет отчёт за выбранный период.",
         "method": "POST",
         "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/reports-webhook",
         "sendBody": true,
@@ -544,11 +544,239 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        1856,
-        176
+        -144,
+        160
       ],
-      "id": "cfe26714-d52d-4611-bb53-e8afd840e330",
+      "id": "c772b7d0-c452-4239-961b-1ccd4d2c4462",
       "name": "Report_Period"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Управляет категориями пользователя. Используй для: показать категории, добавить категорию, удалить категорию. Параметр action: list (показать все), add (добавить новую), delete (удалить)",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/categories-webhook",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"action\": \"{{ $fromAI('action', 'Действие: list (показать), add (добавить), delete (удалить)', 'string') }}\",\n  \"user_id\": {{ $json.user_id }},\n  \"type\": \"{{ $fromAI('type', 'Тип категории: expense или income', 'string') }}\",\n  \"name\": \"{{ $fromAI('name', 'Название категории для добавления/удаления', 'string') }}\",\n  \"icon\": \"{{ $fromAI('icon', 'Эмодзи иконка для категории', 'string') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        -16,
+        160
+      ],
+      "id": "a4889bb9-9233-45f5-a15d-5ed69be82304",
+      "name": "Category_Manager"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "categories-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        456
+      ],
+      "id": "5e6db395-40c0-4b36-ba7e-2fa508c966d8",
+      "name": "Categories Webhook",
+      "webhookId": "categories-webhook-id"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "add"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2800,
+        440
+      ],
+      "id": "1dc0cb4c-8b08-4b92-8b91-e73c7ca6728f",
+      "name": "Route Category Action"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT c.id, c.name, c.type, c.icon, c.color, c.is_default\nFROM categories c\nWHERE (c.user_id IS NULL OR c.user_id = {{ $json.body.user_id }})\n  AND c.is_active = true\n  AND (c.type = '{{ $json.body.type }}' OR '{{ $json.body.type }}' = '')\nORDER BY c.is_default DESC, c.sort_order, c.name",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        264
+      ],
+      "id": "c693d87d-0de4-4d59-81e9-5a6a4c28f7ff",
+      "name": "Get Categories",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO categories (user_id, name, type, icon, is_default, is_active)\nVALUES (\n  {{ $json.body.user_id }},\n  '{{ $json.body.name }}',\n  '{{ $json.body.type }}',\n  '{{ $json.body.icon || \"📁\" }}',\n  false,\n  true\n)\nON CONFLICT (user_id, name, type) DO NOTHING\nRETURNING id, name, type, icon",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        456
+      ],
+      "id": "532a9556-d131-4a5e-b56b-48614c92b017",
+      "name": "Add Category",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE categories\nSET is_active = false, updated_at = NOW()\nWHERE user_id = {{ $json.body.user_id }}\n  AND name = '{{ $json.body.name }}'\n  AND type = '{{ $json.body.type }}'\n  AND is_default = false\nRETURNING id, name, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        648
+      ],
+      "id": "91080a3e-ce7a-4724-8324-e754f13eeccb",
+      "name": "Delete Category",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Форматируем результат для пользователя\nconst items = $input.all();\nconst action = $('Categories Webhook').first().json.body.action;\n\nlet result = {};\n\nif (action === 'list') {\n  const categories = items.map(item => ({\n    name: item.json.name,\n    icon: item.json.icon,\n    type: item.json.type,\n    is_default: item.json.is_default\n  }));\n  \n  const expenses = categories.filter(c => c.type === 'expense');\n  const income = categories.filter(c => c.type === 'income');\n  \n  result = {\n    success: true,\n    expenses: expenses.map(c => `${c.icon} ${c.name}${c.is_default ? '' : ' (свой)'}`).join(', '),\n    income: income.map(c => `${c.icon} ${c.name}${c.is_default ? '' : ' (свой)'}`).join(', '),\n    total: categories.length\n  };\n} else if (action === 'add') {\n  if (items.length > 0 && items[0].json.id) {\n    result = {\n      success: true,\n      message: `Категория \"${items[0].json.name}\" добавлена`,\n      category: items[0].json\n    };\n  } else {\n    result = {\n      success: false,\n      message: 'Категория уже существует или не удалось добавить'\n    };\n  }\n} else if (action === 'delete') {\n  if (items.length > 0 && items[0].json.id) {\n    result = {\n      success: true,\n      message: `Категория \"${items[0].json.name}\" удалена`\n    };\n  } else {\n    result = {\n      success: false,\n      message: 'Категория не найдена или нельзя удалить (дефолтную)'\n    };\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        456
+      ],
+      "id": "8eed7674-e9fb-445c-953c-c9ed5542f76f",
+      "name": "Format Category Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -2128,
+        456
+      ],
+      "id": "f8048067-a590-4305-9819-d269019b29fe",
+      "name": "Respond Categories"
+    },
+    {
+      "parameters": {
+        "content": "## Category",
+        "height": 624,
+        "width": 1184
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3096,
+        184
+      ],
+      "id": "c28ede5b-cb4e-433a-8cfb-0dd359f11092",
+      "name": "Sticky Note"
     }
   ],
   "connections": {
@@ -785,6 +1013,97 @@
           {
             "node": "AI Agent",
             "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Category_Manager": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categories Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route Category Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Category Action": {
+      "main": [
+        [
+          {
+            "node": "Get Categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Category",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Categories": {
+      "main": [
+        [
+          {
+            "node": "Format Category Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Category": {
+      "main": [
+        [
+          {
+            "node": "Format Category Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Category": {
+      "main": [
+        [
+          {
+            "node": "Format Category Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Category Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Categories",
+            "type": "main",
             "index": 0
           }
         ]

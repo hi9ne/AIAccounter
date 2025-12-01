@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import date, datetime, timedelta
 import httpx
 import os
@@ -32,6 +32,59 @@ APITEMPLATE_BASE_URL = "https://rest.apitemplate.io/v2"
 WEEKLY_TEMPLATE_ID = settings.WEEKLY_TEMPLATE_ID
 MONTHLY_TEMPLATE_ID = settings.MONTHLY_TEMPLATE_ID
 PERIOD_TEMPLATE_ID = settings.PERIOD_TEMPLATE_ID
+
+
+def generate_ai_summary(stats: Dict, top_categories: List[Dict], period_days: int) -> str:
+    """
+    Генерирует простой текстовый AI комментарий для отчёта
+    """
+    comments = []
+    
+    total_income = stats.get('total_income', 0)
+    total_expense = stats.get('total_expense', 0)
+    balance = stats.get('balance', 0)
+    expense_count = stats.get('expense_count', 0)
+    
+    # Баланс
+    if balance > 0:
+        savings_percent = round((balance / total_income * 100), 1) if total_income > 0 else 0
+        comments.append(f"🎉 Отлично! Вы сэкономили {balance:,.0f} сом ({savings_percent}% от дохода).")
+    elif balance < 0:
+        comments.append(f"⚠️ Внимание! Расходы превысили доходы на {abs(balance):,.0f} сом.")
+    else:
+        comments.append("📊 Ваши доходы и расходы сбалансированы.")
+    
+    # Топ категория
+    if top_categories:
+        top_cat = top_categories[0]
+        cat_name = top_cat.get('category', 'Неизвестно')
+        cat_amount = top_cat.get('total_amount', 0)
+        cat_percent = top_cat.get('percentage', 0)
+        
+        comments.append(f"💸 Больше всего вы потратили на «{cat_name}» — {cat_amount:,.0f} сом ({cat_percent}% всех расходов).")
+        
+        # Если есть вторая категория
+        if len(top_categories) > 1:
+            second_cat = top_categories[1]
+            comments.append(f"📌 На втором месте — «{second_cat.get('category')}» ({second_cat.get('total_amount', 0):,.0f} сом).")
+    
+    # Средние траты
+    if expense_count > 0 and period_days > 0:
+        avg_daily = total_expense / period_days
+        avg_per_transaction = total_expense / expense_count
+        
+        comments.append(f"📅 В среднем вы тратили {avg_daily:,.0f} сом в день.")
+        
+        if avg_per_transaction > 1000:
+            comments.append(f"💡 Средняя покупка — {avg_per_transaction:,.0f} сом. Возможно, стоит обратить внимание на крупные траты.")
+    
+    # Количество транзакций
+    if expense_count > period_days * 3:
+        comments.append(f"🛒 За период вы совершили {expense_count} покупок — это довольно много! Мелкие траты могут накапливаться.")
+    elif expense_count < period_days / 2:
+        comments.append(f"✨ Всего {expense_count} покупок за период — отличный контроль над расходами!")
+    
+    return "\n".join(comments)
 
 
 async def fetch_report_data(
@@ -258,12 +311,20 @@ async def generate_weekly_report(
     # Получаем данные
     report_data = await fetch_report_data(current_user.user_id, week_start, week_end, db)
     
+    # Генерируем AI комментарий
+    ai_summary = generate_ai_summary(
+        report_data['stats'],
+        report_data['top_categories'],
+        period_days=7
+    )
+    
     # Подготовка данных для шаблона
     template_data = {
         "report_type": "Недельный отчёт",
         "period": f"{week_start.strftime('%d.%m.%Y')} - {week_end.strftime('%d.%m.%Y')}",
         "generated_at": datetime.now().strftime("%d.%m.%Y %H:%M"),
         "user_name": f"{current_user.first_name} {current_user.last_name or ''}".strip(),
+        "ai_summary": ai_summary,
         **report_data
     }
     
@@ -332,6 +393,14 @@ async def generate_monthly_report(
     })
     budgets = budget_result.fetchall()
     
+    # Генерируем AI комментарий
+    period_days = (month_end - month_start).days + 1
+    ai_summary = generate_ai_summary(
+        report_data['stats'],
+        report_data['top_categories'],
+        period_days=period_days
+    )
+    
     # Подготовка данных для шаблона
     month_names = ["", "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
                    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
@@ -341,6 +410,7 @@ async def generate_monthly_report(
         "period": f"{month_names[month]} {year}",
         "generated_at": datetime.now().strftime("%d.%m.%Y %H:%M"),
         "user_name": f"{current_user.first_name} {current_user.last_name or ''}".strip(),
+        "ai_summary": ai_summary,
         "budgets": [
             {
                 "category": b[0],
@@ -384,12 +454,21 @@ async def generate_period_report(
         db
     )
     
+    # Генерируем AI комментарий
+    period_days = (report_request.end_date - report_request.start_date).days + 1
+    ai_summary = generate_ai_summary(
+        report_data['stats'],
+        report_data['top_categories'],
+        period_days=period_days
+    )
+    
     # Подготовка данных для шаблона
     template_data = {
         "report_type": "Отчёт за период",
         "period": f"{report_request.start_date.strftime('%d.%m.%Y')} - {report_request.end_date.strftime('%d.%m.%Y')}",
         "generated_at": datetime.now().strftime("%d.%m.%Y %H:%M"),
         "user_name": f"{current_user.first_name} {current_user.last_name or ''}".strip(),
+        "ai_summary": ai_summary,
         "include_transactions": report_request.include_transactions,
         **report_data
     }

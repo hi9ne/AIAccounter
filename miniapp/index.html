@@ -3,495 +3,821 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AIAccounter - Финансовая Аналитика</title>
+    <title>AIAccounter</title>
     
-    <!-- Apply theme immediately to prevent flash -->
+    <!-- Theme -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'auto';
-            if (savedTheme !== 'auto') {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme === 'auto' ? 'dark' : savedTheme);
         })();
     </script>
     
     <!-- Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=3.0.4">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=4.0.0">
     
-    <!-- Cache Control -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0f">
 </head>
 <body>
-    <div class="app-container">
-        
-        <!-- 🏠 ГЛАВНАЯ: ОБЗОР -->
+    <div class="app">
+        <!-- ═══════════════════════════════════════════════════════════════
+             🏠 HOME / DASHBOARD
+        ═══════════════════════════════════════════════════════════════ -->
         <div id="home-screen" class="screen active">
-            <!-- Header -->
-            <div class="app-header">
-                <div class="header-top">
-                    <div class="user-info">
-                        <div class="avatar" id="user-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div>
-                            <div class="greeting">Добро пожаловать</div>
-                            <div class="username" id="user-name">Пользователь</div>
-                        </div>
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="user-block">
+                    <div class="user-avatar" id="user-avatar">
+                        <i class="fas fa-user"></i>
                     </div>
-                    <button class="icon-btn" onclick="loadDashboard()">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
+                    <div class="user-greeting">
+                        <span class="greeting-text">Привет,</span>
+                        <span class="user-name" id="user-name">User</span>
+                    </div>
+                </div>
+                <button class="btn-icon" onclick="loadDashboard()" title="Обновить">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </header>
+
+            <!-- Hero Balance Card -->
+            <section class="hero-card">
+                <div class="hero-label">Общий баланс</div>
+                <div class="hero-amount" id="main-balance">0 с</div>
+                <div class="hero-change" id="balance-trend">
+                    <i class="fas fa-arrow-trend-up"></i>
+                    <span>+0% за период</span>
                 </div>
                 
-                <!-- Period Selector -->
-                <div class="period-selector">
-                    <button class="period-btn" data-period="day">День</button>
-                    <button class="period-btn active" data-period="week">Неделя</button>
-                    <button class="period-btn" data-period="month">Месяц</button>
-                    <button class="period-btn" data-period="year">Год</button>
+                <!-- Period Pills -->
+                <div class="period-pills">
+                    <button class="pill" data-period="day">День</button>
+                    <button class="pill active" data-period="week">Неделя</button>
+                    <button class="pill" data-period="month">Месяц</button>
+                    <button class="pill" data-period="year">Год</button>
                 </div>
-            </div>
-            
-            <!-- Balance Overview -->
-            <div class="balance-section">
-                <div class="balance-card main-balance">
-                    <div class="balance-header">
-                        <span class="balance-label">Баланс</span>
-                        <i class="fas fa-wallet"></i>
+            </section>
+
+            <!-- Income / Expense Cards -->
+            <section class="flow-cards">
+                <div class="flow-card income">
+                    <div class="flow-icon">
+                        <i class="fas fa-arrow-down"></i>
                     </div>
-                    <div class="balance-amount" id="main-balance">0 с</div>
-                    <div class="balance-trend">
-                        <span class="trend-indicator" id="balance-trend">
-                            <i class="fas fa-arrow-up"></i> +0%
-                        </span>
-                        <span class="trend-period">за период</span>
+                    <div class="flow-data">
+                        <span class="flow-label">Доходы</span>
+                        <span class="flow-value" id="total-income">0 с</span>
                     </div>
                 </div>
-                
-                <div class="balance-grid">
-                    <div class="balance-card income-card">
-                        <div class="card-icon">
-                            <i class="fas fa-arrow-down"></i>
-                        </div>
-                        <div class="card-content">
-                            <div class="card-label">Доходы</div>
-                            <div class="card-value" id="total-income">0 с</div>
-                        </div>
+                <div class="flow-card expense">
+                    <div class="flow-icon">
+                        <i class="fas fa-arrow-up"></i>
                     </div>
-                    
-                    <div class="balance-card expense-card">
-                        <div class="card-icon">
-                            <i class="fas fa-arrow-up"></i>
-                        </div>
-                        <div class="card-content">
-                            <div class="card-label">Расходы</div>
-                            <div class="card-value" id="total-expense">0 с</div>
-                        </div>
+                    <div class="flow-data">
+                        <span class="flow-label">Расходы</span>
+                        <span class="flow-value" id="total-expense">0 с</span>
                     </div>
                 </div>
-            </div>
-            
+            </section>
+
             <!-- Quick Stats -->
-            <div class="stats-pills">
-                <div class="stat-pill">
+            <section class="quick-stats">
+                <div class="stat-chip">
                     <i class="fas fa-receipt"></i>
                     <span id="transactions-count">0 операций</span>
                 </div>
-                <div class="stat-pill">
-                    <i class="fas fa-calendar-day"></i>
+                <div class="stat-chip">
+                    <i class="fas fa-chart-line"></i>
                     <span id="avg-daily">0 с/день</span>
                 </div>
-                <div class="stat-pill">
+                <div class="stat-chip">
                     <i class="fas fa-piggy-bank"></i>
-                    <span id="savings-rate">0% экономия</span>
+                    <span id="savings-rate">0%</span>
                 </div>
-            </div>
-            
+            </section>
+
             <!-- Recent Transactions -->
-            <div class="section">
-                <div class="section-header">
-                    <h3><i class="fas fa-history"></i> Последние операции</h3>
-                    <button class="link-btn" onclick="switchScreen('history')">
+            <section class="section-block">
+                <div class="section-head">
+                    <h2><i class="fas fa-clock-rotate-left"></i> Последние операции</h2>
+                    <button class="btn-link" onclick="switchScreen('history')">
                         Все <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
-                <div id="recent-transactions" class="transactions-list">
-                    <div class="loading-placeholder">
-                        <div class="skeleton-item"></div>
-                        <div class="skeleton-item"></div>
-                        <div class="skeleton-item"></div>
+                <div id="recent-transactions" class="tx-list">
+                    <div class="skeleton-list">
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
                     </div>
                 </div>
-            </div>
-            
+            </section>
+
             <!-- Top Categories -->
-            <div class="section">
-                <div class="section-header">
-                    <h3><i class="fas fa-chart-pie"></i> Топ категорий</h3>
-                    <button class="link-btn" onclick="switchScreen('analytics')">
-                        Подробнее <i class="fas fa-chevron-right"></i>
+            <section class="section-block">
+                <div class="section-head">
+                    <h2><i class="fas fa-chart-pie"></i> Топ категорий</h2>
+                    <button class="btn-link" onclick="switchScreen('analytics')">
+                        Детали <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
-                <div id="home-top-categories" class="top-categories-compact">
-                    <div class="empty-state">
-                        <i class="fas fa-tag"></i>
-                        <p>Нет данных</p>
-                    </div>
+                <div id="home-top-categories" class="categories-mini">
+                    <div class="empty-msg">Нет данных</div>
                 </div>
-            </div>
+            </section>
         </div>
-        
-        <!-- 📊 АНАЛИТИКА -->
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             📊 ANALYTICS
+        ═══════════════════════════════════════════════════════════════ -->
         <div id="analytics-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="switchScreen('home')">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <h1>Аналитика</h1>
-                <select id="analytics-period" class="period-select">
+                <select id="analytics-period" class="select-minimal">
                     <option value="week">Неделя</option>
                     <option value="month" selected>Месяц</option>
                     <option value="quarter">Квартал</option>
                     <option value="year">Год</option>
-                    <option value="custom">Свой период</option>
                 </select>
-            </div>
-            
-            <!-- Custom Period Selector -->
-            <div id="custom-period-panel" class="custom-period-panel" style="display: none;">
-                <div class="date-inputs">
-                    <div class="date-input-group">
-                        <label>От</label>
-                        <input type="date" id="custom-start-date" class="date-input">
+            </header>
+
+            <div class="screen-body">
+                <!-- KPI Row -->
+                <div class="kpi-row">
+                    <div class="kpi-box">
+                        <span class="kpi-icon income"><i class="fas fa-arrow-down"></i></span>
+                        <span class="kpi-val" id="kpi-income">0</span>
+                        <span class="kpi-lbl">Доходы</span>
                     </div>
-                    <div class="date-input-group">
-                        <label>До</label>
-                        <input type="date" id="custom-end-date" class="date-input">
+                    <div class="kpi-box">
+                        <span class="kpi-icon expense"><i class="fas fa-arrow-up"></i></span>
+                        <span class="kpi-val" id="kpi-expense">0</span>
+                        <span class="kpi-lbl">Расходы</span>
                     </div>
-                    <button class="btn-apply" onclick="applyCustomPeriod()">
-                        <i class="fas fa-check"></i> Применить
-                    </button>
-                </div>
-            </div>
-            
-            <div class="screen-content">
-                <!-- KPI Cards -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-wallet"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <div class="kpi-label">Общий доход</div>
-                            <div class="kpi-value" id="kpi-income">0 с</div>
-                        </div>
+                    <div class="kpi-box">
+                        <span class="kpi-icon balance"><i class="fas fa-scale-balanced"></i></span>
+                        <span class="kpi-val" id="kpi-savings">0</span>
+                        <span class="kpi-lbl">Баланс</span>
                     </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <div class="kpi-label">Общий расход</div>
-                            <div class="kpi-value" id="kpi-expense">0 с</div>
-                        </div>
-                    </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-piggy-bank"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <div class="kpi-label">Накоплено</div>
-                            <div class="kpi-value" id="kpi-savings">0 с</div>
-                            <div class="kpi-change">Баланс</div>
-                        </div>
-                    </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-icon">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <div class="kpi-content">
-                            <div class="kpi-label">Норма сбережений</div>
-                            <div class="kpi-value" id="kpi-rate">0%</div>
-                            <div class="kpi-change">от дохода</div>
-                        </div>
+                    <div class="kpi-box">
+                        <span class="kpi-icon rate"><i class="fas fa-percent"></i></span>
+                        <span class="kpi-val" id="kpi-rate">0%</span>
+                        <span class="kpi-lbl">Экономия</span>
                     </div>
                 </div>
-                
+
                 <!-- Charts -->
-                <div class="chart-section">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3><i class="fas fa-chart-line"></i> Динамика</h3>
-                            <div class="chart-legend">
-                                <span class="legend-item income"><span class="dot"></span> Доходы</span>
-                                <span class="legend-item expense"><span class="dot"></span> Расходы</span>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="trend-chart"></canvas>
-                        </div>
+                <div class="chart-block">
+                    <div class="chart-title"><i class="fas fa-chart-area"></i> Динамика</div>
+                    <div class="chart-wrap">
+                        <canvas id="trend-chart"></canvas>
                     </div>
-                    
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3><i class="fas fa-chart-pie"></i> Структура расходов</h3>
-                        </div>
-                        <div class="chart-container pie">
-                            <canvas id="category-pie-chart"></canvas>
-                        </div>
+                </div>
+
+                <div class="chart-block">
+                    <div class="chart-title"><i class="fas fa-chart-pie"></i> По категориям</div>
+                    <div class="chart-wrap donut">
+                        <canvas id="category-pie-chart"></canvas>
                     </div>
-                    
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <h3><i class="fas fa-fire"></i> Топ категорий</h3>
-                            <span class="badge" id="top-categories-period-badge">За месяц</span>
+                </div>
+
+                <!-- Categories List -->
+                <div class="section-block">
+                    <div class="section-head">
+                        <h2><i class="fas fa-fire"></i> Топ расходов</h2>
+                        <span class="badge" id="top-categories-period-badge">Месяц</span>
+                    </div>
+                    <div id="top-categories-list" class="cat-list"></div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="section-block ai-block">
+                    <div class="section-head">
+                        <h2><i class="fas fa-robot"></i> AI Инсайты</h2>
+                        <button class="btn-icon small" onclick="loadAIInsights()">
+                            <i class="fas fa-rotate"></i>
+                        </button>
+                    </div>
+                    <div id="ai-insights-container">
+                        <div id="ai-loading" class="ai-loading" style="display:none;">
+                            <div class="spinner-small"></div>
+                            <span>Анализирую...</span>
                         </div>
-                        <div id="top-categories-list" class="category-list">
-                            <!-- Загружается динамически -->
-                        </div>
+                        <div id="ai-insights-list" class="ai-list"></div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- 📜 ИСТОРИЯ ТРАНЗАКЦИЙ -->
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             📜 HISTORY
+        ═══════════════════════════════════════════════════════════════ -->
         <div id="history-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="switchScreen('home')">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <h1>История</h1>
-                <button class="icon-btn" onclick="openFilters()">
-                    <i class="fas fa-filter"></i>
+                <button class="btn-icon" onclick="openFilters()">
+                    <i class="fas fa-sliders"></i>
                 </button>
-            </div>
-            
-            <div class="screen-content">
-                <!-- Filters -->
-                <div class="filters-panel" id="filters-panel">
-                    <div class="filter-row">
-                        <select id="history-type" class="filter-select">
-                            <option value="all">Все операции</option>
-                            <option value="income">Только доходы</option>
-                            <option value="expense">Только расходы</option>
-                        </select>
-                        
-                        <select id="history-period" class="filter-select">
-                            <option value="week">Неделя</option>
-                            <option value="month" selected>Месяц</option>
-                            <option value="quarter">Квартал</option>
-                            <option value="year">Год</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-row">
-                        <select id="history-category" class="filter-select">
-                            <option value="all">Все категории</option>
-                        </select>
-                        
-                        <select id="history-sort" class="filter-select">
-                            <option value="date_desc">Сначала новые</option>
-                            <option value="date_asc">Сначала старые</option>
-                            <option value="amount_desc">По убыванию суммы</option>
-                            <option value="amount_asc">По возрастанию суммы</option>
-                        </select>
-                    </div>
+            </header>
+
+            <!-- Filters -->
+            <div id="filters-panel" class="filters-panel">
+                <div class="filter-grid">
+                    <select id="history-type" class="select-filter">
+                        <option value="all">Все типы</option>
+                        <option value="income">Доходы</option>
+                        <option value="expense">Расходы</option>
+                    </select>
+                    <select id="history-period" class="select-filter">
+                        <option value="week">Неделя</option>
+                        <option value="month" selected>Месяц</option>
+                        <option value="quarter">Квартал</option>
+                        <option value="year">Год</option>
+                    </select>
+                    <select id="history-category" class="select-filter">
+                        <option value="all">Все категории</option>
+                    </select>
+                    <select id="history-sort" class="select-filter">
+                        <option value="date_desc">Новые ↓</option>
+                        <option value="date_asc">Старые ↑</option>
+                        <option value="amount_desc">Сумма ↓</option>
+                        <option value="amount_asc">Сумма ↑</option>
+                    </select>
                 </div>
-                
-                <!-- Transactions List -->
-                <div id="transactions-history" class="transactions-history">
-                    <!-- Группируется по датам -->
+            </div>
+
+            <div class="screen-body">
+                <div id="transactions-history" class="tx-history"></div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             📄 REPORTS
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="reports-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('home')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Отчёты</h1>
+            </header>
+            <div class="screen-body">
+                <div class="info-box">
+                    <i class="fas fa-circle-info"></i>
+                    <p>Отчёты генерируются через Telegram бота. Здесь можно просмотреть и скачать готовые PDF.</p>
+                </div>
+                <div id="reports-list" class="reports-list">
+                    <div class="empty-state">
+                        <i class="fas fa-file-lines"></i>
+                        <h3>Нет отчётов</h3>
+                        <p>Запросите отчёт в Telegram боте</p>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- ⚙️ НАСТРОЙКИ -->
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             ⚙️ SETTINGS
+        ═══════════════════════════════════════════════════════════════ -->
         <div id="settings-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="switchScreen('home')">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <h1>Настройки</h1>
-            </div>
-            
-            <div class="screen-content">
-                <!-- Display Settings -->
-                <div class="settings-section">
+            </header>
+            <div class="screen-body">
+                <!-- Display -->
+                <div class="settings-group">
                     <h3>Отображение</h3>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <i class="fas fa-dollar-sign"></i>
+                    <div class="setting-row">
+                        <div class="setting-left">
+                            <i class="fas fa-coins"></i>
                             <div>
-                                <div class="setting-label">Валюта по умолчанию</div>
-                                <div class="setting-desc">Для отображения данных</div>
+                                <span class="setting-title">Валюта</span>
+                                <span class="setting-desc">Для отображения сумм</span>
                             </div>
                         </div>
-                        <select id="currency-select" class="setting-select">
+                        <select id="currency-select" class="select-setting">
                             <option value="KGS">KGS (сом)</option>
                             <option value="USD">USD ($)</option>
                             <option value="EUR">EUR (€)</option>
                             <option value="RUB">RUB (₽)</option>
                         </select>
                     </div>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
+
+                    <div class="setting-row">
+                        <div class="setting-left">
                             <i class="fas fa-calendar"></i>
                             <div>
-                                <div class="setting-label">Период по умолчанию</div>
-                                <div class="setting-desc">На главной странице</div>
+                                <span class="setting-title">Период</span>
+                                <span class="setting-desc">По умолчанию</span>
                             </div>
                         </div>
-                        <select id="default-period" class="setting-select">
+                        <select id="default-period" class="select-setting">
                             <option value="day">День</option>
                             <option value="week" selected>Неделя</option>
                             <option value="month">Месяц</option>
                             <option value="year">Год</option>
                         </select>
                     </div>
-                    
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <i class="fas fa-palette"></i>
+
+                    <div class="setting-row">
+                        <div class="setting-left">
+                            <i class="fas fa-moon"></i>
                             <div>
-                                <div class="setting-label">Тема</div>
-                                <div class="setting-desc">Цветовая схема</div>
+                                <span class="setting-title">Тема</span>
+                                <span class="setting-desc">Цветовая схема</span>
                             </div>
                         </div>
-                        <select id="theme-select" class="setting-select">
+                        <select id="theme-select" class="select-setting">
+                            <option value="dark" selected>Тёмная</option>
                             <option value="light">Светлая</option>
-                            <option value="dark">Тёмная</option>
-                            <option value="auto" selected>Авто</option>
                         </select>
                     </div>
                 </div>
-                
-                <!-- Cache & Data -->
-                <div class="settings-section">
+
+                <!-- Data -->
+                <div class="settings-group">
                     <h3>Данные</h3>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <i class="fas fa-database"></i>
+                    <div class="setting-row clickable" onclick="clearCache()">
+                        <div class="setting-left">
+                            <i class="fas fa-broom"></i>
                             <div>
-                                <div class="setting-label">Кэш</div>
-                                <div class="setting-desc">Локальное хранилище</div>
+                                <span class="setting-title">Очистить кэш</span>
+                                <span class="setting-desc">Локальные данные</span>
                             </div>
                         </div>
-                        <button class="btn-outline small" onclick="clearCache()">
-                            Очистить
-                        </button>
+                        <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
-                
-                <!-- About -->
-                <div class="settings-section">
-                    <h3>О приложении</h3>
+
+                <!-- Features -->
+                <div class="settings-group">
+                    <h3>Функции</h3>
                     
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <i class="fas fa-info-circle"></i>
+                    <div class="setting-row clickable" onclick="switchScreen('categories')">
+                        <div class="setting-left">
+                            <i class="fas fa-tags"></i>
                             <div>
-                                <div class="setting-label">Версия</div>
-                                <div class="setting-desc">AIAccounter Mini App</div>
+                                <span class="setting-title">Мои категории</span>
+                                <span class="setting-desc">Управление</span>
                             </div>
                         </div>
-                        <span class="version-badge">v3.0.0</span>
+                        <i class="fas fa-chevron-right"></i>
                     </div>
-                    
 
+                    <div class="setting-row clickable" onclick="switchScreen('recurring')">
+                        <div class="setting-left">
+                            <i class="fas fa-repeat"></i>
+                            <div>
+                                <span class="setting-title">Подписки</span>
+                                <span class="setting-desc">Автоплатежи</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <div class="setting-row clickable" onclick="switchScreen('debts')">
+                        <div class="setting-left">
+                            <i class="fas fa-hand-holding-dollar"></i>
+                            <div>
+                                <span class="setting-title">Долги</span>
+                                <span class="setting-desc">Кто кому должен</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- About -->
+                <div class="settings-group">
+                    <h3>О приложении</h3>
+                    <div class="setting-row">
+                        <div class="setting-left">
+                            <i class="fas fa-code-branch"></i>
+                            <div>
+                                <span class="setting-title">Версия</span>
+                                <span class="setting-desc">AIAccounter</span>
+                            </div>
+                        </div>
+                        <span class="version-tag">v4.0.0</span>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- 📄 МОИ ОТЧЁТЫ -->
-        <div id="reports-screen" class="screen">
-            <div class="screen-header">
-                <button class="back-btn" onclick="switchScreen('settings')">
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             📁 CATEGORIES
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="categories-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('settings')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h1>Мои отчёты</h1>
-            </div>
-            
-            <div class="screen-content">
-                <div class="info-banner">
-                    <i class="fas fa-info-circle"></i>
-                    <div>
-                        <strong>Просмотр отчётов</strong>
-                        <p>Отчёты генерируются только через тг сообщения. Здесь вы можете просмотреть и скачать готовые отчёты.</p>
-                    </div>
+                <h1>Категории</h1>
+                <button class="btn-icon" onclick="openAddCategoryModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </header>
+            <div class="screen-body">
+                <div class="tab-bar">
+                    <button class="tab active" data-type="expense" onclick="switchCategoryTab('expense')">
+                        <i class="fas fa-arrow-up"></i> Расходы
+                    </button>
+                    <button class="tab" data-type="income" onclick="switchCategoryTab('income')">
+                        <i class="fas fa-arrow-down"></i> Доходы
+                    </button>
                 </div>
-                
-                <div id="reports-list" class="reports-list">
-                    <!-- Будет загружено -->
-                    <div class="empty-state">
-                        <i class="fas fa-file-alt"></i>
-                        <h3>Нет отчётов</h3>
-                        <p>Отчёты будут появляться здесь автоматически</p>
+
+                <div class="cat-section">
+                    <div class="cat-section-head">
+                        <span><i class="fas fa-lock"></i> Стандартные</span>
+                        <span class="count-badge" id="default-categories-count">0</span>
+                    </div>
+                    <div id="default-categories-list" class="cat-grid"></div>
+                </div>
+
+                <div class="cat-section">
+                    <div class="cat-section-head">
+                        <span><i class="fas fa-user"></i> Мои</span>
+                        <span class="count-badge" id="user-categories-count">0</span>
+                    </div>
+                    <div id="user-categories-list" class="cat-grid"></div>
+                    <div id="no-user-categories" class="empty-mini" style="display:none;">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Добавьте категорию</span>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- BOTTOM NAVIGATION -->
+
+        <!-- Add Category Modal -->
+        <div id="add-category-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeAddCategoryModal()"></div>
+            <div class="modal-box">
+                <div class="modal-head">
+                    <h3>Новая категория</h3>
+                    <button class="btn-icon" onclick="closeAddCategoryModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="add-category-form" onsubmit="submitAddCategory(event)">
+                    <div class="form-field">
+                        <label>Название</label>
+                        <input type="text" id="new-category-name" placeholder="Кофе, Такси..." required maxlength="50">
+                    </div>
+                    <div class="form-field">
+                        <label>Тип</label>
+                        <select id="new-category-type">
+                            <option value="expense">Расход</option>
+                            <option value="income">Доход</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Иконка</label>
+                        <div class="emoji-grid" id="emoji-picker">
+                            <button type="button" class="emoji selected" data-emoji="📁">📁</button>
+                            <button type="button" class="emoji" data-emoji="🍕">🍕</button>
+                            <button type="button" class="emoji" data-emoji="☕">☕</button>
+                            <button type="button" class="emoji" data-emoji="🚕">🚕</button>
+                            <button type="button" class="emoji" data-emoji="🏠">🏠</button>
+                            <button type="button" class="emoji" data-emoji="💊">💊</button>
+                            <button type="button" class="emoji" data-emoji="🎮">🎮</button>
+                            <button type="button" class="emoji" data-emoji="📚">📚</button>
+                            <button type="button" class="emoji" data-emoji="🎵">🎵</button>
+                            <button type="button" class="emoji" data-emoji="✈️">✈️</button>
+                            <button type="button" class="emoji" data-emoji="💼">💼</button>
+                            <button type="button" class="emoji" data-emoji="💰">💰</button>
+                            <button type="button" class="emoji" data-emoji="🎁">🎁</button>
+                            <button type="button" class="emoji" data-emoji="🛒">🛒</button>
+                            <button type="button" class="emoji" data-emoji="💡">💡</button>
+                            <button type="button" class="emoji" data-emoji="📱">📱</button>
+                        </div>
+                        <input type="hidden" id="new-category-icon" value="📁">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeAddCategoryModal()">Отмена</button>
+                        <button type="submit" class="btn primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             🔄 RECURRING
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="recurring-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('settings')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Подписки</h1>
+                <button class="btn-icon" onclick="openAddRecurringModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </header>
+            <div class="screen-body">
+                <div class="summary-row">
+                    <div class="summary-box">
+                        <div class="summary-icon upcoming"><i class="fas fa-clock"></i></div>
+                        <div class="summary-data">
+                            <span class="summary-label">30 дней</span>
+                            <span class="summary-value" id="recurring-upcoming-total">0 с</span>
+                        </div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-icon active"><i class="fas fa-repeat"></i></div>
+                        <div class="summary-data">
+                            <span class="summary-label">Активных</span>
+                            <span class="summary-value" id="recurring-active-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="recurring-list" class="recurring-list"></div>
+                <div id="recurring-empty" class="empty-state" style="display:none;">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>Нет подписок</h3>
+                    <p>Добавьте повторяющиеся платежи</p>
+                    <button class="btn primary" onclick="openAddRecurringModal()">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </div>
+                <div id="recurring-loading" class="loading-state" style="display:none;">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recurring Modal -->
+        <div id="recurring-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeRecurringModal()"></div>
+            <div class="modal-box large">
+                <div class="modal-head">
+                    <h3 id="recurring-modal-title">Новая подписка</h3>
+                    <button class="btn-icon" onclick="closeRecurringModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="recurring-form" onsubmit="submitRecurring(event)">
+                    <input type="hidden" id="recurring-edit-id" value="">
+                    
+                    <div class="form-field">
+                        <label>Название</label>
+                        <input type="text" id="recurring-name" placeholder="Netflix, Spotify..." required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Сумма</label>
+                            <input type="number" id="recurring-amount" placeholder="0" required min="1" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label>Валюта</label>
+                            <select id="recurring-currency">
+                                <option value="KGS">KGS</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="RUB">RUB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>Категория</label>
+                        <select id="recurring-category">
+                            <option value="Подписки">Подписки</option>
+                            <option value="Жильё">Жильё</option>
+                            <option value="Транспорт">Транспорт</option>
+                            <option value="Связь">Связь</option>
+                            <option value="Другое">Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Частота</label>
+                            <select id="recurring-frequency">
+                                <option value="monthly">Ежемесячно</option>
+                                <option value="weekly">Еженедельно</option>
+                                <option value="yearly">Ежегодно</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>След. платёж</label>
+                            <input type="date" id="recurring-next-date" required>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>Напомнить за (дней)</label>
+                        <input type="number" id="recurring-reminder-days" value="3" min="0" max="30">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeRecurringModal()">Отмена</button>
+                        <button type="submit" class="btn primary" id="recurring-submit-btn">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             💰 DEBTS
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="debts-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('settings')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Долги</h1>
+                <button class="btn-icon" onclick="openAddDebtModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </header>
+            <div class="screen-body">
+                <div class="debt-summary">
+                    <div class="debt-box positive">
+                        <i class="fas fa-arrow-down"></i>
+                        <span class="debt-label">Мне должны</span>
+                        <span class="debt-value" id="debt-given-total">0 с</span>
+                    </div>
+                    <div class="debt-box negative">
+                        <i class="fas fa-arrow-up"></i>
+                        <span class="debt-label">Я должен</span>
+                        <span class="debt-value" id="debt-received-total">0 с</span>
+                    </div>
+                    <div class="debt-box neutral">
+                        <i class="fas fa-scale-balanced"></i>
+                        <span class="debt-label">Баланс</span>
+                        <span class="debt-value" id="debt-net-balance">0 с</span>
+                    </div>
+                </div>
+
+                <div class="tab-bar compact">
+                    <button class="tab active" data-filter="all">Все</button>
+                    <button class="tab" data-filter="given">Мне должны</button>
+                    <button class="tab" data-filter="received">Я должен</button>
+                </div>
+
+                <div id="debts-list" class="debts-list"></div>
+                <div id="debts-empty" class="empty-state" style="display:none;">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    <h3>Нет долгов</h3>
+                    <p>Записывайте кто кому должен</p>
+                    <button class="btn primary" onclick="openAddDebtModal()">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debt Modal -->
+        <div id="debt-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeDebtModal()"></div>
+            <div class="modal-box large">
+                <div class="modal-head">
+                    <h3 id="debt-modal-title">Новый долг</h3>
+                    <button class="btn-icon" onclick="closeDebtModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="debt-form" onsubmit="submitDebt(event)">
+                    <input type="hidden" id="debt-edit-id" value="">
+                    
+                    <div class="form-field">
+                        <label>Тип</label>
+                        <div class="toggle-row">
+                            <button type="button" class="toggle-btn active" data-type="given">
+                                <i class="fas fa-arrow-down"></i> Мне должны
+                            </button>
+                            <button type="button" class="toggle-btn" data-type="received">
+                                <i class="fas fa-arrow-up"></i> Я должен
+                            </button>
+                        </div>
+                        <input type="hidden" id="debt-type" value="given">
+                    </div>
+                    <div class="form-field">
+                        <label>Кто</label>
+                        <input type="text" id="debt-person" placeholder="Имя..." required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Сумма</label>
+                            <input type="number" id="debt-amount" placeholder="0" required min="1" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label>Валюта</label>
+                            <select id="debt-currency">
+                                <option value="KGS">KGS</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="RUB">RUB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label>Срок (опционально)</label>
+                        <input type="date" id="debt-due-date">
+                    </div>
+                    <div class="form-field">
+                        <label>Комментарий</label>
+                        <textarea id="debt-description" placeholder="За что..." rows="2"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeDebtModal()">Отмена</button>
+                        <button type="submit" class="btn primary" id="debt-submit-btn">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Debt Payment Modal -->
+        <div id="debt-payment-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeDebtPaymentModal()"></div>
+            <div class="modal-box">
+                <div class="modal-head">
+                    <h3>Частичный возврат</h3>
+                    <button class="btn-icon" onclick="closeDebtPaymentModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="debt-payment-form" onsubmit="submitDebtPayment(event)">
+                    <input type="hidden" id="debt-payment-id" value="">
+                    <div class="form-field">
+                        <label>Сумма</label>
+                        <input type="number" id="debt-payment-amount" placeholder="0" required min="1" step="0.01">
+                        <small id="debt-remaining-hint">Остаток: 0</small>
+                    </div>
+                    <div class="form-field">
+                        <label>Комментарий</label>
+                        <input type="text" id="debt-payment-note" placeholder="...">
+                    </div>
+                    <div class="form-field checkbox">
+                        <label>
+                            <input type="checkbox" id="debt-create-transaction" checked>
+                            <span>Создать транзакцию</span>
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeDebtPaymentModal()">Отмена</button>
+                        <button type="submit" class="btn primary">Внести</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             BOTTOM NAV
+        ═══════════════════════════════════════════════════════════════ -->
         <nav class="bottom-nav">
-            <button class="nav-item active" data-screen="home">
-                <i class="fas fa-home"></i>
+            <button class="nav-btn active" data-screen="home">
+                <i class="fas fa-house"></i>
                 <span>Главная</span>
             </button>
-            
-            <button class="nav-item" data-screen="analytics">
+            <button class="nav-btn" data-screen="analytics">
                 <i class="fas fa-chart-pie"></i>
                 <span>Аналитика</span>
             </button>
-            
-            <button class="nav-item" data-screen="reports">
-                <i class="fas fa-file-alt"></i>
-                <span>Отчеты</span>
+            <button class="nav-btn" data-screen="reports">
+                <i class="fas fa-file-lines"></i>
+                <span>Отчёты</span>
             </button>
-            
-            <button class="nav-item" data-screen="history">
-                <i class="fas fa-history"></i>
+            <button class="nav-btn" data-screen="history">
+                <i class="fas fa-clock-rotate-left"></i>
                 <span>История</span>
             </button>
-            
-            <button class="nav-item" data-screen="settings">
-                <i class="fas fa-cog"></i>
-                <span>Настройки</span>
+            <button class="nav-btn" data-screen="settings">
+                <i class="fas fa-gear"></i>
+                <span>Ещё</span>
             </button>
         </nav>
     </div>
-    
+
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <div class="loading-text">Загрузка...</div>
+        <div class="loading-content">
+            <div class="spinner-large"></div>
+            <span>Загрузка...</span>
         </div>
     </div>
-    
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
     <!-- Scripts -->
-    <script src="miniapp-config.js?v=3.0.4"></script>
-    <script src="cache.js?v=3.0.4"></script>
-    <script src="websocket.js?v=3.0.4"></script>
-    <script src="api-helper.js?v=3.0.4"></script>
-    <script src="app.js?v=3.0.4"></script>
+    <script src="miniapp-config.js?v=4.0.0"></script>
+    <script src="cache.js?v=4.0.0"></script>
+    <script src="websocket.js?v=4.0.0"></script>
+    <script src="api-helper.js?v=4.0.0"></script>
+    <script src="app.js?v=4.0.0"></script>
 </body>
 </html>

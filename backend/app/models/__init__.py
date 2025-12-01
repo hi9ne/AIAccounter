@@ -3,13 +3,14 @@ from .models import (
     Expense,
     Income,
     Budget,
+    Category,
     ExchangeRate,
     Notification,
     RecurringPayment,
-    OnboardingState,
     AuditLog,
     AnalyticsCache,
     UserPreferences,
+    SavedReport,
 )
 
 __all__ = [
@@ -17,11 +18,12 @@ __all__ = [
     "Expense",
     "Income",
     "Budget",
+    "Category",
     "ExchangeRate",
     "Notification",
     "RecurringPayment",
-    "OnboardingState",
     "AuditLog",
     "AnalyticsCache",
     "UserPreferences",
+    "SavedReport",
 ]

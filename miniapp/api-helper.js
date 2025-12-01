@@ -1,5 +1,5 @@
-// API Helper для работы с FastAPI Backend
-// Использует конфигурацию из miniapp-config.js
+// API Helper пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ FastAPI Backend
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ miniapp-config.js
 
 const apiDebug = {
     log: (...args) => window.IS_LOCALHOST && console.log('[API]', ...args),
@@ -12,10 +12,10 @@ class APIHelper {
         this.config = window.MiniAppConfig || {};
         this.baseUrl = this.config.api?.baseUrl || 'http://localhost:8000/api/v1';
         this.token = localStorage.getItem('auth_token');
-        this.pendingRequests = new Map(); // Кэш для предотвращения дублирующихся запросов
+        this.pendingRequests = new Map(); // пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     }
 
-    // Установить токен авторизации
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     setToken(token) {
         apiDebug.log('?? Setting token:', token ? token.substring(0, 20) + '...' : 'null');
         this.token = token;
@@ -23,7 +23,7 @@ class APIHelper {
         apiDebug.log('?? Token set. Current token:', this.token ? 'exists' : 'null');
     }
 
-    // Получить заголовки
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     getHeaders() {
         const headers = {
             'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ class APIHelper {
         return headers;
     }
 
-    // Базовый запрос
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const config = {
@@ -47,7 +47,7 @@ class APIHelper {
             }
         };
 
-        // Предотвращаем дублирование одновременных запросов (кроме auth)
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ auth)
         const isAuthRequest = endpoint.includes('/auth/');
         const requestKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
         
@@ -64,14 +64,14 @@ class APIHelper {
                     let errorMessage = `HTTP ${response.status}`;
                     try {
                         const error = await response.json();
-                        // Обработка массива ошибок FastAPI
+                        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ FastAPI
                         if (Array.isArray(error)) {
                             errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
                         } else {
                             errorMessage = error.detail || error.message || errorMessage;
                         }
                     } catch (e) {
-                        // Не JSON ответ
+                        // пїЅпїЅ JSON пїЅпїЅпїЅпїЅпїЅ
                     }
                     console.error('API Error:', errorMessage);
                     throw new Error(errorMessage);
@@ -82,7 +82,7 @@ class APIHelper {
                 console.error('API Request failed:', error.message || error);
                 throw error;
             } finally {
-                // Удаляем из кэша после завершения
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 this.pendingRequests.delete(requestKey);
             }
         })();
@@ -91,7 +91,7 @@ class APIHelper {
         return requestPromise;
     }
 
-    // GET запрос
+    // GET пїЅпїЅпїЅпїЅпїЅпїЅ
     async get(endpoint, params = {}) {
         const queryString = new URLSearchParams(params).toString();
         const url = queryString ? `${endpoint}?${queryString}` : endpoint;
@@ -101,7 +101,7 @@ class APIHelper {
         });
     }
 
-    // POST запрос
+    // POST пїЅпїЅпїЅпїЅпїЅпїЅ
     async post(endpoint, data = {}) {
         return this.request(endpoint, {
             method: 'POST',
@@ -109,7 +109,7 @@ class APIHelper {
         });
     }
 
-    // PUT запрос
+    // PUT пїЅпїЅпїЅпїЅпїЅпїЅ
     async put(endpoint, data = {}) {
         return this.request(endpoint, {
             method: 'PUT',
@@ -117,7 +117,7 @@ class APIHelper {
         });
     }
 
-    // DELETE запрос
+    // DELETE пїЅпїЅпїЅпїЅпїЅпїЅ
     async delete(endpoint) {
         return this.request(endpoint, {
             method: 'DELETE'
@@ -148,11 +148,32 @@ class APIHelper {
         return this.get('/categories/all');
     }
 
+    async getUserCategories(type = null) {
+        const params = type ? { type } : {};
+        return this.get('/categories/my', params);
+    }
+
+    async createCategory(data) {
+        return this.post('/categories/', data);
+    }
+
+    async updateCategory(id, data) {
+        return this.put(`/categories/${id}`, data);
+    }
+
+    async deleteCategory(id) {
+        return this.delete(`/categories/${id}`);
+    }
+
+    async restoreCategory(id) {
+        return this.post(`/categories/${id}/restore`);
+    }
+
     // ===== TRANSACTIONS =====
     
     async getTransactions(params = {}) {
-        // Unified endpoint для expenses + income с правильной пагинацией
-        // Параметры: page, page_size, type (expense/income), category, start_date, end_date
+        // Unified endpoint пїЅпїЅпїЅ expenses + income пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: page, page_size, type (expense/income), category, start_date, end_date
         return this.get('/transactions', params);
     }
 
@@ -330,11 +351,11 @@ class APIHelper {
             end_date: endDate
         });
         
-        // Для скачивания файла используем прямой URL
+        // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ URL
         const url = `${this.baseUrl}/reports/export/csv?${params}`;
         const token = localStorage.getItem('auth_token');
         
-        // Скачиваем файл через fetch с blob
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ fetch пїЅ blob
         const response = await fetch(url, {
             method: 'GET',
             headers: {
@@ -405,9 +426,90 @@ class APIHelper {
     async getUserPreferences() {
         return this.get('/users/me/preferences');
     }
+
+    // ===== RECURRING PAYMENTS =====
+    
+    async getRecurringPayments(activeOnly = true) {
+        return this.get('/recurring/', { active_only: activeOnly });
+    }
+
+    async getRecurringPayment(id) {
+        return this.get(`/recurring/${id}`);
+    }
+
+    async createRecurringPayment(data) {
+        return this.post('/recurring/', data);
+    }
+
+    async updateRecurringPayment(id, data) {
+        return this.put(`/recurring/${id}`, data);
+    }
+
+    async deleteRecurringPayment(id) {
+        return this.delete(`/recurring/${id}`);
+    }
+
+    async markRecurringPaymentPaid(id, createExpense = true) {
+        return this.post(`/recurring/${id}/mark-paid`, { create_expense: createExpense });
+    }
+
+    async getUpcomingSummary(days = 30) {
+        return this.get('/recurring/upcoming/summary', { days });
+    }
+
+    // ===== DEBTS =====
+
+    async getDebts(settled = null, debtType = null) {
+        const params = {};
+        if (settled !== null) params.settled = settled;
+        if (debtType) params.debt_type = debtType;
+        return this.get('/debts/', params);
+    }
+
+    async getDebtSummary() {
+        return this.get('/debts/summary');
+    }
+
+    async getDebt(id) {
+        return this.get(`/debts/${id}`);
+    }
+
+    async createDebt(data) {
+        return this.post('/debts/', data);
+    }
+
+    async updateDebt(id, data) {
+        return this.put(`/debts/${id}`, data);
+    }
+
+    async deleteDebt(id) {
+        return this.delete(`/debts/${id}`);
+    }
+
+    async addDebtPayment(debtId, data) {
+        return this.post(`/debts/${debtId}/payments`, data);
+    }
+
+    async settleDebt(id) {
+        return this.post(`/debts/${id}/settle`);
+    }
+
+    // ===== AI ANALYTICS =====
+
+    async getAIAnalysis(periodDays = 30) {
+        return this.get('/ai-analytics/analyze', { period_days: periodDays });
+    }
+
+    async getAIInsights(limit = 10) {
+        return this.get('/ai-analytics/insights', { limit });
+    }
+
+    async getSpendingTrends(months = 6) {
+        return this.get('/ai-analytics/trends', { months });
+    }
 }
 
-// Создать глобальный экземпляр
+// РЎРѕР·РґР°С‘Рј РіР»РѕР±Р°Р»СЊРЅС‹Р№ СЌРєР·РµРјРїР»СЏСЂ
 window.api = new APIHelper();
 
 apiDebug.log('? API Helper initialized');
