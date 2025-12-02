@@ -1147,6 +1147,21 @@ async function loadHistory(loadMore = false) {
     
     const container = document.getElementById('transactions-history');
     
+    // Кэш только для первой страницы без фильтров
+    const cacheKey = `history:${historyFilters.type}:${historyFilters.category}:${state.currency}:p1`;
+    if (!loadMore && historyState.currentPage === 1) {
+        const cached = cache.get(cacheKey);
+        if (cached) {
+            debug.log('📦 Using cached history');
+            historyState.allTransactions = cached.transactions;
+            historyState.hasMore = cached.hasMore;
+            historyState.currentPage = 2;
+            renderHistoryTransactions(historyState.allTransactions);
+            perf.end('loadHistory');
+            return;
+        }
+    }
+    
     try {
         historyState.loading = true;
         
@@ -1229,6 +1244,15 @@ async function loadHistory(loadMore = false) {
         
         // ВАЖНО: Устанавливаем loading = false ДО рендера
         historyState.loading = false;
+        
+        // Кэшируем первую страницу (2 минуты)
+        if (historyState.currentPage === 2) {  // currentPage уже увеличен
+            const historyCacheKey = `history:${historyFilters.type}:${historyFilters.category}:${state.currency}:p1`;
+            cache.set(historyCacheKey, {
+                transactions: historyState.allTransactions,
+                hasMore: historyState.hasMore
+            }, 120);
+        }
         
         // Рендерим все транзакции
         debug.log('🎨 Rendering', historyState.allTransactions.length, 'transactions, hasMore:', historyState.hasMore);
@@ -1849,6 +1873,18 @@ async function loadCategories() {
     if (categoriesState.loading) return;
     categoriesState.loading = true;
     
+    const cacheKey = 'categories:all';
+    const cached = cache.get(cacheKey);
+    
+    // Если есть кэш - используем его
+    if (cached) {
+        debug.log('📦 Using cached categories');
+        categoriesState.allCategories = cached;
+        renderCategories();
+        categoriesState.loading = false;
+        return;
+    }
+    
     // Показываем лоадер в обоих контейнерах
     const defaultList = document.getElementById('default-categories-list');
     const userList = document.getElementById('user-categories-list');
@@ -1865,6 +1901,9 @@ async function loadCategories() {
             ...data.expense_categories.map(c => ({ ...c, type: 'expense' })),
             ...data.income_categories.map(c => ({ ...c, type: 'income' }))
         ];
+        
+        // Кэшируем на 10 минут (категории редко меняются)
+        cache.set(cacheKey, categoriesState.allCategories, 600);
         
         renderCategories();
     } catch (error) {
@@ -2028,6 +2067,23 @@ async function loadRecurringPayments() {
     
     if (!listEl) return;
     
+    const cacheKey = `recurring:${state.currency}`;
+    const cached = cache.get(cacheKey);
+    
+    // Если есть кэш - используем
+    if (cached) {
+        debug.log('📦 Using cached recurring payments');
+        recurringState.items = cached.items;
+        updateRecurringSummary(cached.summary, cached.items);
+        if (cached.items.length === 0) {
+            emptyEl.style.display = 'flex';
+        } else {
+            emptyEl.style.display = 'none';
+            renderRecurringPayments(cached.items);
+        }
+        return;
+    }
+    
     try {
         recurringState.loading = true;
         loadingEl.style.display = 'flex';
@@ -2045,6 +2101,9 @@ async function loadRecurringPayments() {
         // Update summary - передаём все items для подсчёта суммы
         const summary = await api.getUpcomingSummary(30);
         updateRecurringSummary(summary, recurringState.items);
+        
+        // Кэшируем на 5 минут
+        cache.set(cacheKey, { items: recurringState.items, summary }, 300);
         
         loadingEl.style.display = 'none';
         
@@ -2295,6 +2354,18 @@ async function loadDebts() {
     const listEl = document.getElementById('debts-list');
     const emptyEl = document.getElementById('debts-empty');
     
+    const cacheKey = `debts:${state.currency}`;
+    const cached = cache.get(cacheKey);
+    
+    // Если есть кэш - используем
+    if (cached) {
+        debug.log('📦 Using cached debts');
+        debtsState.items = cached.items;
+        updateDebtsSummary(cached.summary);
+        renderDebts();
+        return;
+    }
+    
     try {
         // Показываем лоадер
         if (listEl) {
@@ -2314,6 +2385,10 @@ async function loadDebts() {
         
         debtsState.items = debtsData.items || [];
         updateDebtsSummary(summaryData);
+        
+        // Кэшируем на 5 минут
+        cache.set(cacheKey, { items: debtsState.items, summary: summaryData }, 300);
+        
         renderDebts();
         
     } catch (error) {
@@ -2597,6 +2672,18 @@ async function loadAIInsights() {
     
     if (!container) return;
     
+    const cacheKey = 'ai:insights';
+    const cached = cache.get(cacheKey);
+    
+    // Если есть кэш - используем
+    if (cached) {
+        debug.log('📦 Using cached AI insights');
+        aiState.insights = cached.insights;
+        aiState.recommendations = cached.recommendations;
+        renderIntegratedAIInsights();
+        return;
+    }
+    
     aiState.loading = true;
     if (loadingEl) loadingEl.style.display = 'flex';
     if (listEl) listEl.innerHTML = '';
@@ -2609,6 +2696,12 @@ async function loadAIInsights() {
         
         aiState.insights = insights.items || [];
         aiState.recommendations = analysis?.recommendations || [];
+        
+        // Кэшируем на 10 минут (AI анализ тяжёлый)
+        cache.set(cacheKey, {
+            insights: aiState.insights,
+            recommendations: aiState.recommendations
+        }, 600);
         
         renderIntegratedAIInsights();
         
