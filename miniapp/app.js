@@ -760,18 +760,15 @@ function updateRecentTransactions(transactions) {
     }
     
     container.innerHTML = allTransactions.map(t => `
-        <div class="transaction-item">
-            <div class="transaction-icon ${t.type}">
+        <div class="tx-item-modern">
+            <div class="tx-icon-modern ${t.type}">
                 <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
             </div>
-            <div class="transaction-info">
-                <div class="transaction-category">${t.category || 'Без категории'}</div>
-                <div class="transaction-description">${t.description || '—'}</div>
+            <div class="tx-info-modern">
+                <div class="tx-cat-modern">${t.category || 'Без категории'}</div>
+                <div class="tx-desc-modern">${t.description || formatDate(t.date)}</div>
             </div>
-            <div class="transaction-amount">
-                <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
-                <div class="transaction-date">${formatDate(t.date)}</div>
-            </div>
+            <div class="tx-amount-modern ${t.type}">${formatCurrency(t.amount)}</div>
         </div>
     `).join('');
 }
@@ -1565,10 +1562,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Period selector (pills)
-    document.querySelectorAll('.pill[data-period]').forEach(btn => {
+    // Period selector (segments)
+    document.querySelectorAll('.segment[data-period]').forEach(btn => {
         btn.addEventListener('click', async () => {
-            document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.segment').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.currentPeriod = btn.dataset.period;
             debug.log('🔄 Period changed to:', state.currentPeriod);

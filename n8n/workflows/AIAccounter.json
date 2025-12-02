@@ -239,7 +239,7 @@
         "promptType": "define",
         "text": "=User ID: {{ $json.user_id }}\nChat ID: {{ $json.chat_id }}\nИмя: {{ $json.first_name }}\nСообщение: {{ $json.text }}",
         "options": {
-          "systemMessage": "Ты — AIAccounter, финансовый ассистент в Telegram.\n\n🚫 СТРОГО ЗАПРЕЩЕНО:\n• [Used tools: ...], Tool:, Input:, Result:, {json} — НЕ включай в ответ!\n• Отвечать 'Вот твой отчёт' БЕЗ вызова инструмента — ЗАПРЕЩЕНО!\n\n⚠️ КРИТИЧЕСКОЕ ПРАВИЛО ДЛЯ ОТЧЁТОВ:\nКогда пользователь просит ЛЮБОЙ отчёт — ТЫ ОБЯЗАН вызвать соответствующий инструмент!\nНЕ отвечай текстом типа 'Вот твой отчёт' — ВЫЗОВИ ИНСТРУМЕНТ!\n\n📊 ОТЧЁТЫ (ОБЯЗАТЕЛЬНО вызывай инструмент!):\n• 'отчёт за сегодня/сегодняшний/дневной' → ВЫЗОВИ Report_Daily\n• 'отчёт за неделю/недельный/последняя неделя' → ВЫЗОВИ Report_Weekly\n• 'отчёт за месяц/месячный' → ВЫЗОВИ Report_Monthly\n• 'с [дата] по [дата]' → ВЫЗОВИ Report_Period\n\n💰 ТРАНЗАКЦИИ:\n• Расход (потратил, купил, заплатил) → Create_Expense\n• Доход (получил, заработал) → Create_Income\n\n📁 КАТЕГОРИИ:\n• 'мои категории' → Category_Manager(action: list)\n• 'добавь категорию' → Category_Manager(action: add)\n• 'удали категорию' → Category_Manager(action: delete)\n\n✅ После вызова инструмента отчёта — НЕ ОТВЕЧАЙ НИЧЕГО! Отчёт сам отправится пользователю.\n\n✅ Для транзакций отвечай коротко: 'Записал расход X KGS на категорию Y'",
+          "systemMessage": "Ты — AIAccounter, финансовый ассистент в Telegram.\n\n🚫 СТРОГО ЗАПРЕЩЕНО:\n• [Used tools: ...], Tool:, Input:, Result:, {json} — НЕ включай в ответ!\n• Отвечать 'Вот твой отчёт' БЕЗ вызова инструмента — ЗАПРЕЩЕНО!\n\n⚠️ КРИТИЧЕСКОЕ ПРАВИЛО ДЛЯ ОТЧЁТОВ:\nКогда пользователь просит ЛЮБОЙ отчёт — ТЫ ОБЯЗАН вызвать соответствующий инструмент!\nНЕ отвечай текстом типа 'Вот твой отчёт' — ВЫЗОВИ ИНСТРУМЕНТ!\n\n📊 ОТЧЁТЫ (ОБЯЗАТЕЛЬНО вызывай инструмент!):\n• 'отчёт за сегодня/сегодняшний/дневной' → ВЫЗОВИ Report_Daily\n• 'отчёт за неделю/недельный/последняя неделя' → ВЫЗОВИ Report_Weekly\n• 'отчёт за месяц/месячный' → ВЫЗОВИ Report_Monthly\n• 'с [дата] по [дата]' → ВЫЗОВИ Report_Period\n\n💰 ТРАНЗАКЦИИ:\n• Расход (потратил, купил, заплатил) → Create_Expense\n• Доход (получил, заработал) → Create_Income\n\n📁 КАТЕГОРИИ:\n• 'мои категории' → Category_Manager(action: list)\n• 'добавь категорию' → Category_Manager(action: add)\n• 'удали категорию' → Category_Manager(action: delete)\n\n💳 ДОЛГИ:\n• 'дал в долг X [кому]' → Debt_Manager(action: add, debt_type: owed_to_me)\n• 'взял в долг X [у кого]' → Debt_Manager(action: add, debt_type: i_owe)\n• 'мои долги / кто должен / я должен' → Debt_Manager(action: list)\n• 'вернул долг / [имя] вернул' → Debt_Manager(action: pay)\n• 'закрыть долг' → Debt_Manager(action: settle)\n• 'удалить долг' → Debt_Manager(action: delete)\n\n🔄 ПОДПИСКИ/РЕГУЛЯРНЫЕ ПЛАТЕЖИ:\n• 'добавь подписку/регулярный платёж [название] [сумма]' → Recurring_Manager(action: add)\n• 'мои подписки / регулярные платежи' → Recurring_Manager(action: list)\n• 'удали подписку [название]' → Recurring_Manager(action: delete)\n• 'оплатил подписку [название]' → Recurring_Manager(action: pay)\n• 'приостановить/возобновить подписку' → Recurring_Manager(action: pause)\n\n✅ После вызова инструмента отчёта — НЕ ОТВЕЧАЙ НИЧЕГО! Отчёт сам отправится пользователю.\n\n✅ Для транзакций отвечай коротко: 'Записал расход X KGS на категорию Y'\n✅ Для долгов отвечай: 'Записал долг: [имя] должен тебе X' или 'Ты должен [имя] X'\n✅ Для подписок отвечай: 'Добавил подписку [название] на X в месяц'",
           "maxIterations": 3
         }
       },
@@ -571,6 +571,44 @@
     },
     {
       "parameters": {
+        "toolDescription": "Управляет долгами пользователя. Используй когда пользователь говорит про долги: дал в долг, взял в долг, мои долги, вернул долг. Действия: list (показать долги), add (создать долг), pay (частичный/полный возврат), settle (закрыть долг), delete (удалить)",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/debts",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"action\": \"{{ $fromAI('action', 'Действие: list, add, pay, settle, delete', 'string') }}\",\n  \"user_id\": {{ $json.user_id }},\n  \"debt_type\": \"{{ $fromAI('debt_type', 'Тип: i_owe (взял в долг, я должен) или owed_to_me (дал в долг, мне должны)', 'string') }}\",\n  \"person_name\": \"{{ $fromAI('person_name', 'Имя человека', 'string') }}\",\n  \"amount\": {{ $fromAI('amount', 'Сумма долга числом, 0 если не указана', 'number') }},\n  \"currency\": \"{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}\",\n  \"description\": \"{{ $fromAI('description', 'Описание за что долг', 'string') }}\",\n  \"due_date\": \"{{ $fromAI('due_date', 'Дата возврата YYYY-MM-DD или пустая строка', 'string') }}\",\n  \"debt_id\": {{ $fromAI('debt_id', 'ID долга для оплаты/закрытия, 0 если не указан', 'number') }},\n  \"note\": \"{{ $fromAI('note', 'Заметка о платеже', 'string') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        112,
+        160
+      ],
+      "id": "debt-manager-tool-id",
+      "name": "Debt_Manager"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Управляет регулярными платежами и подписками. Используй когда пользователь говорит про подписки, регулярные платежи, ежемесячные расходы. Действия: list (показать), add (создать), pay (отметить оплаченным), pause (приостановить/возобновить), delete (удалить)",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/recurring",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"action\": \"{{ $fromAI('action', 'Действие: list, add, pay, pause, delete', 'string') }}\",\n  \"user_id\": {{ $json.user_id }},\n  \"title\": \"{{ $fromAI('title', 'Название подписки: Netflix, Spotify, Аренда и т.д.', 'string') }}\",\n  \"amount\": {{ $fromAI('amount', 'Сумма платежа числом, 0 если не указана', 'number') }},\n  \"currency\": \"{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}\",\n  \"category_id\": {{ $fromAI('category_id', 'ID категории или null', 'number') }},\n  \"frequency\": \"{{ $fromAI('frequency', 'Частота: daily, weekly, monthly, yearly', 'string') }}\",\n  \"next_payment_date\": \"{{ $fromAI('next_payment_date', 'Дата следующего платежа YYYY-MM-DD', 'string') }}\",\n  \"recurring_id\": {{ $fromAI('recurring_id', 'ID платежа для pay/pause/delete, 0 если не указан', 'number') }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        240,
+        160
+      ],
+      "id": "recurring-manager-tool-id",
+      "name": "Recurring_Manager"
+    },
+    {
+      "parameters": {
         "httpMethod": "POST",
         "path": "categories-webhook",
         "responseMode": "responseNode",
@@ -777,6 +815,570 @@
       ],
       "id": "c28ede5b-cb4e-433a-8cfb-0dd359f11092",
       "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "debts",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        1100
+      ],
+      "id": "debts-webhook-001",
+      "name": "Debts Webhook",
+      "webhookId": "debts-webhook-id"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "add"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pay",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pay"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "settle",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "settle"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2800,
+        1100
+      ],
+      "id": "route-debt-action-001",
+      "name": "Route Debt Action"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT d.id, d.person_name, d.debt_type, d.original_amount, d.remaining_amount, d.currency, d.description, d.due_date, d.is_settled, d.created_at\nFROM debts d\nWHERE d.user_id = {{ $json.body.user_id }}\nORDER BY d.is_settled ASC, d.due_date ASC NULLS LAST, d.created_at DESC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        900
+      ],
+      "id": "get-debts-001",
+      "name": "Get Debts",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO debts (user_id, person_name, debt_type, original_amount, remaining_amount, currency, description, due_date)\nVALUES (\n  {{ $json.body.user_id }},\n  '{{ $json.body.person_name }}',\n  '{{ $json.body.debt_type }}',\n  {{ $json.body.amount }},\n  {{ $json.body.amount }},\n  '{{ $json.body.currency || \"KGS\" }}',\n  '{{ $json.body.description || \"\" }}',\n  {{ $json.body.due_date ? \"'\" + $json.body.due_date + \"'\" : \"NULL\" }}\n)\nRETURNING id, person_name, debt_type, original_amount, currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1050
+      ],
+      "id": "add-debt-001",
+      "name": "Add Debt",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH debt_update AS (\n  UPDATE debts\n  SET remaining_amount = remaining_amount - {{ $json.body.amount }},\n      is_settled = CASE WHEN remaining_amount - {{ $json.body.amount }} <= 0 THEN true ELSE false END,\n      updated_at = NOW()\n  WHERE id = {{ $json.body.debt_id }} AND user_id = {{ $json.body.user_id }}\n  RETURNING id, person_name, remaining_amount, is_settled\n),\npayment_insert AS (\n  INSERT INTO debt_payments (debt_id, amount, note)\n  SELECT {{ $json.body.debt_id }}, {{ $json.body.amount }}, '{{ $json.body.note || \"Частичная оплата\" }}'\n  WHERE EXISTS (SELECT 1 FROM debt_update)\n  RETURNING id\n)\nSELECT * FROM debt_update",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1200
+      ],
+      "id": "pay-debt-001",
+      "name": "Pay Debt",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE debts\nSET remaining_amount = 0, is_settled = true, updated_at = NOW()\nWHERE id = {{ $json.body.debt_id }} AND user_id = {{ $json.body.user_id }}\nRETURNING id, person_name, 'settled' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1350
+      ],
+      "id": "settle-debt-001",
+      "name": "Settle Debt",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM debts\nWHERE id = {{ $json.body.debt_id }} AND user_id = {{ $json.body.user_id }}\nRETURNING id, person_name, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1500
+      ],
+      "id": "delete-debt-001",
+      "name": "Delete Debt",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Форматируем результат для долгов\nconst items = $input.all();\nconst action = $('Debts Webhook').first().json.body.action;\n\nlet result = {};\n\nif (action === 'list') {\n  const debts = items.map(item => item.json);\n  const iOwe = debts.filter(d => d.debt_type === 'i_owe' && !d.is_settled);\n  const owedToMe = debts.filter(d => d.debt_type === 'owed_to_me' && !d.is_settled);\n  const settled = debts.filter(d => d.is_settled);\n  \n  result = {\n    success: true,\n    i_owe: iOwe.map(d => `${d.person_name}: ${d.remaining_amount} ${d.currency}${d.due_date ? ' (до ' + new Date(d.due_date).toLocaleDateString('ru') + ')' : ''}`).join('; ') || 'нет',\n    owed_to_me: owedToMe.map(d => `${d.person_name}: ${d.remaining_amount} ${d.currency}${d.due_date ? ' (до ' + new Date(d.due_date).toLocaleDateString('ru') + ')' : ''}`).join('; ') || 'нет',\n    settled_count: settled.length,\n    total_i_owe: iOwe.reduce((s, d) => s + parseFloat(d.remaining_amount), 0),\n    total_owed_to_me: owedToMe.reduce((s, d) => s + parseFloat(d.remaining_amount), 0)\n  };\n} else if (action === 'add') {\n  if (items.length > 0 && items[0].json.id) {\n    const d = items[0].json;\n    const typeText = d.debt_type === 'i_owe' ? 'Я должен' : 'Мне должны';\n    result = {\n      success: true,\n      message: `${typeText} ${d.person_name}: ${d.original_amount} ${d.currency}`\n    };\n  } else {\n    result = { success: false, message: 'Не удалось добавить долг' };\n  }\n} else if (action === 'pay') {\n  if (items.length > 0 && items[0].json.id) {\n    const d = items[0].json;\n    result = {\n      success: true,\n      message: d.is_settled ? `Долг ${d.person_name} полностью погашен!` : `Оплачено. Осталось: ${d.remaining_amount}`\n    };\n  } else {\n    result = { success: false, message: 'Долг не найден' };\n  }\n} else if (action === 'settle') {\n  if (items.length > 0 && items[0].json.id) {\n    result = { success: true, message: `Долг ${items[0].json.person_name} закрыт` };\n  } else {\n    result = { success: false, message: 'Долг не найден' };\n  }\n} else if (action === 'delete') {\n  if (items.length > 0 && items[0].json.id) {\n    result = { success: true, message: `Долг ${items[0].json.person_name} удалён` };\n  } else {\n    result = { success: false, message: 'Долг не найден' };\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        1100
+      ],
+      "id": "format-debt-response-001",
+      "name": "Format Debt Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -2128,
+        1100
+      ],
+      "id": "respond-debts-001",
+      "name": "Respond Debts"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recurring",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        1800
+      ],
+      "id": "recurring-webhook-001",
+      "name": "Recurring Webhook",
+      "webhookId": "recurring-webhook-id"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "add",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "add"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pay",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pay"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "pause",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pause"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2800,
+        1800
+      ],
+      "id": "route-recurring-action-001",
+      "name": "Route Recurring Action"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT r.id, r.title, r.amount, r.currency, r.frequency, r.next_payment_date, r.is_active, r.auto_create, r.category_id, c.name as category_name, c.icon as category_icon\nFROM recurring_payments r\nLEFT JOIN categories c ON r.category_id = c.id\nWHERE r.user_id = {{ $json.body.user_id }}\nORDER BY r.is_active DESC, r.next_payment_date ASC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1600
+      ],
+      "id": "get-recurring-001",
+      "name": "Get Recurring",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO recurring_payments (user_id, title, amount, currency, frequency, next_payment_date, category_id)\nVALUES (\n  {{ $json.body.user_id }},\n  '{{ $json.body.title }}',\n  {{ $json.body.amount }},\n  '{{ $json.body.currency || \"KGS\" }}',\n  '{{ $json.body.frequency || \"monthly\" }}',\n  '{{ $json.body.next_payment_date || new Date().toISOString().split(\"T\")[0] }}',\n  {{ $json.body.category_id || \"NULL\" }}\n)\nRETURNING id, title, amount, currency, frequency, next_payment_date",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1750
+      ],
+      "id": "add-recurring-001",
+      "name": "Add Recurring",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH freq_interval AS (\n  SELECT CASE \n    WHEN frequency = 'daily' THEN INTERVAL '1 day'\n    WHEN frequency = 'weekly' THEN INTERVAL '1 week'\n    WHEN frequency = 'monthly' THEN INTERVAL '1 month'\n    WHEN frequency = 'yearly' THEN INTERVAL '1 year'\n    ELSE INTERVAL '1 month'\n  END as interval_val\n  FROM recurring_payments WHERE id = {{ $json.body.recurring_id }}\n)\nUPDATE recurring_payments\nSET next_payment_date = next_payment_date + (SELECT interval_val FROM freq_interval),\n    last_payment_date = NOW(),\n    updated_at = NOW()\nWHERE id = {{ $json.body.recurring_id }} AND user_id = {{ $json.body.user_id }}\nRETURNING id, title, next_payment_date, 'paid' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1900
+      ],
+      "id": "pay-recurring-001",
+      "name": "Pay Recurring",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE recurring_payments\nSET is_active = NOT is_active, updated_at = NOW()\nWHERE id = {{ $json.body.recurring_id }} AND user_id = {{ $json.body.user_id }}\nRETURNING id, title, is_active",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2050
+      ],
+      "id": "pause-recurring-001",
+      "name": "Pause Recurring",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=DELETE FROM recurring_payments\nWHERE id = {{ $json.body.recurring_id }} AND user_id = {{ $json.body.user_id }}\nRETURNING id, title, 'deleted' as status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2200
+      ],
+      "id": "delete-recurring-001",
+      "name": "Delete Recurring",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Форматируем результат для регулярных платежей\nconst items = $input.all();\nconst action = $('Recurring Webhook').first().json.body.action;\n\nlet result = {};\n\nconst freqNames = {\n  'daily': 'ежедневно',\n  'weekly': 'еженедельно', \n  'monthly': 'ежемесячно',\n  'yearly': 'ежегодно'\n};\n\nif (action === 'list') {\n  const payments = items.map(item => item.json);\n  const active = payments.filter(p => p.is_active);\n  const paused = payments.filter(p => !p.is_active);\n  \n  result = {\n    success: true,\n    active: active.map(p => `${p.category_icon || '📅'} ${p.title}: ${p.amount} ${p.currency} (${freqNames[p.frequency] || p.frequency}, след: ${new Date(p.next_payment_date).toLocaleDateString('ru')})`).join('; ') || 'нет активных',\n    paused: paused.map(p => `${p.title} (приостановлен)`).join('; ') || 'нет',\n    total_monthly: active.filter(p => p.frequency === 'monthly').reduce((s, p) => s + parseFloat(p.amount), 0),\n    count: active.length\n  };\n} else if (action === 'add') {\n  if (items.length > 0 && items[0].json.id) {\n    const p = items[0].json;\n    result = {\n      success: true,\n      message: `Добавлен регулярный платёж \"${p.title}\": ${p.amount} ${p.currency} ${freqNames[p.frequency] || p.frequency}`\n    };\n  } else {\n    result = { success: false, message: 'Не удалось добавить' };\n  }\n} else if (action === 'pay') {\n  if (items.length > 0 && items[0].json.id) {\n    const p = items[0].json;\n    result = {\n      success: true,\n      message: `Платёж \"${p.title}\" отмечен. Следующий: ${new Date(p.next_payment_date).toLocaleDateString('ru')}`\n    };\n  } else {\n    result = { success: false, message: 'Платёж не найден' };\n  }\n} else if (action === 'pause') {\n  if (items.length > 0 && items[0].json.id) {\n    const p = items[0].json;\n    result = {\n      success: true,\n      message: p.is_active ? `Платёж \"${p.title}\" возобновлён` : `Платёж \"${p.title}\" приостановлен`\n    };\n  } else {\n    result = { success: false, message: 'Платёж не найден' };\n  }\n} else if (action === 'delete') {\n  if (items.length > 0 && items[0].json.id) {\n    result = { success: true, message: `Платёж \"${items[0].json.title}\" удалён` };\n  } else {\n    result = { success: false, message: 'Платёж не найден' };\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        1800
+      ],
+      "id": "format-recurring-response-001",
+      "name": "Format Recurring Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -2128,
+        1800
+      ],
+      "id": "respond-recurring-001",
+      "name": "Respond Recurring"
     }
   ],
   "connections": {
@@ -1029,6 +1631,28 @@
         ]
       ]
     },
+    "Debt_Manager": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recurring_Manager": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Categories Webhook": {
       "main": [
         [
@@ -1103,6 +1727,238 @@
         [
           {
             "node": "Respond Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debts Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route Debt Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Debt Action": {
+      "main": [
+        [
+          {
+            "node": "Get Debts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Debt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pay Debt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Settle Debt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Debt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Debts": {
+      "main": [
+        [
+          {
+            "node": "Format Debt Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Debt": {
+      "main": [
+        [
+          {
+            "node": "Format Debt Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pay Debt": {
+      "main": [
+        [
+          {
+            "node": "Format Debt Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settle Debt": {
+      "main": [
+        [
+          {
+            "node": "Format Debt Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Debt": {
+      "main": [
+        [
+          {
+            "node": "Format Debt Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Debt Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Debts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recurring Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route Recurring Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Recurring Action": {
+      "main": [
+        [
+          {
+            "node": "Get Recurring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add Recurring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pay Recurring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pause Recurring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Recurring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Recurring": {
+      "main": [
+        [
+          {
+            "node": "Format Recurring Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Recurring": {
+      "main": [
+        [
+          {
+            "node": "Format Recurring Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pay Recurring": {
+      "main": [
+        [
+          {
+            "node": "Format Recurring Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pause Recurring": {
+      "main": [
+        [
+          {
+            "node": "Format Recurring Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Recurring": {
+      "main": [
+        [
+          {
+            "node": "Format Recurring Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Recurring Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Recurring",
             "type": "main",
             "index": 0
           }
