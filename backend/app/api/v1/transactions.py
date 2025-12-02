@@ -26,6 +26,7 @@ async def get_transactions(
     """
     Получить объединенный список транзакций (expenses + income) с правильной пагинацией.
     Транзакции возвращаются отсортированными по дате (сначала новые).
+    Конвертация валют выполняется на фронтенде.
     """
     
     # Базовый запрос для expenses
@@ -122,7 +123,7 @@ async def get_transactions(
     result = await db.execute(final_query)
     transactions = result.fetchall()
     
-    # Преобразуем в словари
+    # Преобразуем в словари - возвращаем оригинальные данные
     items = []
     for row in transactions:
         item = {

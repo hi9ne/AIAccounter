@@ -39,29 +39,47 @@ async def get_income_expense_statistics(
     if cached:
         return cached
     
-    # Direct SQL query with proper aggregation
+    # Direct SQL query with proper aggregation and currency conversion
     query = text("""
+        WITH latest_rates AS (
+            SELECT DISTINCT ON (from_currency, to_currency) 
+                from_currency, to_currency, rate
+            FROM exchange_rates 
+            ORDER BY from_currency, to_currency, date DESC
+        )
         SELECT 
-            COALESCE((SELECT SUM(amount) FROM income 
-                WHERE user_id = :user_id 
-                AND date >= :start_date 
-                AND date <= :end_date 
-                AND deleted_at IS NULL), 0) as total_income,
-            COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE user_id = :user_id 
-                AND date >= :start_date 
-                AND date <= :end_date 
-                AND deleted_at IS NULL), 0) as total_expense,
-            COALESCE((SELECT SUM(amount) FROM income 
-                WHERE user_id = :user_id 
-                AND date >= :start_date 
-                AND date <= :end_date 
-                AND deleted_at IS NULL), 0) - 
-            COALESCE((SELECT SUM(amount) FROM expenses 
-                WHERE user_id = :user_id 
-                AND date >= :start_date 
-                AND date <= :end_date 
-                AND deleted_at IS NULL), 0) as balance,
+            COALESCE((
+                SELECT SUM(
+                    CASE 
+                        WHEN i.currency = 'KGS' THEN i.amount
+                        ELSE i.amount * COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = i.currency AND to_currency = 'KGS'),
+                            1
+                        )
+                    END
+                )
+                FROM income i
+                WHERE i.user_id = :user_id 
+                AND i.date >= :start_date 
+                AND i.date <= :end_date 
+                AND i.deleted_at IS NULL
+            ), 0) as total_income,
+            COALESCE((
+                SELECT SUM(
+                    CASE 
+                        WHEN e.currency = 'KGS' THEN e.amount
+                        ELSE e.amount * COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'),
+                            1
+                        )
+                    END
+                )
+                FROM expenses e
+                WHERE e.user_id = :user_id 
+                AND e.date >= :start_date 
+                AND e.date <= :end_date 
+                AND e.deleted_at IS NULL
+            ), 0) as total_expense,
             (SELECT COUNT(*) FROM income 
                 WHERE user_id = :user_id 
                 AND date >= :start_date 
@@ -87,16 +105,21 @@ async def get_income_expense_statistics(
             "total_income": 0,
             "total_expense": 0,
             "balance": 0,
+            "currency": "KGS",
             "income_count": 0,
             "expense_count": 0
         }
     
+    total_income = float(stats[0])
+    total_expense = float(stats[1])
+    
     result_data = {
-        "total_income": float(stats[0]),
-        "total_expense": float(stats[1]),
-        "balance": float(stats[2]),
-        "income_count": int(stats[3]),
-        "expense_count": int(stats[4])
+        "total_income": total_income,
+        "total_expense": total_expense,
+        "balance": total_income - total_expense,
+        "currency": "KGS",
+        "income_count": int(stats[2]),
+        "expense_count": int(stats[3])
     }
     
     # Сохраняем в кэш (TTL: 5 минут)
@@ -123,28 +146,42 @@ async def get_top_expense_categories(
         return cached
     
     query = text("""
-        WITH total AS (
-            SELECT COALESCE(SUM(amount), 0) as total_amount
-            FROM expenses
+        WITH latest_rates AS (
+            SELECT DISTINCT ON (from_currency, to_currency) 
+                from_currency, to_currency, rate
+            FROM exchange_rates 
+            ORDER BY from_currency, to_currency, date DESC
+        ),
+        converted_expenses AS (
+            SELECT 
+                category,
+                CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'),
+                        1
+                    )
+                END as amount_kgs
+            FROM expenses e
             WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
                 AND deleted_at IS NULL
+        ),
+        total AS (
+            SELECT COALESCE(SUM(amount_kgs), 0) as total_amount
+            FROM converted_expenses
         )
         SELECT 
-            e.category,
-            SUM(e.amount) as total_amount,
+            ce.category,
+            SUM(ce.amount_kgs) as total_amount,
             COUNT(*) as transaction_count,
             CASE WHEN t.total_amount > 0 
-                THEN (SUM(e.amount) / t.total_amount * 100)
+                THEN (SUM(ce.amount_kgs) / t.total_amount * 100)
                 ELSE 0 
             END as percentage
-        FROM expenses e, total t
-        WHERE e.user_id = :user_id
-            AND e.date >= :start_date
-            AND e.date <= :end_date
-            AND e.deleted_at IS NULL
-        GROUP BY e.category, t.total_amount
+        FROM converted_expenses ce, total t
+        GROUP BY ce.category, t.total_amount
         ORDER BY total_amount DESC
         LIMIT :limit
     """)
@@ -162,6 +199,7 @@ async def get_top_expense_categories(
         {
             "category": cat[0],
             "total_amount": float(cat[1]),
+            "currency": "KGS",
             "transaction_count": int(cat[2]),
             "percentage": float(cat[3])
         }
@@ -182,18 +220,31 @@ async def get_balance_trend(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Получить тренд баланса по дням
+    Получить тренд баланса по дням (с конвертацией валют)
     """
-    # Simple aggregation by day - без generate_series для совместимости
     query = text("""
+        WITH latest_rates AS (
+            SELECT DISTINCT ON (from_currency, to_currency) 
+                from_currency, to_currency, rate
+            FROM exchange_rates 
+            ORDER BY from_currency, to_currency, date DESC
+        )
         SELECT 
             COALESCE(i.date, e.date) as date,
             COALESCE(i.amount, 0) - COALESCE(e.amount, 0) as balance,
             COALESCE(i.amount, 0) as income,
             COALESCE(e.amount, 0) as expense
         FROM (
-            SELECT date, SUM(amount) as amount
-            FROM income
+            SELECT date, SUM(
+                CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = inc.currency AND to_currency = 'KGS'),
+                        1
+                    )
+                END
+            ) as amount
+            FROM income inc
             WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
@@ -201,8 +252,16 @@ async def get_balance_trend(
             GROUP BY date
         ) i
         FULL OUTER JOIN (
-            SELECT date, SUM(amount) as amount
-            FROM expenses
+            SELECT date, SUM(
+                CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = exp.currency AND to_currency = 'KGS'),
+                        1
+                    )
+                END
+            ) as amount
+            FROM expenses exp
             WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
@@ -240,17 +299,30 @@ async def get_income_expense_chart(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Получить данные для графика доходов/расходов
+    Получить данные для графика доходов/расходов (с конвертацией валют)
     """
-    # Generate chart data without generate_series
     query = text("""
+        WITH latest_rates AS (
+            SELECT DISTINCT ON (from_currency, to_currency) 
+                from_currency, to_currency, rate
+            FROM exchange_rates 
+            ORDER BY from_currency, to_currency, date DESC
+        )
         SELECT 
             COALESCE(i.date, e.date) as date,
             COALESCE(i.amount, 0) as income,
             COALESCE(e.amount, 0) as expense
         FROM (
-            SELECT date, SUM(amount) as amount
-            FROM income
+            SELECT date, SUM(
+                CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = inc.currency AND to_currency = 'KGS'),
+                        1
+                    )
+                END
+            ) as amount
+            FROM income inc
             WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
@@ -258,8 +330,16 @@ async def get_income_expense_chart(
             GROUP BY date
         ) i
         FULL OUTER JOIN (
-            SELECT date, SUM(amount) as amount
-            FROM expenses
+            SELECT date, SUM(
+                CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = exp.currency AND to_currency = 'KGS'),
+                        1
+                    )
+                END
+            ) as amount
+            FROM expenses exp
             WHERE user_id = :user_id
                 AND date >= :start_date
                 AND date <= :end_date
@@ -293,13 +373,26 @@ async def get_category_pie_chart(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Получить данные для круговой диаграммы по категориям
+    Получить данные для круговой диаграммы по категориям (с конвертацией валют)
     """
-    # Get category breakdown
     table_name = "expenses" if transaction_type == "expense" else "income"
     query = text(f"""
-        SELECT category, SUM(amount) as total
-        FROM {table_name}
+        WITH latest_rates AS (
+            SELECT DISTINCT ON (from_currency, to_currency) 
+                from_currency, to_currency, rate
+            FROM exchange_rates 
+            ORDER BY from_currency, to_currency, date DESC
+        )
+        SELECT category, SUM(
+            CASE 
+                WHEN currency = 'KGS' THEN amount
+                ELSE amount * COALESCE(
+                    (SELECT rate FROM latest_rates WHERE from_currency = t.currency AND to_currency = 'KGS'),
+                    1
+                )
+            END
+        ) as total
+        FROM {table_name} t
         WHERE user_id = :user_id
             AND date >= :start_date
             AND date <= :end_date
@@ -596,19 +689,47 @@ async def get_dashboard_data(
     week_ago = today - timedelta(days=7)
     
     try:
-        # Создаём все запросы
+        # Создаём все запросы с конвертацией валют в KGS
         stats_query = text("""
+            WITH latest_rates AS (
+                SELECT DISTINCT ON (from_currency, to_currency) 
+                    from_currency, to_currency, rate
+                FROM exchange_rates 
+                ORDER BY from_currency, to_currency, date DESC
+            )
             SELECT 
-                COALESCE((SELECT SUM(amount) FROM income 
-                    WHERE user_id = :user_id 
-                    AND date >= :start_date 
-                    AND date <= :end_date 
-                    AND deleted_at IS NULL), 0) as total_income,
-                COALESCE((SELECT SUM(amount) FROM expenses 
-                    WHERE user_id = :user_id 
-                    AND date >= :start_date 
-                    AND date <= :end_date 
-                    AND deleted_at IS NULL), 0) as total_expense,
+                COALESCE((
+                    SELECT SUM(
+                        CASE 
+                            WHEN i.currency = 'KGS' THEN i.amount
+                            ELSE i.amount * COALESCE(
+                                (SELECT rate FROM latest_rates WHERE from_currency = i.currency AND to_currency = 'KGS'),
+                                1
+                            )
+                        END
+                    )
+                    FROM income i
+                    WHERE i.user_id = :user_id 
+                    AND i.date >= :start_date 
+                    AND i.date <= :end_date 
+                    AND i.deleted_at IS NULL
+                ), 0) as total_income,
+                COALESCE((
+                    SELECT SUM(
+                        CASE 
+                            WHEN e.currency = 'KGS' THEN e.amount
+                            ELSE e.amount * COALESCE(
+                                (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'),
+                                1
+                            )
+                        END
+                    )
+                    FROM expenses e
+                    WHERE e.user_id = :user_id 
+                    AND e.date >= :start_date 
+                    AND e.date <= :end_date 
+                    AND e.deleted_at IS NULL
+                ), 0) as total_expense,
                 (SELECT COUNT(*) FROM income 
                     WHERE user_id = :user_id 
                     AND date >= :start_date 
@@ -686,6 +807,7 @@ async def get_dashboard_data(
                 "total_income": total_income,
                 "total_expense": total_expense,
                 "balance": balance,
+                "currency": "KGS",  # Все суммы конвертированы в KGS
                 "income_count": int(stats[2]) if stats else 0,
                 "expense_count": int(stats[3]) if stats else 0,
                 "period": {

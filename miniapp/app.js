@@ -562,22 +562,13 @@ async function loadDashboard() {
             const { overview, topCategories, rates } = state.preloadedData;
             exchangeRates = rates;
             
-            // Конвертируем топ категории
+            // Данные уже сконвертированы на сервере
             if (Array.isArray(topCategories)) {
-                const convertedTop = topCategories.slice(0, 3).map(cat => {
-                    const origCurrency = cat.currency || 'KGS';
-                    const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
-                    const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
-                    return {
-                        ...cat,
-                        category: cleanCategory,
-                        amount: convertAmount(originalAmount, origCurrency, state.currency),
-                        total: convertAmount(originalAmount, origCurrency, state.currency),
-                        total_amount: convertAmount(originalAmount, origCurrency, state.currency),
-                        currency: state.currency
-                    };
-                });
-                updateHomeTopCategories(convertedTop);
+                const cleanedTop = topCategories.slice(0, 3).map(cat => ({
+                    ...cat,
+                    category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim()
+                }));
+                updateHomeTopCategories(cleanedTop);
             }
             
             updateDashboardUI(overview);
@@ -604,22 +595,13 @@ async function loadDashboard() {
                 loadRates
             ]);
             
-            // Конвертируем и кэшируем вместе
-            const convertedTop = Array.isArray(topCategories) ? topCategories.map(cat => {
-                const origCurrency = cat.currency || 'KGS';
-                const originalAmount = cat.total_amount || cat.amount || cat.total || 0;
-                const cleanCategory = (cat.category || 'Без категории').replace(/\s+/g, ' ').trim();
-                return {
-                    ...cat,
-                    category: cleanCategory,
-                    amount: convertAmount(originalAmount, origCurrency, state.currency),
-                    total: convertAmount(originalAmount, origCurrency, state.currency),
-                    total_amount: convertAmount(originalAmount, origCurrency, state.currency),
-                    currency: state.currency
-                };
-            }) : [];
+            // Данные уже сконвертированы на сервере, только чистим названия
+            const cleanedTop = Array.isArray(topCategories) ? topCategories.map(cat => ({
+                ...cat,
+                category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim()
+            })) : [];
             
-            dashboardData = { ...data, topCategories: convertedTop };
+            dashboardData = { ...data, topCategories: cleanedTop };
             cache.set(cacheKey, dashboardData, 300);
         }
         
@@ -647,7 +629,7 @@ function updateDashboardUI(data) {
         return;
     }
     
-    // Balance - конвертируем все суммы
+    // Balance - данные приходят в KGS, конвертируем в выбранную валюту
     const origCurrency = data.balance.currency || 'KGS';
     const balance = convertAmount(data.balance.balance || 0, origCurrency, state.currency);
     const income = convertAmount(data.balance.total_income || 0, origCurrency, state.currency);
@@ -659,13 +641,13 @@ function updateDashboardUI(data) {
         document.getElementById('total-income').textContent = formatCurrency(income);
         document.getElementById('total-expense').textContent = formatCurrency(expense);
     
-    // Trend (simplified - можно улучшить с историческими данными)
-    const trendEl = document.getElementById('balance-trend');
-    if (trendEl && balance !== 0) {
-        const isPositive = balance > 0;
-        trendEl.innerHTML = `<i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i> ${Math.abs(balance).toFixed(1)}%`;
-        trendEl.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
-    }
+        // Trend (simplified - можно улучшить с историческими данными)
+        const trendEl = document.getElementById('balance-trend');
+        if (trendEl && balance !== 0) {
+            const isPositive = balance > 0;
+            trendEl.innerHTML = `<i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i> ${Math.abs(balance).toFixed(1)}%`;
+            trendEl.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+        }
     
         // Stats
         const transactionsCount = (data.balance.income_count || 0) + (data.balance.expense_count || 0);
@@ -704,13 +686,23 @@ function updateHomeTopCategories(categories) {
         return;
     }
     
-    const total = validCategories.reduce((sum, cat) => sum + parseFloat(cat.total_amount || cat.amount || cat.total || 0), 0);
+    // Конвертируем суммы из KGS в выбранную валюту (данные приходят в KGS с бэка)
+    const convertedCategories = validCategories.map(cat => {
+        const origAmount = parseFloat(cat.total_amount || cat.amount || cat.total || 0);
+        const origCurrency = cat.currency || 'KGS';
+        return {
+            ...cat,
+            convertedAmount: convertAmount(origAmount, origCurrency, state.currency)
+        };
+    });
+    
+    const total = convertedCategories.reduce((sum, cat) => sum + cat.convertedAmount, 0);
     const colors = ['#667eea', '#f093fb', '#4facfe'];
     
     // Используем DocumentFragment для батчинга
     const fragment = document.createDocumentFragment();
-    validCategories.forEach((cat, index) => {
-        const amount = parseFloat(cat.total_amount || cat.amount || cat.total || 0);
+    convertedCategories.forEach((cat, index) => {
+        const amount = cat.convertedAmount;
         const percent = total > 0 ? ((amount / total) * 100).toFixed(0) : 0;
         
         const div = document.createElement('div');
@@ -734,17 +726,19 @@ function updateRecentTransactions(transactions) {
     const container = document.getElementById('recent-transactions');
     if (!container) return;
     
+    // Транзакции приходят в разных валютах, конвертируем в выбранную валюту
     let allTransactions = [
         ...(transactions.expenses || []).map(t => ({ ...t, type: 'expense' })),
         ...(transactions.income || []).map(t => ({ ...t, type: 'income' }))
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
     
-    // Конвертируем в выбранную валюту
+    // Конвертируем из оригинальной валюты в выбранную валюту пользователя
     allTransactions = allTransactions.map(t => {
-        const origCurrency = t.currency || 'KGS';
+        const origCurrency = t.original_currency || t.currency || 'KGS';
+        const origAmount = t.original_amount || t.amount;
         return {
             ...t,
-            amount: convertAmount(t.amount, origCurrency, state.currency),
+            amount: convertAmount(origAmount, origCurrency, state.currency),
             currency: state.currency
         };
     });
@@ -797,6 +791,14 @@ function applyCustomPeriod() {
 async function loadAnalytics() {
     debug.log('📊 Loading analytics...');
     
+    // Показываем лоадер
+    const chartContainer = document.querySelector('.chart-container canvas')?.parentElement;
+    const categoriesContainer = document.getElementById('categories-chart-container');
+    
+    if (chartContainer) {
+        chartContainer.innerHTML = '<div class="loading-placeholder" style="height: 200px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--text-secondary);"></i></div>';
+    }
+    
     try {
         const periodSelect = document.getElementById('analytics-period');
         
@@ -822,6 +824,11 @@ async function loadAnalytics() {
             };
         } else {
             params = getDateRangeFor(period);
+        }
+        
+        // Загружаем курсы если нужно
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
         }
 
         const cacheKey = `analytics:${period}:${state.currency}:${params.start_date || ''}`;
@@ -1799,6 +1806,12 @@ async function loadCategories() {
     if (categoriesState.loading) return;
     categoriesState.loading = true;
     
+    // Показываем лоадер
+    const container = document.getElementById('categories-list');
+    if (container) {
+        container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
+    }
+    
     try {
         const data = await api.getAllCategories();
         debug.log('📁 Categories loaded:', data);
@@ -1810,6 +1823,7 @@ async function loadCategories() {
         
         renderCategories();
     } catch (error) {
+        if (container) container.innerHTML = '';
         handleError(error, 'Не удалось загрузить категории');
     } finally {
         categoriesState.loading = false;
@@ -1974,6 +1988,11 @@ async function loadRecurringPayments() {
         listEl.innerHTML = '';
         emptyEl.style.display = 'none';
         
+        // Загружаем курсы если нужно
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
+        }
+        
         const response = await api.getRecurringPayments(true);
         recurringState.items = response.items || [];
         
@@ -2003,9 +2022,12 @@ function updateRecurringSummary(summary) {
     const countEl = document.getElementById('recurring-active-count');
     
     if (totalEl && summary.totals_by_currency) {
-        const parts = Object.entries(summary.totals_by_currency)
-            .map(([currency, amount]) => formatCurrency(amount, currency));
-        totalEl.textContent = parts.join(' + ') || '0 сом';
+        // Конвертируем все валюты в выбранную и суммируем
+        let totalConverted = 0;
+        Object.entries(summary.totals_by_currency).forEach(([currency, amount]) => {
+            totalConverted += convertAmount(amount, currency, state.currency);
+        });
+        totalEl.textContent = formatCurrency(totalConverted);
     }
     
     if (countEl) {
@@ -2063,7 +2085,7 @@ function renderRecurringPayments(items) {
                         </div>
                     </div>
                     <div class="recurring-amount">
-                        <div class="amount">${formatCurrency(item.amount, item.currency)}</div>
+                        <div class="amount">${formatCurrency(convertAmount(item.amount, item.currency || 'KGS', state.currency))}</div>
                         <div class="next-date ${statusClass}">${dateText}</div>
                     </div>
                 </div>
@@ -2222,7 +2244,21 @@ const debtsState = {
 };
 
 async function loadDebts() {
+    const listEl = document.getElementById('debts-list');
+    const emptyEl = document.getElementById('debts-empty');
+    
     try {
+        // Показываем лоадер
+        if (listEl) {
+            listEl.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
+        }
+        if (emptyEl) emptyEl.style.display = 'none';
+        
+        // Загружаем курсы если нужно
+        if (Object.keys(exchangeRates).length === 0) {
+            await loadExchangeRates();
+        }
+        
         const [debtsData, summaryData] = await Promise.all([
             api.getDebts(false),
             api.getDebtSummary()
@@ -2233,6 +2269,7 @@ async function loadDebts() {
         renderDebts();
         
     } catch (error) {
+        if (listEl) listEl.innerHTML = '';
         handleError(error, 'Не удалось загрузить долги');
     }
 }
@@ -2242,12 +2279,16 @@ function updateDebtsSummary(summary) {
     const receivedEl = document.getElementById('debt-received-total');
     const balanceEl = document.getElementById('debt-net-balance');
     
-    if (givenEl) givenEl.textContent = formatCurrency(summary.total_given_remaining);
-    if (receivedEl) receivedEl.textContent = formatCurrency(summary.total_received_remaining);
+    // Конвертируем суммы в выбранную валюту (summary приходит в KGS)
+    const givenConverted = convertAmount(summary.total_given_remaining || 0, 'KGS', state.currency);
+    const receivedConverted = convertAmount(summary.total_received_remaining || 0, 'KGS', state.currency);
+    const balanceConverted = convertAmount(summary.net_balance || 0, 'KGS', state.currency);
+    
+    if (givenEl) givenEl.textContent = formatCurrency(givenConverted);
+    if (receivedEl) receivedEl.textContent = formatCurrency(receivedConverted);
     if (balanceEl) {
-        const balance = summary.net_balance;
-        balanceEl.textContent = (balance >= 0 ? '+' : '') + formatCurrency(balance);
-        balanceEl.style.color = balance >= 0 ? 'var(--success)' : 'var(--danger)';
+        balanceEl.textContent = (balanceConverted >= 0 ? '+' : '') + formatCurrency(balanceConverted);
+        balanceEl.style.color = balanceConverted >= 0 ? 'var(--success)' : 'var(--danger)';
     }
 }
 
@@ -2299,8 +2340,8 @@ function renderDebts() {
                         </div>
                     </div>
                     <div class="debt-amount-info">
-                        <div class="debt-amount ${debt.debt_type}">${formatCurrency(debt.original_amount, debt.currency)}</div>
-                        ${!debt.is_settled ? `<div class="debt-remaining">Осталось: ${formatCurrency(debt.remaining_amount, debt.currency)}</div>` : '<div class="debt-remaining">✓ Погашен</div>'}
+                        <div class="debt-amount ${debt.debt_type}">${formatCurrency(convertAmount(debt.original_amount, debt.currency || 'KGS', state.currency))}</div>
+                        ${!debt.is_settled ? `<div class="debt-remaining">Осталось: ${formatCurrency(convertAmount(debt.remaining_amount, debt.currency || 'KGS', state.currency))}</div>` : '<div class="debt-remaining">✓ Погашен</div>'}
                     </div>
                 </div>
                 
