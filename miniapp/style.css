@@ -160,40 +160,96 @@
     color: var(--text-primary);
 }
 
-/* Insights Grid - Clean */
-.insights-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+/* Stats Cards - Modern Design */
+.stats-cards {
+    display: flex;
     gap: 10px;
     padding: 0 20px 20px;
 }
 
-.insight-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 16px 12px;
+.stat-card {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
     gap: 8px;
+    padding: 16px 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.2s ease;
 }
 
-.insight-icon {
-    font-size: 18px;
-    color: var(--accent);
+.stat-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
 }
 
-.insight-val {
+.stat-card.highlight {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.05));
+    border-color: rgba(34, 197, 94, 0.3);
+    position: relative;
+}
+
+.stat-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
+}
+
+.stat-card-icon.blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.1));
+    color: #60a5fa;
+}
+
+.stat-card-icon.orange {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(249, 115, 22, 0.1));
+    color: #fb923c;
+}
+
+.stat-card-icon.green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
+    color: #22c55e;
+}
+
+.stat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.stat-card-value {
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
 }
 
-.insight-lbl {
+.stat-card-label {
     font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     color: var(--text-muted);
+}
+
+.stat-card-trend {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.stat-card-trend.positive {
+    color: #22c55e;
+}
+
+.stat-card-trend.negative {
+    color: #ef4444;
 }
 
 /* Section Headers - Clean */
@@ -292,11 +348,19 @@
     .balance-amount {
         font-size: 36px;
     }
-    .insights-grid {
-        gap: 8px;
+    .stats-cards {
+        gap: 6px;
     }
-    .insight-card {
-        padding: 12px 8px;
+    .stat-card {
+        padding: 12px 6px;
+    }
+    .stat-card-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    .stat-card-value {
+        font-size: 15px;
     }
 }
 
@@ -1146,6 +1210,96 @@ input, select, textarea {
     gap: 12px;
 }
 
+.ai-insight-card {
+    display: flex;
+    gap: 14px;
+    padding: 16px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--primary);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-insight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ai-insight-card.high {
+    border-left-color: var(--red);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--bg-elevated));
+}
+
+.ai-insight-card.medium {
+    border-left-color: var(--yellow);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), var(--bg-elevated));
+}
+
+.ai-insight-card.low, .ai-insight-card.normal {
+    border-left-color: var(--green);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), var(--bg-elevated));
+}
+
+.ai-insight-card.empty {
+    border-left-color: var(--green);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), var(--bg-elevated));
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.ai-insight-card.empty i {
+    font-size: 24px;
+    color: var(--green);
+    margin-right: 12px;
+}
+
+.ai-insight-card.empty span {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.insight-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+}
+
+.insight-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.insight-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.insight-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.insight-saving {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(34, 197, 94, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    display: inline-block;
+}
+
 .ai-item {
     display: flex;
     gap: 14px;
@@ -1180,9 +1334,20 @@ input, select, textarea {
 .ai-loading {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
-    padding: 20px;
+    padding: 30px;
     color: var(--text-muted);
+    font-size: 14px;
+}
+
+.ai-loading .spinner-small {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 /* ═══════════ HISTORY ═══════════ */
@@ -2824,4 +2989,53 @@ input, select, textarea {
 .success-toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+}
+
+/* ===== LOADING PLACEHOLDERS ===== */
+.loading-placeholder {
+    padding: 16px;
+}
+
+.skeleton-item {
+    height: 60px;
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0.05) 25%, 
+        rgba(255,255,255,0.1) 50%, 
+        rgba(255,255,255,0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+}
+
+.skeleton-item:last-child {
+    margin-bottom: 0;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.loading-spinner i {
+    font-size: 24px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

@@ -79,28 +79,35 @@
                 </div>
             </section>
 
-            <!-- Quick Insights Grid -->
-            <section class="insights-grid">
-                <div class="insight-card">
-                    <div class="insight-icon"><i class="fas fa-receipt"></i></div>
-                    <div class="insight-data">
-                        <span class="insight-val" id="transactions-count">0</span>
-                        <span class="insight-lbl">Операций</span>
+            <!-- Quick Stats Cards -->
+            <section class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-card-icon blue">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-value" id="transactions-count">0</span>
+                        <span class="stat-card-label">Операций</span>
                     </div>
                 </div>
-                <div class="insight-card">
-                    <div class="insight-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="insight-data">
-                        <span class="insight-val" id="avg-daily">0</span>
-                        <span class="insight-lbl">В день</span>
+                <div class="stat-card">
+                    <div class="stat-card-icon orange">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-value" id="avg-daily">0</span>
+                        <span class="stat-card-label">В день</span>
                     </div>
                 </div>
-                <div class="insight-card">
-                    <div class="insight-icon"><i class="fas fa-piggy-bank"></i></div>
-                    <div class="insight-data">
-                        <span class="insight-val" id="savings-rate">0%</span>
-                        <span class="insight-lbl">Экономия</span>
+                <div class="stat-card highlight">
+                    <div class="stat-card-icon green">
+                        <i class="fas fa-piggy-bank"></i>
                     </div>
+                    <div class="stat-card-content">
+                        <span class="stat-card-value" id="savings-rate">0%</span>
+                        <span class="stat-card-label">Экономия</span>
+                    </div>
+                    <div class="stat-card-trend" id="savings-rate-trend"></div>
                 </div>
             </section>
 

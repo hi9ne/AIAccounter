@@ -649,15 +649,35 @@ function updateDashboardUI(data) {
             trendEl.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
         }
     
-        // Stats
+        // Stats cards
         const transactionsCount = (data.balance.income_count || 0) + (data.balance.expense_count || 0);
-        document.getElementById('transactions-count').textContent = `${transactionsCount} операций`;
+        const countEl = document.getElementById('transactions-count');
+        if (countEl) countEl.textContent = transactionsCount;
         
-        const avgDaily = income > 0 ? (expense / 30).toFixed(0) : 0;
-        document.getElementById('avg-daily').textContent = `${formatCurrency(avgDaily)}/день`;
+        const avgDaily = expense > 0 ? (expense / 30).toFixed(0) : 0;
+        const avgEl = document.getElementById('avg-daily');
+        if (avgEl) avgEl.textContent = formatCurrency(avgDaily);
         
-        const savingsRate = income > 0 ? ((balance / income) * 100).toFixed(1) : 0;
-        document.getElementById('savings-rate').textContent = `${savingsRate}% экономия`;
+        const savingsRate = income > 0 ? Math.round((balance / income) * 100) : 0;
+        const rateEl = document.getElementById('savings-rate');
+        if (rateEl) rateEl.textContent = `${savingsRate}%`;
+        
+        // Update trend indicators
+        const rateTrend = document.getElementById('savings-rate-trend');
+        if (rateTrend) {
+            if (savingsRate > 0) {
+                rateTrend.innerHTML = `<i class="fas fa-arrow-up"></i>`;
+                rateTrend.classList.add('positive');
+                rateTrend.classList.remove('negative');
+            } else if (savingsRate < 0) {
+                rateTrend.innerHTML = `<i class="fas fa-arrow-down"></i>`;
+                rateTrend.classList.add('negative');
+                rateTrend.classList.remove('positive');
+            } else {
+                rateTrend.innerHTML = `<i class="fas fa-minus"></i>`;
+                rateTrend.classList.remove('positive', 'negative');
+            }
+        }
     });
     
     // Recent transactions (асинхронно)
@@ -1806,11 +1826,13 @@ async function loadCategories() {
     if (categoriesState.loading) return;
     categoriesState.loading = true;
     
-    // Показываем лоадер
-    const container = document.getElementById('categories-list');
-    if (container) {
-        container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
-    }
+    // Показываем лоадер в обоих контейнерах
+    const defaultList = document.getElementById('default-categories-list');
+    const userList = document.getElementById('user-categories-list');
+    const loaderHtml = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
+    
+    if (defaultList) defaultList.innerHTML = loaderHtml;
+    if (userList) userList.innerHTML = loaderHtml;
     
     try {
         const data = await api.getAllCategories();
@@ -1823,7 +1845,8 @@ async function loadCategories() {
         
         renderCategories();
     } catch (error) {
-        if (container) container.innerHTML = '';
+        if (defaultList) defaultList.innerHTML = '';
+        if (userList) userList.innerHTML = '';
         handleError(error, 'Не удалось загрузить категории');
     } finally {
         categoriesState.loading = false;
@@ -1996,9 +2019,9 @@ async function loadRecurringPayments() {
         const response = await api.getRecurringPayments(true);
         recurringState.items = response.items || [];
         
-        // Update summary
+        // Update summary - передаём все items для подсчёта суммы
         const summary = await api.getUpcomingSummary(30);
-        updateRecurringSummary(summary);
+        updateRecurringSummary(summary, recurringState.items);
         
         loadingEl.style.display = 'none';
         
@@ -2017,21 +2040,23 @@ async function loadRecurringPayments() {
     }
 }
 
-function updateRecurringSummary(summary) {
+function updateRecurringSummary(summary, allItems) {
     const totalEl = document.getElementById('recurring-upcoming-total');
     const countEl = document.getElementById('recurring-active-count');
     
-    if (totalEl && summary.totals_by_currency) {
-        // Конвертируем все валюты в выбранную и суммируем
+    // Считаем сумму всех активных подписок (не только за 30 дней)
+    if (totalEl && allItems && allItems.length > 0) {
         let totalConverted = 0;
-        Object.entries(summary.totals_by_currency).forEach(([currency, amount]) => {
-            totalConverted += convertAmount(amount, currency, state.currency);
+        allItems.forEach(item => {
+            totalConverted += convertAmount(item.amount || 0, item.currency || 'KGS', state.currency);
         });
         totalEl.textContent = formatCurrency(totalConverted);
+    } else if (totalEl) {
+        totalEl.textContent = formatCurrency(0);
     }
     
     if (countEl) {
-        countEl.textContent = summary.total_payments || '0';
+        countEl.textContent = allItems?.length || summary.total_payments || '0';
     }
 }
 
