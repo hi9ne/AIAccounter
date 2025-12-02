@@ -1,8 +1,8 @@
 // Service Worker for AIAccounter Mini App
 // Provides offline caching and PWA capabilities
 
-const CACHE_NAME = 'aiaccounter-v5.0.3';
-const RUNTIME_CACHE = 'aiaccounter-runtime-v5.0.3';
+const CACHE_NAME = 'aiaccounter-v1.1';
+const RUNTIME_CACHE = 'aiaccounter-runtime-v1.1';
 
 // Critical assets to cache on install
 const PRECACHE_ASSETS = [
@@ -17,7 +17,7 @@ const PRECACHE_ASSETS = [
 
 // Install: Cache critical assets and skip waiting
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing v5.0.3...');
+    console.log('[SW] Installing v1.1...');
     
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -34,14 +34,14 @@ self.addEventListener('install', (event) => {
 
 // Activate: Clean old caches and claim clients immediately
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating v5.0.3...');
+    console.log('[SW] Activating v1.1...');
     
     event.waitUntil(
         caches.keys()
             .then(cacheNames => {
                 return Promise.all(
                     cacheNames
-                        .filter(name => !name.includes('v5.0.3'))
+                        .filter(name => !name.includes('v1.1'))
                         .map(name => {
                             console.log('[SW] Deleting old cache:', name);
                             return caches.delete(name);

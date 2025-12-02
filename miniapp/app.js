@@ -1,9 +1,9 @@
 // ============================================================================
-// AIAccounter Mini App v5.0.3 - Read-Only Analytics Dashboard
+// AIAccounter Mini App v1.1 - Read-Only Analytics Dashboard
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '5.0.3'; // Caching optimization
+const APP_VERSION = '1.1';
 
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
