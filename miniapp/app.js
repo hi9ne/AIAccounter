@@ -1,9 +1,9 @@
 // ============================================================================
-// AIAccounter Mini App v3.0.0 - Read-Only Analytics Dashboard
+// AIAccounter Mini App v5.0.3 - Read-Only Analytics Dashboard
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '4.0.0'; // Major UI redesign
+const APP_VERSION = '5.0.3'; // Caching optimization
 
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
@@ -55,6 +55,23 @@ let state = {
 
 // ===== API =====
 const api = window.api;
+
+// ===== PERFORMANCE MONITOR =====
+const perf = {
+    marks: {},
+    start(label) {
+        this.marks[label] = performance.now();
+    },
+    end(label) {
+        if (this.marks[label]) {
+            const duration = performance.now() - this.marks[label];
+            debug.log(`⏱️ ${label}: ${duration.toFixed(1)}ms`);
+            delete this.marks[label];
+            return duration;
+        }
+        return 0;
+    }
+};
 
 // ===== CACHE =====
 const cache = {
@@ -527,6 +544,7 @@ async function authenticate() {
 
 // ===== DASHBOARD (HOME) =====
 async function loadDashboard() {
+    perf.start('loadDashboard');
     debug.log(`📊 Loading dashboard for period: ${state.currentPeriod}, currency: ${state.currency}`);
     
     const cacheKey = `dashboard:${state.currentPeriod}:${state.currency}`;
@@ -610,6 +628,7 @@ async function loadDashboard() {
         if (dashboardData.topCategories) {
             updateHomeTopCategories(dashboardData.topCategories);
         }
+        perf.end('loadDashboard');
         debug.log('✅ Dashboard loaded');
     } catch (error) {
         handleError(error, 'Не удалось загрузить данные');
@@ -809,6 +828,7 @@ function applyCustomPeriod() {
 }
 
 async function loadAnalytics() {
+    perf.start('loadAnalytics');
     debug.log('📊 Loading analytics...');
     
     // Показываем лоадер
@@ -924,6 +944,7 @@ async function loadAnalytics() {
         // Ленивая загрузка графиков - загружаем через небольшую задержку
         setTimeout(() => loadCharts(analyticsData), 100);
         
+        perf.end('loadAnalytics');
         debug.log('✅ Analytics loaded');
     } catch (error) {
         handleError(error, 'Не удалось загрузить аналитику');
@@ -1116,6 +1137,7 @@ let historyState = {
 };
 
 async function loadHistory(loadMore = false) {
+    perf.start('loadHistory');
     debug.log('📜 Loading history...', { loadMore, currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
     
     if (historyState.loading) {
@@ -1214,6 +1236,7 @@ async function loadHistory(loadMore = false) {
         
         debug.log('✅ Loading complete, new state:', { currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
         
+        perf.end('loadHistory');
         debug.log(`✅ History loaded. Page: ${historyState.currentPage - 1}, Has more: ${historyState.hasMore}`);
     } catch (error) {
         historyState.loading = false;
