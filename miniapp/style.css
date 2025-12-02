@@ -2,6 +2,14 @@
    REDESIGN V5.0 - CLEAN MINIMAL MODERN
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Глобальный отступ для Telegram header на мобильных */
+@media (max-width: 768px) {
+    .home-header,
+    .screen-header {
+        padding-top: 65px !important;
+    }
+}
+
 /* Modern Header - Clean */
 .home-header {
     display: flex;
@@ -9,13 +17,6 @@
     justify-content: space-between;
     padding: 20px 20px 16px;
     background: transparent;
-}
-
-/* Отступ для мобильных (Telegram header) */
-@media (max-width: 768px) {
-    .home-header {
-        padding-top: 60px;
-    }
 }
 
 .user-block {
