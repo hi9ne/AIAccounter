@@ -2,12 +2,9 @@
    REDESIGN V5.0 - CLEAN MINIMAL MODERN
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Глобальный отступ для Telegram header на мобильных */
-@media (max-width: 768px) {
-    .home-header,
-    .screen-header {
-        padding-top: 65px !important;
-    }
+/* Глобальный отступ для Telegram header */
+.app-container {
+    padding-top: 50px;
 }
 
 /* Modern Header - Clean */
@@ -15,7 +12,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 20px 16px;
+    padding: 16px 20px 16px;
     background: transparent;
 }
 
@@ -560,6 +557,7 @@ input, select, textarea {
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
+    padding-top: 50px; /* Отступ для Telegram */
     background: var(--bg-card);
     border-bottom: 1px solid var(--border);
     position: sticky;
@@ -570,9 +568,11 @@ input, select, textarea {
 .screen-header h1 {
     font-size: 18px;
     font-weight: 700;
-    flex: 1;
     text-align: center;
-    margin: 0 16px;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .btn-back {
@@ -2802,7 +2802,12 @@ input, select, textarea {
 }
 
 .nav-btn i {
-    font-size: 20px;
+    font-size: 22px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s;
 }
 
