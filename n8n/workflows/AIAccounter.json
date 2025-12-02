@@ -1250,7 +1250,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT r.id, r.title, r.amount, r.currency, r.frequency, r.next_payment_date, r.is_active, r.auto_create, r.category_id, c.name as category_name, c.icon as category_icon\nFROM recurring_payments r\nLEFT JOIN categories c ON r.category_id = c.id\nWHERE r.user_id = {{ $json.body.user_id }}\nORDER BY r.is_active DESC, r.next_payment_date ASC",
+        "query": "=SELECT r.id, r.title, r.amount, r.currency, r.frequency, r.next_payment_date, r.is_active, r.auto_create, r.category\nFROM recurring_payments r\nWHERE r.user_id = {{ $json.body.user_id }}\nORDER BY r.is_active DESC, r.next_payment_date ASC",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

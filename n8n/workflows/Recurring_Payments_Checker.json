@@ -23,7 +23,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  rp.id as recurring_id,\n  rp.user_id,\n  rp.name as title,\n  rp.amount,\n  rp.currency,\n  rp.category,\n  rp.next_payment_date,\n  rp.next_payment_date - CURRENT_DATE as days_until_payment,\n  COALESCE(rp.reminder_days_before, 3) as reminder_days,\n  false as auto_create\nFROM recurring_payments rp\nWHERE rp.is_active = true\n  AND rp.next_payment_date - CURRENT_DATE <= COALESCE(rp.reminder_days_before, 3)\n  AND rp.next_payment_date >= CURRENT_DATE\n  AND (rp.last_reminded_at IS NULL \n       OR DATE(rp.last_reminded_at AT TIME ZONE 'Asia/Bishkek') < CURRENT_DATE)\nORDER BY rp.next_payment_date;",
+        "query": "SELECT \n  rp.id as recurring_id,\n  rp.user_id,\n  rp.title,\n  rp.amount,\n  rp.currency,\n  rp.category,\n  rp.next_payment_date,\n  rp.next_payment_date - CURRENT_DATE as days_until_payment,\n  COALESCE(rp.remind_days_before, 3) as reminder_days,\n  rp.auto_create\nFROM recurring_payments rp\nWHERE rp.is_active = true\n  AND rp.next_payment_date - CURRENT_DATE <= COALESCE(rp.remind_days_before, 3)\n  AND rp.next_payment_date >= CURRENT_DATE\n  AND (rp.last_reminder_sent_at IS NULL \n       OR DATE(rp.last_reminder_sent_at AT TIME ZONE 'Asia/Bishkek') < CURRENT_DATE)\nORDER BY rp.next_payment_date;",
         "options": {}
       },
       "name": "Get Pending Reminders",
