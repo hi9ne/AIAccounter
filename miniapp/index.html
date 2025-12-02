@@ -24,7 +24,7 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=5.0.0">
+    <link rel="stylesheet" href="style.css?v=5.0.2">
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -344,7 +344,8 @@
                             </div>
                         </div>
                         <select id="theme-select" class="select-setting">
-                            <option value="dark" selected>Тёмная</option>
+                            <option value="auto">Авто</option>
+                            <option value="dark">Тёмная</option>
                             <option value="light">Светлая</option>
                         </select>
                     </div>
@@ -435,32 +436,43 @@
                 </button>
             </header>
             <div class="screen-body">
-                <div class="tab-bar">
-                    <button class="tab active" data-type="expense" onclick="switchCategoryTab('expense')">
-                        <i class="fas fa-arrow-up"></i> Расходы
+                <!-- Type Toggle -->
+                <div class="category-type-toggle">
+                    <button class="type-btn active" data-type="expense" onclick="switchCategoryTab('expense')">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Расходы</span>
                     </button>
-                    <button class="tab" data-type="income" onclick="switchCategoryTab('income')">
-                        <i class="fas fa-arrow-down"></i> Доходы
+                    <button class="type-btn" data-type="income" onclick="switchCategoryTab('income')">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>Доходы</span>
                     </button>
                 </div>
 
+                <!-- Default Categories -->
                 <div class="cat-section">
-                    <div class="cat-section-head">
-                        <span><i class="fas fa-lock"></i> Стандартные</span>
-                        <span class="count-badge" id="default-categories-count">0</span>
+                    <div class="cat-section-header">
+                        <div class="section-title">
+                            <i class="fas fa-lock"></i>
+                            <span>Стандартные</span>
+                        </div>
+                        <span class="section-count" id="default-categories-count">0</span>
                     </div>
-                    <div id="default-categories-list" class="cat-grid"></div>
+                    <div id="default-categories-list" class="categories-grid"></div>
                 </div>
 
+                <!-- User Categories -->
                 <div class="cat-section">
-                    <div class="cat-section-head">
-                        <span><i class="fas fa-user"></i> Мои</span>
-                        <span class="count-badge" id="user-categories-count">0</span>
+                    <div class="cat-section-header">
+                        <div class="section-title">
+                            <i class="fas fa-user"></i>
+                            <span>Мои категории</span>
+                        </div>
+                        <span class="section-count" id="user-categories-count">0</span>
                     </div>
-                    <div id="user-categories-list" class="cat-grid"></div>
-                    <div id="no-user-categories" class="empty-mini" style="display:none;">
+                    <div id="user-categories-list" class="categories-grid"></div>
+                    <div id="no-user-categories" class="empty-user-cats" style="display:none;">
                         <i class="fas fa-plus-circle"></i>
-                        <span>Добавьте категорию</span>
+                        <span>Нажмите + чтобы добавить</span>
                     </div>
                 </div>
             </div>
@@ -477,18 +489,29 @@
                 <form id="add-category-form" onsubmit="submitAddCategory(event)">
                     <div class="form-field">
                         <label>Название</label>
-                        <input type="text" id="new-category-name" placeholder="Кофе, Такси..." required maxlength="50">
+                        <input type="text" id="new-category-name" placeholder="Например: Кофе" required maxlength="50">
                     </div>
                     <div class="form-field">
                         <label>Тип</label>
-                        <select id="new-category-type">
-                            <option value="expense">Расход</option>
-                            <option value="income">Доход</option>
-                        </select>
+                        <div class="type-selector">
+                            <label class="type-option">
+                                <input type="radio" name="cat-type" value="expense" checked>
+                                <span class="type-label expense">
+                                    <i class="fas fa-arrow-up"></i> Расход
+                                </span>
+                            </label>
+                            <label class="type-option">
+                                <input type="radio" name="cat-type" value="income">
+                                <span class="type-label income">
+                                    <i class="fas fa-arrow-down"></i> Доход
+                                </span>
+                            </label>
+                        </div>
+                        <input type="hidden" id="new-category-type" value="expense">
                     </div>
                     <div class="form-field">
                         <label>Иконка</label>
-                        <div class="emoji-grid" id="emoji-picker">
+                        <div class="emoji-picker-grid" id="emoji-picker">
                             <button type="button" class="emoji selected" data-emoji="📁">📁</button>
                             <button type="button" class="emoji" data-emoji="🍕">🍕</button>
                             <button type="button" class="emoji" data-emoji="☕">☕</button>
@@ -510,7 +533,9 @@
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn secondary" onclick="closeAddCategoryModal()">Отмена</button>
-                        <button type="submit" class="btn primary">Добавить</button>
+                        <button type="submit" class="btn primary">
+                            <i class="fas fa-plus"></i> Добавить
+                        </button>
                     </div>
                 </form>
             </div>
@@ -808,10 +833,10 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="miniapp-config.js?v=4.0.0"></script>
-    <script src="cache.js?v=4.0.0"></script>
-    <script src="websocket.js?v=4.0.0"></script>
-    <script src="api-helper.js?v=4.0.0"></script>
-    <script src="app.js?v=4.0.0"></script>
+    <script src="miniapp-config.js?v=4.0.2"></script>
+    <script src="cache.js?v=4.0.2"></script>
+    <script src="websocket.js?v=4.0.2"></script>
+    <script src="api-helper.js?v=4.0.2"></script>
+    <script src="app.js?v=4.0.2"></script>
 </body>
 </html>

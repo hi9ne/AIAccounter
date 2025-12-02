@@ -1482,10 +1482,9 @@ function clearCache() {
 function showSuccess(message) {
     debug.log('✅', message);
     
-    // Показываем toast вместо alert
+    // Показываем toast
     const toast = document.createElement('div');
-    toast.className = 'error-toast';
-    toast.style.background = 'var(--success)';
+    toast.className = 'success-toast';
     toast.textContent = message;
     document.body.appendChild(toast);
     
@@ -1820,9 +1819,9 @@ async function loadCategories() {
 function switchCategoryTab(type) {
     categoriesState.currentType = type;
     
-    // Update tabs
-    document.querySelectorAll('.category-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.type === type);
+    // Update type toggle buttons
+    document.querySelectorAll('#categories-screen .type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
     });
     
     renderCategories();
@@ -1874,23 +1873,35 @@ function openAddCategoryModal() {
     modal.style.display = 'flex';
     
     // Set default type based on current tab
-    document.getElementById('new-category-type').value = categoriesState.currentType;
+    const currentType = categoriesState.currentType;
+    document.getElementById('new-category-type').value = currentType;
+    
+    // Set radio button
+    const radioBtn = document.querySelector(`input[name="cat-type"][value="${currentType}"]`);
+    if (radioBtn) radioBtn.checked = true;
     
     // Reset form
     document.getElementById('new-category-name').value = '';
     document.getElementById('new-category-icon').value = '📁';
     
     // Reset emoji picker
-    document.querySelectorAll('.emoji-btn').forEach(btn => {
+    document.querySelectorAll('#emoji-picker .emoji').forEach(btn => {
         btn.classList.toggle('selected', btn.dataset.emoji === '📁');
     });
     
     // Setup emoji picker
-    document.querySelectorAll('.emoji-btn').forEach(btn => {
+    document.querySelectorAll('#emoji-picker .emoji').forEach(btn => {
         btn.onclick = () => {
-            document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+            document.querySelectorAll('#emoji-picker .emoji').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
             document.getElementById('new-category-icon').value = btn.dataset.emoji;
+        };
+    });
+    
+    // Setup type radio buttons
+    document.querySelectorAll('input[name="cat-type"]').forEach(radio => {
+        radio.onchange = () => {
+            document.getElementById('new-category-type').value = radio.value;
         };
     });
 }
@@ -2323,9 +2334,9 @@ function renderDebts() {
 }
 
 function setupDebtTabs() {
-    document.querySelectorAll('.debt-tab').forEach(tab => {
+    document.querySelectorAll('#debts-screen .tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            document.querySelectorAll('.debt-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#debts-screen .tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             debtsState.filter = tab.dataset.filter;
             renderDebts();
@@ -2350,7 +2361,7 @@ function openAddDebtModal() {
     document.getElementById('debt-description').value = '';
     
     // Reset type buttons
-    document.querySelectorAll('.debt-type-btn').forEach(btn => {
+    document.querySelectorAll('#debt-modal .toggle-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === 'given');
     });
     
@@ -2363,9 +2374,9 @@ function closeDebtModal() {
 }
 
 function setupDebtTypeButtons() {
-    document.querySelectorAll('.debt-type-btn').forEach(btn => {
+    document.querySelectorAll('#debt-modal .toggle-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.debt-type-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#debt-modal .toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('debt-type').value = btn.dataset.type;
         });

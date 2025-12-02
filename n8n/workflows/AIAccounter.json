@@ -1271,7 +1271,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO recurring_payments (user_id, title, amount, currency, frequency, start_date, next_payment_date, category)\nVALUES (\n  {{ $json.body.user_id }},\n  '{{ $json.body.title }}',\n  {{ $json.body.amount || 0 }},\n  '{{ $json.body.currency || \"KGS\" }}',\n  '{{ $json.body.frequency || \"monthly\" }}',\n  '{{ $json.body.next_payment_date || new Date().toISOString().split(\"T\")[0] }}',\n  '{{ $json.body.next_payment_date || new Date().toISOString().split(\"T\")[0] }}',\n  '{{ $json.body.category || \"Подписки\" }}'\n)\nRETURNING id, title, amount, currency, frequency, next_payment_date",
+        "query": "=INSERT INTO recurring_payments (user_id, title, amount, currency, frequency, start_date, next_payment_date, category)\nVALUES (\n  {{ $json.body.user_id }},\n  '{{ $json.body.title }}',\n  {{ $json.body.amount || 0 }},\n  '{{ $json.body.currency || \"KGS\" }}',\n  '{{ $json.body.frequency || \"monthly\" }}',\n  COALESCE(NULLIF('{{ $json.body.next_payment_date }}', '')::date, CURRENT_DATE),\n  COALESCE(NULLIF('{{ $json.body.next_payment_date }}', '')::date, CURRENT_DATE),\n  '{{ $json.body.category || \"Подписки\" }}'\n)\nRETURNING id, title, amount, currency, frequency, next_payment_date",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import date, datetime, timedelta
 
@@ -115,7 +116,7 @@ async def get_debts(
     debt_type: Optional[str] = None,
 ):
     """Получить все долги пользователя"""
-    query = select(Debt).where(Debt.user_id == user_id)
+    query = select(Debt).options(selectinload(Debt.payments)).where(Debt.user_id == user_id)
     
     if settled is not None:
         query = query.where(Debt.is_settled == settled)
@@ -190,7 +191,7 @@ async def get_debt(
     user_id: int = Depends(get_current_user_id),
 ):
     """Получить конкретный долг"""
-    query = select(Debt).where(Debt.id == debt_id, Debt.user_id == user_id)
+    query = select(Debt).options(selectinload(Debt.payments)).where(Debt.id == debt_id, Debt.user_id == user_id)
     result = await db.execute(query)
     debt = result.scalar_one_or_none()
     
@@ -234,7 +235,7 @@ async def update_debt(
     user_id: int = Depends(get_current_user_id),
 ):
     """Обновить долг"""
-    query = select(Debt).where(Debt.id == debt_id, Debt.user_id == user_id)
+    query = select(Debt).options(selectinload(Debt.payments)).where(Debt.id == debt_id, Debt.user_id == user_id)
     result = await db.execute(query)
     debt = result.scalar_one_or_none()
     
@@ -279,7 +280,7 @@ async def add_payment(
     user_id: int = Depends(get_current_user_id),
 ):
     """Добавить платёж по долгу (частичный или полный возврат)"""
-    query = select(Debt).where(Debt.id == debt_id, Debt.user_id == user_id)
+    query = select(Debt).options(selectinload(Debt.payments)).where(Debt.id == debt_id, Debt.user_id == user_id)
     result = await db.execute(query)
     debt = result.scalar_one_or_none()
     
@@ -353,7 +354,7 @@ async def settle_debt(
     user_id: int = Depends(get_current_user_id),
 ):
     """Отметить долг как погашенный (без создания платежа)"""
-    query = select(Debt).where(Debt.id == debt_id, Debt.user_id == user_id)
+    query = select(Debt).options(selectinload(Debt.payments)).where(Debt.id == debt_id, Debt.user_id == user_id)
     result = await db.execute(query)
     debt = result.scalar_one_or_none()
     
