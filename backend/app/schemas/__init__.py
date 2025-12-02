@@ -73,6 +73,17 @@ from .recurring import (
     MarkPaidRequest,
 )
 
+# Debt schemas
+from .debt import (
+    DebtCreate,
+    DebtUpdate,
+    DebtResponse,
+    DebtListResponse,
+    DebtPaymentCreate,
+    DebtPaymentResponse,
+    DebtSummary,
+)
+
 __all__ = [
     # User
     "UserBase",
@@ -127,6 +138,14 @@ __all__ = [
     "RecurringPaymentResponse",
     "RecurringPaymentListResponse",
     "MarkPaidRequest",
+    # Debts
+    "DebtCreate",
+    "DebtUpdate",
+    "DebtResponse",
+    "DebtListResponse",
+    "DebtPaymentCreate",
+    "DebtPaymentResponse",
+    "DebtSummary",
     # Responses
     "MessageResponse",
     "ErrorResponse",
