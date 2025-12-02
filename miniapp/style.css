@@ -7,8 +7,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 60px 20px 16px; /* Увеличен отступ сверху для Telegram */
+    padding: 20px 20px 16px;
     background: transparent;
+}
+
+/* Отступ для мобильных (Telegram header) */
+@media (max-width: 768px) {
+    .home-header {
+        padding-top: 60px;
+    }
 }
 
 .user-block {
