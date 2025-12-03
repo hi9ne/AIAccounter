@@ -378,10 +378,10 @@ CREATE UNIQUE INDEX idx_budgets_unique ON budgets(user_id, month, COALESCE(categ
 - [x] Команды: мой бюджет, установить бюджет
 - [x] Интеграция с AI Agent
 
-### Фаза 6: Уведомления
-- [ ] n8n workflow проверки бюджета
-- [ ] Telegram уведомления 80%/100%
-- [ ] Настройки порогов в user_preferences
+### Фаза 6: Уведомления ✅
+- [x] n8n workflow проверки бюджета (Budget_Notifications.json)
+- [x] Telegram уведомления 80%/100%
+- [x] Миграция: budget_alert_80_sent, budget_alert_100_sent в user_preferences
 
 ---
 

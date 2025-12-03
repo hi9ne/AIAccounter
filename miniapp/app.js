@@ -596,6 +596,10 @@ async function loadDashboard() {
             cache.set(cacheKey, overview, 300);
             state.isInitialized = true;
             state.preloadedData = null;
+            
+            // Загружаем виджет бюджета
+            loadBudgetWidget();
+            
             debug.log('✅ Dashboard loaded from preload');
             return;
         }
@@ -1604,6 +1608,15 @@ function showSuccess(message) {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
     }, 2000);
+}
+
+// Универсальная функция toast
+function showToast(message, type = 'success') {
+    if (type === 'error') {
+        showError(message);
+    } else {
+        showSuccess(message);
+    }
 }
 
 // ===== EVENT LISTENERS =====
@@ -2883,33 +2896,26 @@ async function loadBudgetWidget() {
         
         const emptyState = document.getElementById('budget-empty');
         const progressContainer = widget.querySelector('.budget-progress-container');
-        const footer = widget.querySelector('.budget-footer');
         const header = widget.querySelector('.budget-widget-header');
         
         if (!data.has_budget) {
-            // Бюджет не установлен
-            widget.className = 'budget-widget';
+            // Бюджет не установлен - показываем "Установить бюджет"
+            widget.className = 'budget-widget budget-widget-mini';
             if (progressContainer) progressContainer.style.display = 'none';
-            if (footer) footer.style.display = 'none';
             if (header) header.style.display = 'none';
             if (emptyState) {
                 emptyState.style.display = 'flex';
-                emptyState.onclick = () => openBudgetModal();
             }
             return;
         }
         
         // Бюджет установлен - показываем виджет
         if (progressContainer) progressContainer.style.display = 'block';
-        if (footer) footer.style.display = 'flex';
         if (header) header.style.display = 'flex';
         if (emptyState) emptyState.style.display = 'none';
         
         // Обновляем класс статуса
-        widget.className = `budget-widget ${data.status}`;
-        
-        // Название месяца
-        document.getElementById('budget-month').textContent = data.month_name || data.month;
+        widget.className = `budget-widget budget-widget-mini ${data.status}`;
         
         // Прогресс-бар
         const percentage = Math.min(data.percentage_used, 100);
@@ -2921,13 +2927,6 @@ async function loadBudgetWidget() {
         document.getElementById('budget-total').textContent = formatAmount(data.budget_amount) + ' ' + currency;
         document.getElementById('budget-percentage').textContent = `${data.percentage_used}%`;
         
-        // Остаток
-        const remaining = data.remaining;
-        const remainingText = remaining >= 0 
-            ? `${formatAmount(remaining)} ${currency}`
-            : `-${formatAmount(Math.abs(remaining))} ${currency}`;
-        document.getElementById('budget-remaining').textContent = remainingText;
-        
         debug.log('✅ Budget widget updated');
         
     } catch (error) {
@@ -2937,15 +2936,12 @@ async function loadBudgetWidget() {
         if (widget) {
             const emptyState = document.getElementById('budget-empty');
             const progressContainer = widget.querySelector('.budget-progress-container');
-            const footer = widget.querySelector('.budget-footer');
             const header = widget.querySelector('.budget-widget-header');
             
             if (progressContainer) progressContainer.style.display = 'none';
-            if (footer) footer.style.display = 'none';
             if (header) header.style.display = 'none';
             if (emptyState) {
                 emptyState.style.display = 'flex';
-                emptyState.onclick = () => openBudgetModal();
             }
         }
     }
@@ -2998,12 +2994,12 @@ function openBudgetModal() {
         suffix.textContent = getCurrencySymbol(state.currency || 'KGS');
     }
     
-    modal.classList.add('active');
+    modal.classList.add('open');
 }
 
 function closeBudgetModal() {
     const modal = document.getElementById('budget-modal');
-    if (modal) modal.classList.remove('active');
+    if (modal) modal.classList.remove('open');
 }
 
 function setupBudgetPresets() {

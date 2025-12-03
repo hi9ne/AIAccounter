@@ -270,6 +270,36 @@
     position: relative;
 }
 
+/* Мини-версия виджета для главной страницы */
+.budget-widget.budget-widget-mini {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.budget-widget.budget-widget-mini:active {
+    transform: scale(0.98);
+}
+
+.budget-widget.budget-widget-mini .budget-widget-header {
+    margin-bottom: 10px;
+}
+
+.budget-widget.budget-widget-mini .budget-progress-bar {
+    height: 6px;
+    margin-bottom: 6px;
+}
+
+.budget-widget.budget-widget-mini .budget-progress-info {
+    font-size: 13px;
+    justify-content: center;
+    gap: 4px;
+}
+
+.budget-widget.budget-widget-mini .budget-progress-container {
+    margin-bottom: 0;
+}
+
 .budget-widget.on_track {
     border-color: rgba(34, 197, 94, 0.3);
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), var(--bg-card));

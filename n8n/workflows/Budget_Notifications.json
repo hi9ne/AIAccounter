@@ -1,0 +1,275 @@
+{
+  "name": "Budget Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10,18 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule: 10:00 & 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -896,
+        168
+      ],
+      "id": "budget-schedule-001"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH current_month AS (\n  SELECT TO_CHAR(CURRENT_DATE AT TIME ZONE 'Asia/Bishkek', 'YYYY-MM') as month\n),\nbudget_status AS (\n  SELECT \n    b.user_id,\n    b.budget_amount,\n    b.currency,\n    b.month,\n    COALESCE(SUM(e.amount), 0) as total_spent,\n    ROUND((COALESCE(SUM(e.amount), 0) / b.budget_amount * 100)::numeric, 1) as percent_used,\n    b.budget_amount - COALESCE(SUM(e.amount), 0) as remaining\n  FROM budgets b\n  CROSS JOIN current_month cm\n  LEFT JOIN expenses e ON e.user_id = b.user_id \n    AND e.deleted_at IS NULL\n    AND TO_CHAR(e.date AT TIME ZONE 'Asia/Bishkek', 'YYYY-MM') = cm.month\n  WHERE b.month = cm.month\n  GROUP BY b.user_id, b.budget_amount, b.currency, b.month\n),\nuser_notifications AS (\n  SELECT \n    bs.*,\n    u.first_name,\n    up.budget_alert_80_sent,\n    up.budget_alert_100_sent,\n    CASE \n      WHEN bs.percent_used >= 100 AND (up.budget_alert_100_sent IS NULL OR up.budget_alert_100_sent < DATE_TRUNC('month', CURRENT_DATE)) THEN 'exceeded'\n      WHEN bs.percent_used >= 80 AND bs.percent_used < 100 AND (up.budget_alert_80_sent IS NULL OR up.budget_alert_80_sent < DATE_TRUNC('month', CURRENT_DATE)) THEN 'warning'\n      ELSE NULL\n    END as alert_type\n  FROM budget_status bs\n  JOIN users u ON u.user_id = bs.user_id\n  LEFT JOIN user_preferences up ON up.user_id = bs.user_id\n)\nSELECT *\nFROM user_notifications\nWHERE alert_type IS NOT NULL;",
+        "options": {}
+      },
+      "name": "Get Budget Alerts",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -672,
+        168
+      ],
+      "id": "budget-get-alerts-001",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-has-alerts",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Есть алерты?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        168
+      ],
+      "id": "budget-if-alerts-001"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        72
+      ],
+      "id": "budget-split-001"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst amount = parseFloat(item.budget_amount).toLocaleString('ru-RU');\nconst spent = parseFloat(item.total_spent).toLocaleString('ru-RU');\nconst remaining = parseFloat(item.remaining).toLocaleString('ru-RU');\nconst percent = item.percent_used;\nconst currency = item.currency;\nconst firstName = item.first_name || 'Друг';\n\n// Названия месяцев\nconst monthNames = {\n  '01': 'январь', '02': 'февраль', '03': 'март', '04': 'апрель',\n  '05': 'май', '06': 'июнь', '07': 'июль', '08': 'август',\n  '09': 'сентябрь', '10': 'октябрь', '11': 'ноябрь', '12': 'декабрь'\n};\nconst monthNum = item.month.split('-')[1];\nconst monthName = monthNames[monthNum] || item.month;\n\nlet message;\nlet alertType = item.alert_type;\n\nif (alertType === 'exceeded') {\n  const overSpent = Math.abs(parseFloat(item.remaining)).toLocaleString('ru-RU');\n  message = `🚨 ${firstName}, бюджет превышен!\\n\\n` +\n    `📅 ${monthName}\\n` +\n    `💰 Лимит: ${amount} ${currency}\\n` +\n    `💸 Потрачено: ${spent} ${currency} (${percent}%)\\n` +\n    `❌ Перерасход: ${overSpent} ${currency}\\n\\n` +\n    `💡 Совет: попробуй сократить расходы или увеличь бюджет в приложении`;\n} else if (alertType === 'warning') {\n  message = `⚠️ ${firstName}, бюджет почти исчерпан!\\n\\n` +\n    `📅 ${monthName}\\n` +\n    `💰 Лимит: ${amount} ${currency}\\n` +\n    `💸 Потрачено: ${spent} ${currency} (${percent}%)\\n` +\n    `✅ Осталось: ${remaining} ${currency}\\n\\n` +\n    `💡 Будь внимательнее с расходами до конца месяца!`;\n}\n\nreturn {\n  json: {\n    user_id: item.user_id,\n    message: message,\n    alert_type: alertType,\n    percent_used: percent\n  }\n};"
+      },
+      "name": "Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "budget-format-001"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.user_id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Send Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "budget-telegram-001",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.alert_type === 'exceeded' ? \n  `UPDATE user_preferences SET budget_alert_100_sent = NOW() WHERE user_id = ${$json.user_id}; INSERT INTO user_preferences (user_id, budget_alert_100_sent) SELECT ${$json.user_id}, NOW() WHERE NOT EXISTS (SELECT 1 FROM user_preferences WHERE user_id = ${$json.user_id});` :\n  `UPDATE user_preferences SET budget_alert_80_sent = NOW() WHERE user_id = ${$json.user_id}; INSERT INTO user_preferences (user_id, budget_alert_80_sent) SELECT ${$json.user_id}, NOW() WHERE NOT EXISTS (SELECT 1 FROM user_preferences WHERE user_id = ${$json.user_id});`\n}}",
+        "options": {}
+      },
+      "name": "Mark Alert Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        72
+      ],
+      "id": "budget-mark-sent-001",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "No Alerts",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        312
+      ],
+      "id": "budget-no-alerts-001",
+      "notes": "Нет алертов о бюджете"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Статистика выполнения\nconst items = $input.all();\nconst totalSent = items.length;\n\nconst summary = `✅ Проверка бюджетов завершена\\n\\n` +\n  `📊 Отправлено алертов: ${totalSent}\\n` +\n  `⏰ Время: ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Bishkek' })}`;\n\nreturn {\n  json: {\n    total_sent: totalSent,\n    timestamp: new Date().toISOString(),\n    summary: summary\n  }\n};"
+      },
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        312
+      ],
+      "id": "budget-summary-001"
+    }
+  ],
+  "connections": {
+    "Schedule: 10:00 & 18:00": {
+      "main": [
+        [
+          {
+            "node": "Get Budget Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Budget Alerts": {
+      "main": [
+        [
+          {
+            "node": "Есть алерты?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть алерты?": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram": {
+      "main": [
+        [
+          {
+            "node": "Mark Alert Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Alert Sent": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Alerts": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
+  }
+}

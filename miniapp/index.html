@@ -24,7 +24,7 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=1.2">
+    <link rel="stylesheet" href="style.css?v=1.3">
     <link rel="stylesheet" href="onboarding.css?v=1.0">
     
     <!-- PWA -->
@@ -81,35 +81,23 @@
             </section>
 
             <!-- Budget Widget -->
-            <section class="budget-widget" id="budget-widget">
+            <section class="budget-widget budget-widget-mini" id="budget-widget" onclick="switchScreen('budgets')">
                 <div class="budget-widget-header">
                     <div class="budget-title">
                         <i class="fas fa-wallet"></i>
                         <span>Бюджет</span>
                     </div>
-                    <span class="budget-month" id="budget-month">Декабрь</span>
+                    <span class="budget-percentage" id="budget-percentage">0%</span>
                 </div>
                 <div class="budget-progress-container">
                     <div class="budget-progress-bar">
                         <div class="budget-progress-fill" id="budget-progress-fill" style="width: 0%"></div>
                     </div>
                     <div class="budget-progress-info">
-                        <div class="budget-spent">
-                            <span id="budget-spent">0</span>
-                            <span class="budget-separator">/</span>
-                            <span id="budget-total">0</span>
-                        </div>
-                        <span class="budget-percentage" id="budget-percentage">0%</span>
+                        <span id="budget-spent">0</span>
+                        <span class="budget-separator">/</span>
+                        <span id="budget-total">0</span>
                     </div>
-                </div>
-                <div class="budget-footer">
-                    <div class="budget-remaining">
-                        <span class="budget-remaining-label">Осталось:</span>
-                        <span class="budget-remaining-value" id="budget-remaining">0 с</span>
-                    </div>
-                    <button class="budget-edit-btn" onclick="openBudgetModal()">
-                        <i class="fas fa-pen"></i>
-                    </button>
                 </div>
                 <!-- Состояние когда бюджет не установлен -->
                 <div class="budget-empty" id="budget-empty" style="display: none;">
@@ -1023,6 +1011,6 @@
     <script src="websocket.js?v=1.2"></script>
     <script src="api-helper.js?v=1.2"></script>
     <script src="onboarding.js?v=1.0"></script>
-    <script src="app.js?v=1.2"></script>
+    <script src="app.js?v=1.3"></script>
 </body>
 </html>
