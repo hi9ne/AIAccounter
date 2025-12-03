@@ -1,9 +1,9 @@
 // ============================================================================
-// AIAccounter Mini App v1.1 - Read-Only Analytics Dashboard
+// AIAccounter Mini App v1.2 - Read-Only Analytics Dashboard + Onboarding
 // Clean, Fast, Optimized
 // ============================================================================
 
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
@@ -448,6 +448,9 @@ function loadScreenData(screenName) {
         case 'debts':
             loadDebts();
             break;
+        case 'budgets':
+            loadBudgetsScreen();
+            break;
     }
 }
 
@@ -628,6 +631,10 @@ async function loadDashboard() {
         if (dashboardData.topCategories) {
             updateHomeTopCategories(dashboardData.topCategories);
         }
+        
+        // Загружаем виджет бюджета
+        loadBudgetWidget();
+        
         perf.end('loadDashboard');
         debug.log('✅ Dashboard loaded');
     } catch (error) {
@@ -1396,7 +1403,7 @@ function renderHistoryTransactions(transactions) {
 }
 
 // ===== SETTINGS =====
-function loadSettings() {
+async function loadSettings() {
     debug.log('⚙️ Loading settings...');
     
     // Load saved settings
@@ -1437,6 +1444,33 @@ function loadSettings() {
         document.documentElement.removeAttribute('data-theme');
     } else {
         document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    
+    // Load usage type from server
+    const usageTypeSelect = document.getElementById('usage-type-select');
+    const usageTypeDesc = document.getElementById('usage-type-desc');
+    
+    try {
+        const profile = await api.getProfile();
+        const usageType = profile.usage_type || 'personal';
+        localStorage.setItem('usageType', usageType);
+        
+        if (usageTypeSelect) {
+            usageTypeSelect.value = usageType;
+        }
+        if (usageTypeDesc) {
+            usageTypeDesc.textContent = usageType === 'business' ? 'Бизнес финансы' : 'Личные финансы';
+        }
+        debug.log('👤 Usage type loaded:', usageType);
+    } catch (e) {
+        // Используем сохранённое значение
+        const savedUsageType = localStorage.getItem('usageType') || 'personal';
+        if (usageTypeSelect) {
+            usageTypeSelect.value = savedUsageType;
+        }
+        if (usageTypeDesc) {
+            usageTypeDesc.textContent = savedUsageType === 'business' ? 'Бизнес финансы' : 'Личные финансы';
+        }
     }
     
     debug.log('✅ Settings loaded:', { currency: savedCurrency, period: savedPeriod, theme: savedTheme });
@@ -1798,6 +1832,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Usage Type (Personal/Business)
+    const usageTypeSelect = document.getElementById('usage-type-select');
+    if (usageTypeSelect) {
+        usageTypeSelect.addEventListener('change', async (e) => {
+            const newType = e.target.value;
+            debug.log('👤 Changing usage type to:', newType);
+            
+            try {
+                await api.updateProfile({ usage_type: newType });
+                localStorage.setItem('usageType', newType);
+                
+                // Обновляем описание
+                const desc = document.getElementById('usage-type-desc');
+                if (desc) {
+                    desc.textContent = newType === 'business' ? 'Бизнес финансы' : 'Личные финансы';
+                }
+                
+                showSuccess(newType === 'business' ? 'Режим: Бизнес' : 'Режим: Личный');
+            } catch (error) {
+                console.error('Failed to update usage type:', error);
+                showError('Не удалось изменить тип');
+                // Откатываем селектор
+                usageTypeSelect.value = localStorage.getItem('usageType') || 'personal';
+            }
+        });
+    }
+
     // Initialize
     (async () => {
         // 1. Загружаем настройки СРАЗУ (до аутентификации)
@@ -1829,6 +1890,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         debug.log('✅ Authentication successful, token set');
+        
+        // 2.5 Проверка онбординга (ОБЯЗАТЕЛЬНЫЙ)
+        debug.log('🎯 Checking onboarding status...');
+        if (window.OnboardingModule) {
+            const needsOnboarding = await OnboardingModule.checkAndStart();
+            if (needsOnboarding) {
+                debug.log('📋 Onboarding started, pausing app init...');
+                return; // Онбординг покажется, приложение загрузится после его завершения
+            }
+        }
+        debug.log('✅ Onboarding completed or skipped');
         
         // 3. Предзагрузка данных УЖЕ С ТОКЕНОМ
         debug.log('⚡ Starting data preload with token...');
@@ -2789,7 +2861,349 @@ function getRecommendationIcon(type) {
 document.addEventListener('DOMContentLoaded', () => {
     setupDebtTabs();
     setupDebtTypeButtons();
+    setupBudgetPresets();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUDGET WIDGET
+// ═══════════════════════════════════════════════════════════════════════════
+
+let currentBudgetData = null;
+
+async function loadBudgetWidget() {
+    debug.log('💰 Loading budget widget...');
+    
+    const widget = document.getElementById('budget-widget');
+    if (!widget) return;
+    
+    try {
+        const data = await api.getCurrentBudgetStatus();
+        currentBudgetData = data;
+        debug.log('💰 Budget data:', data);
+        
+        const emptyState = document.getElementById('budget-empty');
+        const progressContainer = widget.querySelector('.budget-progress-container');
+        const footer = widget.querySelector('.budget-footer');
+        const header = widget.querySelector('.budget-widget-header');
+        
+        if (!data.has_budget) {
+            // Бюджет не установлен
+            widget.className = 'budget-widget';
+            if (progressContainer) progressContainer.style.display = 'none';
+            if (footer) footer.style.display = 'none';
+            if (header) header.style.display = 'none';
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+                emptyState.onclick = () => openBudgetModal();
+            }
+            return;
+        }
+        
+        // Бюджет установлен - показываем виджет
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (footer) footer.style.display = 'flex';
+        if (header) header.style.display = 'flex';
+        if (emptyState) emptyState.style.display = 'none';
+        
+        // Обновляем класс статуса
+        widget.className = `budget-widget ${data.status}`;
+        
+        // Название месяца
+        document.getElementById('budget-month').textContent = data.month_name || data.month;
+        
+        // Прогресс-бар
+        const percentage = Math.min(data.percentage_used, 100);
+        document.getElementById('budget-progress-fill').style.width = `${percentage}%`;
+        
+        // Суммы
+        const currency = getCurrencySymbol(data.currency);
+        document.getElementById('budget-spent').textContent = formatAmount(data.total_spent) + ' ' + currency;
+        document.getElementById('budget-total').textContent = formatAmount(data.budget_amount) + ' ' + currency;
+        document.getElementById('budget-percentage').textContent = `${data.percentage_used}%`;
+        
+        // Остаток
+        const remaining = data.remaining;
+        const remainingText = remaining >= 0 
+            ? `${formatAmount(remaining)} ${currency}`
+            : `-${formatAmount(Math.abs(remaining))} ${currency}`;
+        document.getElementById('budget-remaining').textContent = remainingText;
+        
+        debug.log('✅ Budget widget updated');
+        
+    } catch (error) {
+        debug.error('❌ Error loading budget:', error);
+        // Показываем состояние "установить бюджет" при ошибке
+        const widget = document.getElementById('budget-widget');
+        if (widget) {
+            const emptyState = document.getElementById('budget-empty');
+            const progressContainer = widget.querySelector('.budget-progress-container');
+            const footer = widget.querySelector('.budget-footer');
+            const header = widget.querySelector('.budget-widget-header');
+            
+            if (progressContainer) progressContainer.style.display = 'none';
+            if (footer) footer.style.display = 'none';
+            if (header) header.style.display = 'none';
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+                emptyState.onclick = () => openBudgetModal();
+            }
+        }
+    }
+}
+
+function formatAmount(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    if (num >= 1000) {
+        return Math.round(num).toLocaleString('ru-RU');
+    }
+    return Math.round(num).toString();
+}
+
+function getCurrencySymbol(currency) {
+    const symbols = {
+        'KGS': 'с',
+        'USD': '$',
+        'EUR': '€',
+        'RUB': '₽'
+    };
+    return symbols[currency] || currency;
+}
+
+function openBudgetModal() {
+    debug.log('📝 Opening budget modal');
+    
+    const modal = document.getElementById('budget-modal');
+    if (!modal) return;
+    
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    const monthName = getMonthName(now.getMonth());
+    
+    document.getElementById('budget-modal-title').textContent = `Бюджет на ${monthName}`;
+    document.getElementById('budget-edit-month').value = currentMonth;
+    
+    // Заполняем текущее значение если есть
+    const input = document.getElementById('budget-amount-input');
+    if (currentBudgetData && currentBudgetData.has_budget) {
+        input.value = Math.round(currentBudgetData.budget_amount);
+    } else {
+        input.value = '';
+    }
+    
+    // Валюта
+    const suffix = document.getElementById('budget-currency-suffix');
+    if (suffix) {
+        suffix.textContent = getCurrencySymbol(state.currency || 'KGS');
+    }
+    
+    modal.classList.add('active');
+}
+
+function closeBudgetModal() {
+    const modal = document.getElementById('budget-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function setupBudgetPresets() {
+    const presetButtons = document.querySelectorAll('.budget-preset-btn');
+    presetButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const amount = btn.dataset.amount;
+            const input = document.getElementById('budget-amount-input');
+            if (input && amount) {
+                input.value = amount;
+                input.focus();
+            }
+        });
+    });
+}
+
+async function submitBudget(event) {
+    event.preventDefault();
+    
+    const month = document.getElementById('budget-edit-month').value;
+    const amount = parseFloat(document.getElementById('budget-amount-input').value);
+    
+    if (!month || !amount || amount <= 0) {
+        showToast('Введите корректную сумму', 'error');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('budget-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
+    
+    try {
+        await api.createBudget({
+            month: month,
+            budget_amount: amount,
+            currency: state.currency || 'KGS'
+        });
+        
+        showToast('Бюджет сохранён', 'success');
+        closeBudgetModal();
+        
+        // Обновляем виджет
+        await loadBudgetWidget();
+        
+    } catch (error) {
+        debug.error('❌ Error saving budget:', error);
+        showToast('Не удалось сохранить бюджет', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Сохранить';
+    }
+}
+
+function getMonthName(monthIndex) {
+    const months = [
+        'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+        'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'
+    ];
+    return months[monthIndex] || '';
+}
+
+function getMonthNameFull(monthStr) {
+    // monthStr format: YYYY-MM
+    const [year, month] = monthStr.split('-');
+    const months = [
+        'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    ];
+    return `${months[parseInt(month) - 1]} ${year}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BUDGETS SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadBudgetsScreen() {
+    debug.log('💰 Loading budgets screen...');
+    
+    try {
+        // Загружаем текущий статус
+        const currentStatus = await api.getCurrentBudgetStatus();
+        updateBudgetCurrentCard(currentStatus);
+        
+        // Загружаем историю
+        const budgets = await api.getBudgets({ limit: 12 });
+        updateBudgetsHistory(budgets, currentStatus);
+        
+    } catch (error) {
+        debug.error('❌ Error loading budgets screen:', error);
+        showToast('Ошибка загрузки бюджетов', 'error');
+    }
+}
+
+function updateBudgetCurrentCard(data) {
+    const card = document.getElementById('budget-current-card');
+    if (!card) return;
+    
+    if (!data.has_budget) {
+        // Бюджет не установлен
+        card.className = 'budget-current-card';
+        card.innerHTML = `
+            <div class="empty-state small" onclick="openBudgetModal()" style="cursor:pointer">
+                <i class="fas fa-plus-circle" style="color: var(--accent)"></i>
+                <p>Нажмите чтобы установить бюджет</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Обновляем класс статуса
+    card.className = `budget-current-card ${data.status}`;
+    
+    // Название месяца
+    document.getElementById('budget-current-month').textContent = 
+        data.month_name || getMonthNameFull(data.month);
+    
+    // Статус
+    const statusEl = document.getElementById('budget-current-status');
+    const statusTexts = {
+        'on_track': '✅ В норме',
+        'warning': '⚠️ Близко к лимиту',
+        'over_budget': '🚨 Превышен'
+    };
+    statusEl.textContent = statusTexts[data.status] || '✅ В норме';
+    
+    // Прогресс-бар
+    const percentage = Math.min(data.percentage_used, 100);
+    document.getElementById('budget-current-fill').style.width = `${percentage}%`;
+    
+    // Суммы
+    const currency = getCurrencySymbol(data.currency);
+    document.getElementById('budget-current-spent').textContent = 
+        formatAmount(data.total_spent) + ' ' + currency;
+    document.getElementById('budget-current-total').textContent = 
+        '/ ' + formatAmount(data.budget_amount) + ' ' + currency;
+    
+    // Статистика
+    const remaining = data.remaining;
+    document.getElementById('budget-current-remaining').textContent = 
+        (remaining >= 0 ? '' : '-') + formatAmount(Math.abs(remaining)) + ' ' + currency;
+    document.getElementById('budget-current-percent').textContent = 
+        data.percentage_used + '%';
+}
+
+async function updateBudgetsHistory(budgets, currentStatus) {
+    const listEl = document.getElementById('budgets-history-list');
+    if (!listEl) return;
+    
+    // Фильтруем - убираем текущий месяц
+    const currentMonth = currentStatus?.month || new Date().toISOString().slice(0, 7);
+    const historyBudgets = budgets.filter(b => b.month !== currentMonth);
+    
+    if (historyBudgets.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state small">
+                <i class="fas fa-calendar-check"></i>
+                <p>История бюджетов появится здесь</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Для каждого бюджета получаем статус (расходы)
+    const historyWithStatus = await Promise.all(
+        historyBudgets.slice(0, 6).map(async (budget) => {
+            try {
+                const status = await api.getBudgetStatus(budget.month);
+                return { ...budget, ...status };
+            } catch {
+                return { ...budget, total_spent: 0, percentage_used: 0, status: 'on_track' };
+            }
+        })
+    );
+    
+    listEl.innerHTML = historyWithStatus.map(budget => {
+        const [year, month] = budget.month.split('-');
+        const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        const currency = getCurrencySymbol(budget.currency);
+        
+        return `
+            <div class="budget-history-item" onclick="showBudgetDetails('${budget.month}')">
+                <div class="month-badge">
+                    <span class="month-num">${month}</span>
+                    <span>${year}</span>
+                </div>
+                <div class="budget-info">
+                    <div class="budget-month-name">${monthNames[parseInt(month) - 1]} ${year}</div>
+                    <div class="budget-amounts">${formatAmount(budget.total_spent || 0)} / ${formatAmount(budget.budget_amount)} ${currency}</div>
+                </div>
+                <span class="budget-percent ${budget.status || 'on_track'}">${budget.percentage_used || 0}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function showBudgetDetails(month) {
+    // Можно открыть модалку с деталями или просто показать тост
+    debug.log('Show budget details for:', month);
+    showToast(`Бюджет за ${getMonthNameFull(month)}`, 'info');
+}
 
 // ===== GLOBAL ERROR HANDLER =====
 window.addEventListener('error', (e) => {

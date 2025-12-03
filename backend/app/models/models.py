@@ -104,8 +104,7 @@ class Budget(Base):
     month = Column(String, nullable=False)  # Format: YYYY-MM
     budget_amount = Column(Float, nullable=False)
     currency = Column(String, default="KGS")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     user = relationship("User", back_populates="budgets")

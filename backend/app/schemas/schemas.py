@@ -35,6 +35,7 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = None
     language: Optional[str] = None
     timezone: Optional[str] = None
+    usage_type: Optional[str] = None  # 'personal' or 'business'
 
 
 class User(UserBase):
@@ -42,6 +43,7 @@ class User(UserBase):
     
     user_id: int
     is_active: bool
+    usage_type: Optional[str] = None
     created_at: Optional[datetime] = None
     last_activity: Optional[datetime] = None
 
@@ -127,7 +129,7 @@ class Budget(BudgetBase):
     
     id: int
     user_id: int
-    created_at: datetime
+    last_updated: Optional[datetime] = None
 
 
 # Response Schemas

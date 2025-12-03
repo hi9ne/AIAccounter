@@ -84,6 +84,23 @@ from .debt import (
     DebtSummary,
 )
 
+# Onboarding schemas
+from .onboarding import (
+    UsageType,
+    Currency,
+    OnboardingStatus,
+    Step1Currency,
+    Step2UsageType,
+    Step3Budget,
+    Step4Categories,
+    Step5Notifications,
+    NotificationSettings,
+    CategoryTemplate,
+    CategoryTemplates,
+    OnboardingStepResponse,
+    OnboardingCompleteResponse,
+)
+
 __all__ = [
     # User
     "UserBase",
@@ -146,6 +163,20 @@ __all__ = [
     "DebtPaymentCreate",
     "DebtPaymentResponse",
     "DebtSummary",
+    # Onboarding
+    "UsageType",
+    "Currency",
+    "OnboardingStatus",
+    "Step1Currency",
+    "Step2UsageType",
+    "Step3Budget",
+    "Step4Categories",
+    "Step5Notifications",
+    "NotificationSettings",
+    "CategoryTemplate",
+    "CategoryTemplates",
+    "OnboardingStepResponse",
+    "OnboardingCompleteResponse",
     # Responses
     "MessageResponse",
     "ErrorResponse",

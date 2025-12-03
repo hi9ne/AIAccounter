@@ -26,7 +26,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO users (user_id, telegram_chat_id, first_name, registered_date, last_activity, is_active, registration_source)\nVALUES (\n  {{ $json.message.from.id }},\n  {{ $json.message.chat.id }},\n  '{{ $json.message.from.first_name || \"User\" }}',\n  NOW(),\n  NOW(),\n  true,\n  'telegram'\n)\nON CONFLICT (user_id) DO UPDATE SET\n  first_name = EXCLUDED.first_name,\n  last_activity = NOW()",
+        "query": "=INSERT INTO users (user_id, telegram_chat_id, first_name, registered_date, last_activity, is_active, registration_source)\nVALUES (\n  {{ $json.message.from.id }},\n  {{ $json.message.chat.id }},\n  '{{ $json.message.from.first_name || \"User\" }}',\n  NOW(),\n  NOW(),\n  true,\n  'telegram'\n)\nON CONFLICT (user_id) DO UPDATE SET\n  first_name = EXCLUDED.first_name,\n  last_activity = NOW()\nRETURNING user_id, onboarding_completed, onboarding_step, preferred_currency, usage_type",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -41,6 +41,126 @@
         "postgres": {
           "id": "5T19Mbva6dh2EvkZ",
           "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.onboarding_completed }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "needs_onboarding"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.onboarding_completed }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ready"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2650,
+        -64
+      ],
+      "id": "check-onboarding-switch",
+      "name": "Check Onboarding"
+    },
+    {
+      "parameters": {
+        "jsCode": "const user = $input.first().json;\nconst message = $('Telegram Trigger').first().json.message;\nconst text = (message.text || '').toLowerCase().trim();\nconst step = user.onboarding_step || 0;\n\n// Команда /start или первое сообщение\nconst isStart = text === '/start' || step === 0;\n\nlet response = '';\nlet newStep = step;\nlet updateQuery = '';\n\nif (isStart || step === 0) {\n  // Шаг 1: Выбор валюты\n  response = `👋 Привет, ${message.from.first_name}!\\n\\nЯ — AIAccounter, твой финансовый помощник.\\n\\nДавай настроим аккаунт. Выбери основную валюту:\\n\\n1️⃣ KGS (сом)\\n2️⃣ USD (доллар)\\n3️⃣ EUR (евро)\\n4️⃣ RUB (рубль)\\n\\nОтправь цифру или название валюты.`;\n  updateQuery = `UPDATE users SET onboarding_step = 1 WHERE user_id = ${user.user_id}`;\n  newStep = 1;\n} else if (step === 1) {\n  // Обработка выбора валюты\n  let currency = 'KGS';\n  if (text.includes('1') || text.includes('kgs') || text.includes('сом')) currency = 'KGS';\n  else if (text.includes('2') || text.includes('usd') || text.includes('доллар')) currency = 'USD';\n  else if (text.includes('3') || text.includes('eur') || text.includes('евро')) currency = 'EUR';\n  else if (text.includes('4') || text.includes('rub') || text.includes('рубл')) currency = 'RUB';\n  \n  updateQuery = `UPDATE users SET preferred_currency = '${currency}', onboarding_step = 2 WHERE user_id = ${user.user_id}`;\n  response = `✅ Валюта: ${currency}\\n\\nТеперь выбери тип использования:\\n\\n1️⃣ 👤 Личный — для личных финансов\\n2️⃣ 💼 Бизнес — для учёта бизнеса\\n\\nОтправь цифру.`;\n  newStep = 2;\n} else if (step === 2) {\n  // Обработка выбора типа\n  let usageType = 'personal';\n  if (text.includes('2') || text.includes('бизнес') || text.includes('business')) usageType = 'business';\n  \n  updateQuery = `UPDATE users SET usage_type = '${usageType}', onboarding_step = 3 WHERE user_id = ${user.user_id}`;\n  const typeText = usageType === 'business' ? '💼 Бизнес' : '👤 Личный';\n  response = `✅ Режим: ${typeText}\\n\\nУстанови месячный бюджет (необязательно):\\n\\nОтправь сумму или напиши \"пропустить\".`;\n  newStep = 3;\n} else if (step === 3) {\n  // Обработка бюджета\n  let budget = null;\n  if (!text.includes('пропуст') && !text.includes('skip') && !text.includes('нет')) {\n    const num = parseFloat(text.replace(/[^0-9.]/g, ''));\n    if (!isNaN(num) && num > 0) budget = num;\n  }\n  \n  if (budget) {\n    updateQuery = `UPDATE users SET monthly_budget = ${budget}, onboarding_step = 5, onboarding_completed = true, onboarding_completed_at = NOW() WHERE user_id = ${user.user_id}`;\n    response = `✅ Бюджет: ${budget.toLocaleString()} в месяц\\n\\n🎉 Отлично! Настройка завершена!\\n\\nТеперь ты можешь:\\n• Записывать расходы: \"потратил 500 на такси\"\\n• Записывать доходы: \"получил 50000 зарплата\"\\n• Смотреть отчёты: \"отчёт за неделю\"\\n• Управлять долгами: \"дал в долг Ивану 1000\"\\n\\nПросто пиши или отправляй голосовые! 🎤`;\n  } else {\n    updateQuery = `UPDATE users SET onboarding_step = 5, onboarding_completed = true, onboarding_completed_at = NOW() WHERE user_id = ${user.user_id}`;\n    response = `✅ Бюджет пропущен\\n\\n🎉 Отлично! Настройка завершена!\\n\\nТеперь ты можешь:\\n• Записывать расходы: \"потратил 500 на такси\"\\n• Записывать доходы: \"получил 50000 зарплата\"\\n• Смотреть отчёты: \"отчёт за неделю\"\\n• Управлять долгами: \"дал в долг Ивану 1000\"\\n\\nПросто пиши или отправляй голосовые! 🎤`;\n  }\n  newStep = 5;\n}\n\nreturn [{\n  json: {\n    chat_id: message.chat.id,\n    response: response,\n    update_query: updateQuery,\n    new_step: newStep,\n    user_id: user.user_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2450,
+        -160
+      ],
+      "id": "onboarding-logic",
+      "name": "Onboarding Logic"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.update_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2250,
+        -160
+      ],
+      "id": "update-onboarding-step",
+      "name": "Update Onboarding",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Onboarding Logic').item.json.chat_id }}",
+        "text": "={{ $('Onboarding Logic').item.json.response }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2050,
+        -160
+      ],
+      "id": "send-onboarding-msg",
+      "name": "Send Onboarding",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
         }
       }
     },
@@ -239,7 +359,7 @@
         "promptType": "define",
         "text": "=User ID: {{ $json.user_id }}\nChat ID: {{ $json.chat_id }}\nИмя: {{ $json.first_name }}\nСообщение: {{ $json.text }}",
         "options": {
-          "systemMessage": "Ты — AIAccounter, финансовый ассистент в Telegram.\n\n🚫 СТРОГО ЗАПРЕЩЕНО:\n• НИКОГДА не показывай [Used tools:...], Tool:, Input:, Result:, {json} в ответе!\n• Отвечай только по-русски, коротко и дружелюбно\n• Не отвечай 'Вот твой отчёт' БЕЗ вызова инструмента!\n\n📊 ОТЧЁТЫ (ВЫЗОВИ инструмент!):\n• 'отчёт за сегодня' → Report_Daily\n• 'отчёт за неделю' → Report_Weekly\n• 'отчёт за месяц' → Report_Monthly\n\n💰 ТРАНЗАКЦИИ:\n• Расход (потратил, купил) → Create_Expense\n• Доход (получил, заработал) → Create_Income\n\n💳 ДОЛГИ:\n• 'дал в долг X [кому]' → Debt_Manager(action: add, debt_type: given)\n• 'взял в долг X [у кого]' → Debt_Manager(action: add, debt_type: received)\n• 'мои долги / кто должен' → Debt_Manager(action: list)\n• '[Имя] вернул 2000' → Debt_Manager(action: pay, amount: 2000)\n• '[Имя] вернул всё' → Debt_Manager(action: settle, person_name: Имя)\n• 'закрыть долг #123' → Debt_Manager(action: settle, debt_id: 123)\n\n🔄 ПОДПИСКИ:\n• 'добавь подписку [X] [Y сом]' → Recurring_Manager(action: add)\n• 'мои подписки' → Recurring_Manager(action: list)\n\n✅ Отвечай коротко: 'Записал...', 'Добавил...', 'Долг закрыт'",
+          "systemMessage": "Ты — AIAccounter, умный финансовый помощник в Telegram. Обращайся к пользователю по имени.\n\n🚫 СТРОГИЕ ПРАВИЛА:\n• НИКОГДА не показывай техническую информацию: [Used tools], Tool:, Input:, Result:, JSON\n• Отвечай ТОЛЬКО по-русски\n• Будь кратким и дружелюбным\n• Используй эмодзи умеренно\n\n📊 ОТЧЁТЫ — ОБЯЗАТЕЛЬНО вызывай инструмент:\n• 'отчёт за сегодня/что потратил' → Report_Daily\n• 'отчёт за неделю/за 7 дней' → Report_Weekly  \n• 'отчёт за месяц' → Report_Monthly\n• 'отчёт с [дата] по [дата]' → Report_Period\n\n💰 ТРАНЗАКЦИИ:\n• Расход: 'потратил', 'купил', 'заплатил', 'такси', 'кофе' → Create_Expense\n• Доход: 'получил', 'заработал', 'зарплата', 'перевод' → Create_Income\n• Валюта по умолчанию: KGS. Если указана другая (USD, EUR, RUB) — используй её\n• Категорию определяй по смыслу: еда→Продукты, такси→Транспорт, кино→Развлечения\n\n💳 ДОЛГИ (Debt_Manager):\n• 'дал в долг 5000 Артёму' → action:add, debt_type:given\n• 'занял 3000 у Маши' → action:add, debt_type:received\n• 'мои долги/кто должен' → action:list\n• 'Артём вернул 2000' → action:pay (частичный возврат)\n• 'Артём вернул всё' → action:settle\n\n🔄 ПОДПИСКИ (Recurring_Manager):\n• 'добавь подписку Netflix 500' → action:add\n• 'мои подписки' → action:list\n\n💵 БЮДЖЕТ (Budget_Manager):\n• 'мой бюджет/сколько осталось/статус' → action:get\n• 'установи бюджет 100000' → action:set, amount:100000\n\n📁 КАТЕГОРИИ (Category_Manager):\n• 'мои категории/покажи категории' → action:list\n• 'добавь категорию Спорт' → action:add\n\n⚙️ НАСТРОЙКИ:\nЕсли спрашивают про настройки, валюту или режим → ответь:\n'Настройки можно изменить в приложении 📱\\nНажми кнопку «Открыть приложение» внизу чата'\n\n✅ ФОРМАТ ОТВЕТОВ:\n• Расход: '✅ Записал: [сумма] на [категория]'\n• Доход: '✅ Добавил доход: [сумма] ([категория])'\n• Долг: '✅ Долг добавлен/закрыт'\n• Бюджет: показывай лимит, потрачено, остаток\n• Ошибка: '❌ Не удалось...' + причина",
           "maxIterations": 3
         }
       },
@@ -606,6 +726,25 @@
       ],
       "id": "recurring-manager-tool-id",
       "name": "Recurring_Manager"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Управляет бюджетом пользователя. Используй когда пользователь спрашивает про бюджет: мой бюджет, статус бюджета, сколько осталось, установить бюджет. Действия: get (показать бюджет и статус), set (установить бюджет на текущий месяц)",
+        "method": "POST",
+        "url": "https://alikbekalatoo77.app.n8n.cloud/webhook/budget",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"action\": \"{{ $fromAI('action', 'Действие: get (показать бюджет), set (установить бюджет)', 'string') }}\",\n  \"user_id\": {{ $json.user_id }},\n  \"amount\": {{ $fromAI('amount', 'Сумма бюджета числом, 0 если не указана', 'number') }},\n  \"currency\": \"{{ $fromAI('currency', 'Валюта KGS/USD/EUR/RUB, по умолчанию KGS', 'string') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        368,
+        160
+      ],
+      "id": "budget-manager-tool-id",
+      "name": "Budget_Manager"
     },
     {
       "parameters": {
@@ -1379,6 +1518,394 @@
       ],
       "id": "respond-recurring-001",
       "name": "Respond Recurring"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "settings",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        2400
+      ],
+      "id": "settings-webhook-001",
+      "name": "Settings Webhook",
+      "webhookId": "settings-webhook-id"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "get",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "set_mode",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "set_mode"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "set_currency",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "set_currency"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "set_budget",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "set_budget"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2800,
+        2400
+      ],
+      "id": "route-settings-action-001",
+      "name": "Route Settings Action"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT user_id, preferred_currency, usage_type, monthly_budget FROM users WHERE user_id = {{ $json.body.user_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2200
+      ],
+      "id": "get-settings-001",
+      "name": "Get Settings",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE users SET usage_type = '{{ $json.body.value }}', updated_at = NOW() WHERE user_id = {{ $json.body.user_id }} RETURNING user_id, usage_type",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2350
+      ],
+      "id": "set-mode-001",
+      "name": "Set Mode",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE users SET preferred_currency = '{{ $json.body.value }}', updated_at = NOW() WHERE user_id = {{ $json.body.user_id }} RETURNING user_id, preferred_currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2500
+      ],
+      "id": "set-currency-001",
+      "name": "Set Currency",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE users SET monthly_budget = {{ $json.body.value }}, updated_at = NOW() WHERE user_id = {{ $json.body.user_id }} RETURNING user_id, monthly_budget",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2650
+      ],
+      "id": "set-budget-001",
+      "name": "Set Budget",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst action = $('Settings Webhook').first().json.body.action;\n\nlet result = {};\n\nif (action === 'get') {\n  const s = items[0]?.json || {};\n  const modeText = s.usage_type === 'business' ? '💼 Бизнес' : '👤 Личный';\n  result = {\n    success: true,\n    message: `⚙️ Твои настройки:\\n• Режим: ${modeText}\\n• Валюта: ${s.preferred_currency || 'KGS'}\\n• Бюджет: ${s.monthly_budget ? s.monthly_budget + ' в месяц' : 'не установлен'}`\n  };\n} else if (action === 'set_mode') {\n  const s = items[0]?.json || {};\n  const modeText = s.usage_type === 'business' ? '💼 Бизнес' : '👤 Личный';\n  result = {\n    success: true,\n    message: `✅ Режим изменён на: ${modeText}`\n  };\n} else if (action === 'set_currency') {\n  const s = items[0]?.json || {};\n  result = {\n    success: true,\n    message: `✅ Валюта изменена на: ${s.preferred_currency}`\n  };\n} else if (action === 'set_budget') {\n  const s = items[0]?.json || {};\n  result = {\n    success: true,\n    message: `✅ Бюджет установлен: ${s.monthly_budget} в месяц`\n  };\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        2400
+      ],
+      "id": "format-settings-response-001",
+      "name": "Format Settings Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -2128,
+        2400
+      ],
+      "id": "respond-settings-001",
+      "name": "Respond Settings"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "budget",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3024,
+        2900
+      ],
+      "id": "budget-webhook-001",
+      "name": "Budget Webhook",
+      "webhookId": "budget-webhook-id"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "get",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "set",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "set"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2800,
+        2900
+      ],
+      "id": "route-budget-action-001",
+      "name": "Route Budget Action"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=WITH current_month AS (\n  SELECT TO_CHAR(CURRENT_DATE AT TIME ZONE 'Asia/Bishkek', 'YYYY-MM') as month\n),\nbudget_info AS (\n  SELECT b.budget_amount, b.currency, b.month\n  FROM budgets b, current_month cm\n  WHERE b.user_id = {{ $json.body.user_id }} AND b.month = cm.month\n),\nexpenses_sum AS (\n  SELECT COALESCE(SUM(amount), 0) as total_spent\n  FROM expenses\n  WHERE user_id = {{ $json.body.user_id }}\n    AND deleted_at IS NULL\n    AND TO_CHAR(date AT TIME ZONE 'Asia/Bishkek', 'YYYY-MM') = (SELECT month FROM current_month)\n)\nSELECT \n  bi.budget_amount,\n  bi.currency,\n  bi.month,\n  es.total_spent,\n  bi.budget_amount - es.total_spent as remaining,\n  ROUND((es.total_spent / bi.budget_amount * 100)::numeric, 1) as percent_used\nFROM budget_info bi, expenses_sum es",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        2800
+      ],
+      "id": "get-budget-001",
+      "name": "Get Budget",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO budgets (user_id, month, budget_amount, currency)\nVALUES (\n  {{ $json.body.user_id }},\n  TO_CHAR(CURRENT_DATE AT TIME ZONE 'Asia/Bishkek', 'YYYY-MM'),\n  {{ $json.body.amount }},\n  '{{ $json.body.currency || 'KGS' }}'\n)\nON CONFLICT (user_id, month) DO UPDATE SET\n  budget_amount = EXCLUDED.budget_amount,\n  currency = EXCLUDED.currency,\n  last_updated = NOW()\nRETURNING id, user_id, month, budget_amount, currency",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        3000
+      ],
+      "id": "set-budget-new-001",
+      "name": "Set Budget New",
+      "credentials": {
+        "postgres": {
+          "id": "5T19Mbva6dh2EvkZ",
+          "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst action = $('Budget Webhook').first().json.body.action;\n\nlet result = {};\n\nconst monthNames = {\n  '01': 'январь', '02': 'февраль', '03': 'март', '04': 'апрель',\n  '05': 'май', '06': 'июнь', '07': 'июль', '08': 'август',\n  '09': 'сентябрь', '10': 'октябрь', '11': 'ноябрь', '12': 'декабрь'\n};\n\nif (action === 'get') {\n  const b = items[0]?.json;\n  if (b && b.budget_amount) {\n    const monthNum = b.month.split('-')[1];\n    const monthName = monthNames[monthNum] || b.month;\n    const percentUsed = parseFloat(b.percent_used) || 0;\n    let statusEmoji = '✅';\n    if (percentUsed >= 100) statusEmoji = '🔴';\n    else if (percentUsed >= 80) statusEmoji = '🟡';\n    \n    result = {\n      success: true,\n      message: `💰 Бюджет на ${monthName}:\\n• Лимит: ${Number(b.budget_amount).toLocaleString()} ${b.currency}\\n• Потрачено: ${Number(b.total_spent).toLocaleString()} ${b.currency} (${percentUsed}%)\\n• Осталось: ${Number(b.remaining).toLocaleString()} ${b.currency}\\n${statusEmoji} ${percentUsed >= 100 ? 'Бюджет превышен!' : percentUsed >= 80 ? 'Внимание: бюджет почти исчерпан' : 'В пределах бюджета'}`\n    };\n  } else {\n    result = {\n      success: true,\n      message: '📊 Бюджет на этот месяц не установлен.\\n\\nЧтобы установить, скажи: \"установи бюджет 50000\"'\n    };\n  }\n} else if (action === 'set') {\n  const b = items[0]?.json;\n  if (b && b.budget_amount) {\n    const monthNum = b.month.split('-')[1];\n    const monthName = monthNames[monthNum] || b.month;\n    result = {\n      success: true,\n      message: `✅ Бюджет установлен!\\n• ${monthName}: ${Number(b.budget_amount).toLocaleString()} ${b.currency}`\n    };\n  } else {\n    result = { success: false, message: '❌ Не удалось установить бюджет' };\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        2900
+      ],
+      "id": "format-budget-response-001",
+      "name": "Format Budget Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -2128,
+        2900
+      ],
+      "id": "respond-budget-001",
+      "name": "Respond Budget"
     }
   ],
   "connections": {
@@ -1397,7 +1924,47 @@
       "main": [
         [
           {
+            "node": "Check Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Onboarding": {
+      "main": [
+        [
+          {
+            "node": "Onboarding Logic",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Onboarding Logic": {
+      "main": [
+        [
+          {
+            "node": "Update Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Onboarding": {
+      "main": [
+        [
+          {
+            "node": "Send Onboarding",
             "type": "main",
             "index": 0
           }
@@ -1959,6 +2526,177 @@
         [
           {
             "node": "Respond Recurring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route Settings Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Settings Action": {
+      "main": [
+        [
+          {
+            "node": "Get Settings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Mode",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Currency",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Settings": {
+      "main": [
+        [
+          {
+            "node": "Format Settings Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Mode": {
+      "main": [
+        [
+          {
+            "node": "Format Settings Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Currency": {
+      "main": [
+        [
+          {
+            "node": "Format Settings Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Budget": {
+      "main": [
+        [
+          {
+            "node": "Format Settings Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Settings Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Budget_Manager": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Budget Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route Budget Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Budget Action": {
+      "main": [
+        [
+          {
+            "node": "Get Budget",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Budget New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Budget": {
+      "main": [
+        [
+          {
+            "node": "Format Budget Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Budget New": {
+      "main": [
+        [
+          {
+            "node": "Format Budget Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Budget Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Budget",
             "type": "main",
             "index": 0
           }

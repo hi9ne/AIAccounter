@@ -257,6 +257,522 @@
     color: #ef4444;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUDGET WIDGET - MODERN DESIGN
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.budget-widget {
+    margin: 0 20px 20px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    position: relative;
+}
+
+.budget-widget.on_track {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), var(--bg-card));
+}
+
+.budget-widget.warning {
+    border-color: rgba(251, 146, 60, 0.4);
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), var(--bg-card));
+}
+
+.budget-widget.over_budget {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--bg-card));
+}
+
+.budget-widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.budget-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.budget-title i {
+    color: var(--accent);
+}
+
+.budget-month {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+.budget-progress-container {
+    margin-bottom: 12px;
+}
+
+.budget-progress-bar {
+    height: 10px;
+    background: var(--bg-secondary);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.budget-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 5px;
+    transition: width 0.5s ease, background 0.3s ease;
+}
+
+.budget-widget.warning .budget-progress-fill {
+    background: linear-gradient(90deg, #fb923c, #f97316);
+}
+
+.budget-widget.over_budget .budget-progress-fill {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.budget-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.budget-spent {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.budget-spent span:first-child {
+    font-weight: 600;
+}
+
+.budget-separator {
+    color: var(--text-muted);
+    margin: 0 4px;
+}
+
+.budget-percentage {
+    font-size: 14px;
+    font-weight: 700;
+    color: #22c55e;
+}
+
+.budget-widget.warning .budget-percentage {
+    color: #fb923c;
+}
+
+.budget-widget.over_budget .budget-percentage {
+    color: #ef4444;
+}
+
+.budget-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.budget-remaining {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.budget-remaining-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.budget-remaining-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.budget-widget.over_budget .budget-remaining-value {
+    color: #ef4444;
+}
+
+.budget-edit-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.budget-edit-btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.budget-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.budget-empty i {
+    font-size: 20px;
+    color: var(--accent);
+}
+
+.budget-empty:hover {
+    color: var(--accent);
+}
+
+/* Budget Modal Specific Styles */
+.input-with-suffix {
+    display: flex;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.input-with-suffix input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 12px 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.input-with-suffix input:focus {
+    outline: none;
+}
+
+.input-suffix {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+    border-left: 1px solid var(--border);
+}
+
+.budget-presets-section {
+    margin: 16px 0;
+}
+
+.budget-presets-section label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.budget-preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.budget-preset-btn {
+    padding: 8px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.budget-preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.budget-preset-btn:active {
+    transform: scale(0.95);
+}
+
+.budget-hint {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.budget-hint i {
+    color: #f59e0b;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUDGETS SCREEN
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.budget-current-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.budget-current-card.on_track {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), var(--bg-card));
+}
+
+.budget-current-card.warning {
+    border-color: rgba(251, 146, 60, 0.4);
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.08), var(--bg-card));
+}
+
+.budget-current-card.over_budget {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), var(--bg-card));
+}
+
+.budget-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.budget-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.budget-card-title i {
+    color: var(--accent);
+}
+
+.budget-card-status {
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.budget-current-card.warning .budget-card-status {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+}
+
+.budget-current-card.over_budget .budget-card-status {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.budget-card-progress {
+    margin-bottom: 16px;
+}
+
+.budget-card-bar {
+    height: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.budget-card-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.budget-current-card.warning .budget-card-fill {
+    background: linear-gradient(90deg, #fb923c, #f97316);
+}
+
+.budget-current-card.over_budget .budget-card-fill {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.budget-card-numbers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 15px;
+}
+
+.budget-card-numbers span:first-child {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.budget-card-numbers span:last-child {
+    color: var(--text-muted);
+}
+
+.budget-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.budget-card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.budget-card-stat .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.budget-card-stat .stat-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.budget-card-footer .btn-sm {
+    margin-left: auto;
+    padding: 8px 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.budget-card-footer .btn-sm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Budget History List */
+.budgets-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.budget-history-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.budget-history-item:hover {
+    border-color: var(--accent);
+}
+
+.budget-history-item .month-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.budget-history-item .month-badge .month-num {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.budget-history-item .budget-info {
+    flex: 1;
+}
+
+.budget-history-item .budget-info .budget-month-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.budget-history-item .budget-info .budget-amounts {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.budget-history-item .budget-percent {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+
+.budget-history-item .budget-percent.on_track {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.budget-history-item .budget-percent.warning {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+}
+
+.budget-history-item .budget-percent.over_budget {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.empty-state.small {
+    padding: 30px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state.small i {
+    font-size: 32px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+.empty-state.small p {
+    font-size: 13px;
+}
+
 /* Section Headers - Clean */
 .section-modern {
     padding: 0 20px 20px;

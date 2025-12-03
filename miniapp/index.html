@@ -24,7 +24,8 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <link rel="stylesheet" href="style.css?v=1.2">
+    <link rel="stylesheet" href="onboarding.css?v=1.0">
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -76,6 +77,44 @@
                             <span class="pill-value" id="total-expense">0</span>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Budget Widget -->
+            <section class="budget-widget" id="budget-widget">
+                <div class="budget-widget-header">
+                    <div class="budget-title">
+                        <i class="fas fa-wallet"></i>
+                        <span>Бюджет</span>
+                    </div>
+                    <span class="budget-month" id="budget-month">Декабрь</span>
+                </div>
+                <div class="budget-progress-container">
+                    <div class="budget-progress-bar">
+                        <div class="budget-progress-fill" id="budget-progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="budget-progress-info">
+                        <div class="budget-spent">
+                            <span id="budget-spent">0</span>
+                            <span class="budget-separator">/</span>
+                            <span id="budget-total">0</span>
+                        </div>
+                        <span class="budget-percentage" id="budget-percentage">0%</span>
+                    </div>
+                </div>
+                <div class="budget-footer">
+                    <div class="budget-remaining">
+                        <span class="budget-remaining-label">Осталось:</span>
+                        <span class="budget-remaining-value" id="budget-remaining">0 с</span>
+                    </div>
+                    <button class="budget-edit-btn" onclick="openBudgetModal()">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+                <!-- Состояние когда бюджет не установлен -->
+                <div class="budget-empty" id="budget-empty" style="display: none;">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Установить бюджет</span>
                 </div>
             </section>
 
@@ -308,16 +347,31 @@
                 <div style="width: 40px;"></div>
             </header>
             <div class="screen-body">
-                <!-- Display -->
+                
+                <!-- Аккаунт -->
                 <div class="settings-group">
-                    <h3>Отображение</h3>
+                    <h3>Аккаунт</h3>
                     
+                    <div class="setting-row">
+                        <div class="setting-left">
+                            <i class="fas fa-user-circle"></i>
+                            <div>
+                                <span class="setting-title">Режим</span>
+                                <span class="setting-desc" id="usage-type-desc">Личные финансы</span>
+                            </div>
+                        </div>
+                        <select id="usage-type-select" class="select-setting">
+                            <option value="personal">Личный</option>
+                            <option value="business">Бизнес</option>
+                        </select>
+                    </div>
+
                     <div class="setting-row">
                         <div class="setting-left">
                             <i class="fas fa-coins"></i>
                             <div>
                                 <span class="setting-title">Валюта</span>
-                                <span class="setting-desc">Для отображения сумм</span>
+                                <span class="setting-desc">Основная валюта</span>
                             </div>
                         </div>
                         <select id="currency-select" class="select-setting">
@@ -327,26 +381,15 @@
                             <option value="RUB">RUB (₽)</option>
                         </select>
                     </div>
+                </div>
 
+                <!-- Внешний вид -->
+                <div class="settings-group">
+                    <h3>Внешний вид</h3>
+                    
                     <div class="setting-row">
                         <div class="setting-left">
-                            <i class="fas fa-calendar"></i>
-                            <div>
-                                <span class="setting-title">Период</span>
-                                <span class="setting-desc">По умолчанию</span>
-                            </div>
-                        </div>
-                        <select id="default-period" class="select-setting">
-                            <option value="day">День</option>
-                            <option value="week" selected>Неделя</option>
-                            <option value="month">Месяц</option>
-                            <option value="year">Год</option>
-                        </select>
-                    </div>
-
-                    <div class="setting-row">
-                        <div class="setting-left">
-                            <i class="fas fa-moon"></i>
+                            <i class="fas fa-palette"></i>
                             <div>
                                 <span class="setting-title">Тема</span>
                                 <span class="setting-desc">Цветовая схема</span>
@@ -358,34 +401,45 @@
                             <option value="light">Светлая</option>
                         </select>
                     </div>
+
+                    <div class="setting-row">
+                        <div class="setting-left">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div>
+                                <span class="setting-title">Период по умолчанию</span>
+                                <span class="setting-desc">На главном экране</span>
+                            </div>
+                        </div>
+                        <select id="default-period" class="select-setting">
+                            <option value="day">День</option>
+                            <option value="week" selected>Неделя</option>
+                            <option value="month">Месяц</option>
+                            <option value="year">Год</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Data -->
+                <!-- Управление -->
                 <div class="settings-group">
-                    <h3>Данные</h3>
+                    <h3>Управление</h3>
                     
-                    <div class="setting-row clickable" onclick="clearCache()">
+                    <div class="setting-row clickable" onclick="switchScreen('budgets')">
                         <div class="setting-left">
-                            <i class="fas fa-broom"></i>
+                            <i class="fas fa-wallet"></i>
                             <div>
-                                <span class="setting-title">Очистить кэш</span>
-                                <span class="setting-desc">Локальные данные</span>
+                                <span class="setting-title">Бюджеты</span>
+                                <span class="setting-desc">Месячные лимиты расходов</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                </div>
-
-                <!-- Features -->
-                <div class="settings-group">
-                    <h3>Функции</h3>
                     
                     <div class="setting-row clickable" onclick="switchScreen('categories')">
                         <div class="setting-left">
                             <i class="fas fa-tags"></i>
                             <div>
-                                <span class="setting-title">Мои категории</span>
-                                <span class="setting-desc">Управление</span>
+                                <span class="setting-title">Категории</span>
+                                <span class="setting-desc">Настроить категории расходов и доходов</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right"></i>
@@ -393,10 +447,10 @@
 
                     <div class="setting-row clickable" onclick="switchScreen('recurring')">
                         <div class="setting-left">
-                            <i class="fas fa-repeat"></i>
+                            <i class="fas fa-sync-alt"></i>
                             <div>
-                                <span class="setting-title">Подписки</span>
-                                <span class="setting-desc">Автоплатежи</span>
+                                <span class="setting-title">Подписки и автоплатежи</span>
+                                <span class="setting-desc">Регулярные списания</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right"></i>
@@ -404,25 +458,41 @@
 
                     <div class="setting-row clickable" onclick="switchScreen('debts')">
                         <div class="setting-left">
-                            <i class="fas fa-hand-holding-dollar"></i>
+                            <i class="fas fa-handshake"></i>
                             <div>
                                 <span class="setting-title">Долги</span>
-                                <span class="setting-desc">Кто кому должен</span>
+                                <span class="setting-desc">Учёт займов и долгов</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
 
-                <!-- About -->
+                <!-- Данные -->
+                <div class="settings-group">
+                    <h3>Данные</h3>
+                    
+                    <div class="setting-row clickable" onclick="clearCache()">
+                        <div class="setting-left">
+                            <i class="fas fa-trash-alt"></i>
+                            <div>
+                                <span class="setting-title">Очистить кэш</span>
+                                <span class="setting-desc">Удалить локальные данные</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- О приложении -->
                 <div class="settings-group">
                     <h3>О приложении</h3>
                     <div class="setting-row">
                         <div class="setting-left">
-                            <i class="fas fa-code-branch"></i>
+                            <i class="fas fa-info-circle"></i>
                             <div>
-                                <span class="setting-title">Версия</span>
-                                <span class="setting-desc">AIAccounter</span>
+                                <span class="setting-title">AIAccounter</span>
+                                <span class="setting-desc">Умный учёт финансов</span>
                             </div>
                         </div>
                         <span class="version-tag">v1.1</span>
@@ -803,6 +873,113 @@
             </div>
         </div>
 
+        <!-- Budget Modal -->
+        <div id="budget-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeBudgetModal()"></div>
+            <div class="modal-box">
+                <div class="modal-head">
+                    <h3 id="budget-modal-title">Бюджет на декабрь</h3>
+                    <button class="btn-icon" onclick="closeBudgetModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="budget-form" onsubmit="submitBudget(event)">
+                    <input type="hidden" id="budget-edit-month" value="">
+                    
+                    <div class="form-field">
+                        <label>Сумма бюджета</label>
+                        <div class="input-with-suffix">
+                            <input type="number" id="budget-amount-input" placeholder="0" required min="1" step="1">
+                            <span class="input-suffix" id="budget-currency-suffix">сом</span>
+                        </div>
+                    </div>
+                    
+                    <div class="budget-presets-section">
+                        <label>Быстрый выбор:</label>
+                        <div class="budget-preset-buttons">
+                            <button type="button" class="budget-preset-btn" data-amount="30000">30 000</button>
+                            <button type="button" class="budget-preset-btn" data-amount="50000">50 000</button>
+                            <button type="button" class="budget-preset-btn" data-amount="100000">100 000</button>
+                            <button type="button" class="budget-preset-btn" data-amount="150000">150 000</button>
+                            <button type="button" class="budget-preset-btn" data-amount="200000">200 000</button>
+                        </div>
+                    </div>
+                    
+                    <div class="budget-hint" id="budget-hint" style="display: none;">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>В прошлом месяце: <strong id="budget-last-month">0 с</strong></span>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeBudgetModal()">Отмена</button>
+                        <button type="submit" class="btn primary" id="budget-submit-btn">
+                            <i class="fas fa-check"></i> Сохранить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             💰 BUDGETS SCREEN
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="budgets-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('settings')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Бюджеты</h1>
+                <button class="btn-icon" onclick="openBudgetModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </header>
+            <div class="screen-body">
+                <!-- Текущий месяц -->
+                <div class="budget-current-card" id="budget-current-card">
+                    <div class="budget-card-header">
+                        <div class="budget-card-title">
+                            <i class="fas fa-calendar"></i>
+                            <span id="budget-current-month">Декабрь 2025</span>
+                        </div>
+                        <span class="budget-card-status" id="budget-current-status">✅ В норме</span>
+                    </div>
+                    <div class="budget-card-progress">
+                        <div class="budget-card-bar">
+                            <div class="budget-card-fill" id="budget-current-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="budget-card-numbers">
+                            <span id="budget-current-spent">0 с</span>
+                            <span id="budget-current-total">/ 0 с</span>
+                        </div>
+                    </div>
+                    <div class="budget-card-footer">
+                        <div class="budget-card-stat">
+                            <span class="stat-label">Осталось</span>
+                            <span class="stat-value" id="budget-current-remaining">0 с</span>
+                        </div>
+                        <div class="budget-card-stat">
+                            <span class="stat-label">Использовано</span>
+                            <span class="stat-value" id="budget-current-percent">0%</span>
+                        </div>
+                        <button class="btn-sm" onclick="openBudgetModal()">
+                            <i class="fas fa-pen"></i> Изменить
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- История бюджетов -->
+                <div class="section-block">
+                    <div class="section-head">
+                        <h2><i class="fas fa-history"></i> История</h2>
+                    </div>
+                    <div id="budgets-history-list" class="budgets-history-list">
+                        <div class="empty-state small">
+                            <i class="fas fa-calendar-check"></i>
+                            <p>История бюджетов появится здесь</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══════════════════════════════════════════════════════════════
              BOTTOM NAV
         ═══════════════════════════════════════════════════════════════ -->
@@ -842,9 +1019,10 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="miniapp-config.js?v=1.1"></script>
-    <script src="websocket.js?v=1.1"></script>
-    <script src="api-helper.js?v=1.1"></script>
-    <script src="app.js?v=1.1"></script>
+    <script src="miniapp-config.js?v=1.2"></script>
+    <script src="websocket.js?v=1.2"></script>
+    <script src="api-helper.js?v=1.2"></script>
+    <script src="onboarding.js?v=1.0"></script>
+    <script src="app.js?v=1.2"></script>
 </body>
 </html>

@@ -217,16 +217,24 @@ class APIHelper {
 
     // ===== BUDGET =====
     
-    async getBudget(params = {}) {
+    async getBudgets(params = {}) {
         return this.get('/budget', params);
+    }
+    
+    async getCurrentBudgetStatus() {
+        return this.get('/budget/current/status');
+    }
+    
+    async getBudgetStatus(month) {
+        return this.get(`/budget/${month}/status`);
     }
 
     async createBudget(data) {
         return this.post('/budget', data);
     }
 
-    async updateBudget(id, data) {
-        return this.put(`/budget/${id}`, data);
+    async updateBudget(month, data) {
+        return this.put(`/budget/${month}`, data);
     }
 
     // ===== EXCHANGE RATES =====
@@ -421,6 +429,14 @@ class APIHelper {
 
     async updateUser(data) {
         return this.put('/users/me', data);
+    }
+
+    async updateProfile(data) {
+        return this.put('/users/me', data);
+    }
+
+    async getProfile() {
+        return this.get('/users/me');
     }
 
     async getUserPreferences() {

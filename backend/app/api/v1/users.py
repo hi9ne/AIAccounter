@@ -43,6 +43,7 @@ async def get_current_user_profile(
         "language_code": current_user.language_code,
         "timezone": current_user.timezone,
         "is_active": current_user.is_active,
+        "usage_type": current_user.usage_type,
         "last_activity": current_user.last_activity,
         "created_at": current_user.last_activity,  # Используем last_activity как created_at
     }
@@ -56,9 +57,15 @@ async def update_current_user_profile(
     """
     Обновить профиль текущего пользователя
     
-    Можно обновить: first_name, last_name, language, timezone
+    Можно обновить: first_name, last_name, language, timezone, usage_type
     """
     update_data = user_update.model_dump(exclude_unset=True)
+    
+    # Валидация usage_type
+    if 'usage_type' in update_data:
+        if update_data['usage_type'] not in ['personal', 'business']:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="usage_type must be 'personal' or 'business'")
     
     for field, value in update_data.items():
         setattr(current_user, field, value)
@@ -66,7 +73,19 @@ async def update_current_user_profile(
     await db.commit()
     await db.refresh(current_user)
     
-    return current_user
+    return {
+        "user_id": current_user.user_id,
+        "telegram_chat_id": str(current_user.telegram_chat_id),
+        "username": current_user.username,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "language_code": current_user.language_code,
+        "timezone": current_user.timezone,
+        "is_active": current_user.is_active,
+        "usage_type": current_user.usage_type,
+        "last_activity": current_user.last_activity,
+        "created_at": current_user.last_activity,
+    }
 
 
 @router.get("/me/stats")
