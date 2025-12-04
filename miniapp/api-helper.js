@@ -277,8 +277,60 @@ class APIHelper {
         return this.get('/analytics/chart/balance-trend', params);
     }
 
+    async getSpendingTrends() {
+        return this.get('/analytics/trends');
+    }
+
     async getPatterns(params = {}) {
         return this.get('/analytics/patterns', params);
+    }
+
+    async getSpendingPatterns() {
+        return this.get('/analytics/patterns');
+    }
+
+    // ===== EXPORT =====
+    
+    async exportTransactions(params = {}) {
+        const token = this.getToken();
+        if (!token) {
+            throw new Error('No token available');
+        }
+        
+        const queryString = new URLSearchParams(params).toString();
+        const url = `${this.baseUrl}/export/transactions${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+        
+        // Get filename from Content-Disposition header
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = 'transactions.xlsx';
+        if (disposition) {
+            const match = disposition.match(/filename=(.+)/);
+            if (match) filename = match[1];
+        }
+        
+        // Download the file
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        return true;
     }
 
     async getInsights(params = {}) {

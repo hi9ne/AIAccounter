@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, union_all, func, literal
+from sqlalchemy import select, union_all, func, literal, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
+from decimal import Decimal
 
 from app.database import get_db
 from app.models.models import User, Expense, Income
@@ -20,6 +21,9 @@ async def get_transactions(
     category: Optional[str] = Query(None, description="Filter by category"),
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    search: Optional[str] = Query(None, description="Search in description"),
+    amount_min: Optional[float] = Query(None, description="Minimum amount"),
+    amount_max: Optional[float] = Query(None, description="Maximum amount"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -68,6 +72,12 @@ async def get_transactions(
             expenses_query = expenses_query.where(Expense.date >= start_date)
         if end_date:
             expenses_query = expenses_query.where(Expense.date <= end_date)
+        if search:
+            expenses_query = expenses_query.where(Expense.description.ilike(f"%{search}%"))
+        if amount_min is not None:
+            expenses_query = expenses_query.where(Expense.amount >= Decimal(str(amount_min)))
+        if amount_max is not None:
+            expenses_query = expenses_query.where(Expense.amount <= Decimal(str(amount_max)))
         
         # Получаем общее количество
         count_query = select(func.count()).select_from(expenses_query.subquery())
@@ -86,6 +96,12 @@ async def get_transactions(
             income_query = income_query.where(Income.date >= start_date)
         if end_date:
             income_query = income_query.where(Income.date <= end_date)
+        if search:
+            income_query = income_query.where(Income.description.ilike(f"%{search}%"))
+        if amount_min is not None:
+            income_query = income_query.where(Income.amount >= Decimal(str(amount_min)))
+        if amount_max is not None:
+            income_query = income_query.where(Income.amount <= Decimal(str(amount_max)))
         
         # Получаем общее количество
         count_query = select(func.count()).select_from(income_query.subquery())
@@ -97,17 +113,29 @@ async def get_transactions(
         final_query = income_query.order_by(Income.date.desc()).offset(skip).limit(page_size)
         
     else:
+        # Применяем фильтры к отдельным запросам до объединения
+        if category:
+            expenses_query = expenses_query.where(Expense.category == category)
+            income_query = income_query.where(Income.category == category)
+        if start_date:
+            expenses_query = expenses_query.where(Expense.date >= start_date)
+            income_query = income_query.where(Income.date >= start_date)
+        if end_date:
+            expenses_query = expenses_query.where(Expense.date <= end_date)
+            income_query = income_query.where(Income.date <= end_date)
+        if search:
+            expenses_query = expenses_query.where(Expense.description.ilike(f"%{search}%"))
+            income_query = income_query.where(Income.description.ilike(f"%{search}%"))
+        if amount_min is not None:
+            expenses_query = expenses_query.where(Expense.amount >= Decimal(str(amount_min)))
+            income_query = income_query.where(Income.amount >= Decimal(str(amount_min)))
+        if amount_max is not None:
+            expenses_query = expenses_query.where(Expense.amount <= Decimal(str(amount_max)))
+            income_query = income_query.where(Income.amount <= Decimal(str(amount_max)))
+        
         # Объединяем оба
         combined_subquery = union_all(expenses_query, income_query).subquery()
         combined_query = select(combined_subquery)
-        
-        # Применяем фильтры по категории и датам
-        if category:
-            combined_query = combined_query.where(combined_subquery.c.category == category)
-        if start_date:
-            combined_query = combined_query.where(combined_subquery.c.date >= start_date)
-        if end_date:
-            combined_query = combined_query.where(combined_subquery.c.date <= end_date)
         
         # Получаем общее количество
         count_query = select(func.count()).select_from(combined_query.subquery())

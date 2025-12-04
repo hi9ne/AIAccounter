@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from . import expenses, income, budget, auth, users, categories, rates, analytics, reports, websocket, transactions, recurring, debts, ai_analytics, onboarding
+from . import expenses, income, budget, auth, users, categories, rates, analytics, reports, websocket, transactions, recurring, debts, ai_analytics, onboarding, export
 
 router = APIRouter()
 
@@ -18,4 +18,5 @@ router.include_router(transactions.router, tags=["Transactions"])
 router.include_router(expenses.router, prefix="/expenses", tags=["Expenses"])
 router.include_router(income.router, prefix="/income", tags=["Income"])
 router.include_router(budget.router, prefix="/budget", tags=["Budget"])
+router.include_router(export.router, tags=["Export"])
 router.include_router(websocket.router, tags=["WebSocket"])

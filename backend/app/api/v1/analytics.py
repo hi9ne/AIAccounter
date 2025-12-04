@@ -859,3 +859,405 @@ async def get_dashboard_data(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to load dashboard data: {str(e)}"
         )
+
+
+@router.get("/trends")
+async def get_spending_trends(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить тренды: сравнение текущего месяца с прошлым,
+    динамика по неделям, изменения по категориям
+    """
+    today = date.today()
+    
+    # Текущий месяц
+    current_month_start = today.replace(day=1)
+    current_month_end = today
+    
+    # Прошлый месяц
+    last_month_end = current_month_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+    
+    # Количество дней в текущем месяце (для корректного сравнения)
+    days_in_current = (today - current_month_start).days + 1
+    
+    try:
+        # Запрос сравнения месяцев
+        comparison_query = text("""
+            WITH latest_rates AS (
+                SELECT DISTINCT ON (from_currency, to_currency) 
+                    from_currency, to_currency, rate
+                FROM exchange_rates 
+                ORDER BY from_currency, to_currency, date DESC
+            ),
+            current_month AS (
+                SELECT 
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN currency = 'KGS' THEN amount
+                            ELSE amount * COALESCE(
+                                (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                            )
+                        END
+                    ), 0) as total,
+                    COUNT(*) as count
+                FROM expenses e
+                WHERE user_id = :user_id 
+                AND date >= :current_start AND date <= :current_end
+                AND deleted_at IS NULL
+            ),
+            last_month AS (
+                SELECT 
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN currency = 'KGS' THEN amount
+                            ELSE amount * COALESCE(
+                                (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                            )
+                        END
+                    ), 0) as total,
+                    COUNT(*) as count
+                FROM expenses e
+                WHERE user_id = :user_id 
+                AND date >= :last_start AND date <= :last_end
+                AND deleted_at IS NULL
+            ),
+            current_income AS (
+                SELECT COALESCE(SUM(
+                    CASE 
+                        WHEN currency = 'KGS' THEN amount
+                        ELSE amount * COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = i.currency AND to_currency = 'KGS'), 1
+                        )
+                    END
+                ), 0) as total
+                FROM income i
+                WHERE user_id = :user_id 
+                AND date >= :current_start AND date <= :current_end
+                AND deleted_at IS NULL
+            ),
+            last_income AS (
+                SELECT COALESCE(SUM(
+                    CASE 
+                        WHEN currency = 'KGS' THEN amount
+                        ELSE amount * COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = i.currency AND to_currency = 'KGS'), 1
+                        )
+                    END
+                ), 0) as total
+                FROM income i
+                WHERE user_id = :user_id 
+                AND date >= :last_start AND date <= :last_end
+                AND deleted_at IS NULL
+            )
+            SELECT 
+                (SELECT total FROM current_month) as current_expenses,
+                (SELECT count FROM current_month) as current_count,
+                (SELECT total FROM last_month) as last_expenses,
+                (SELECT count FROM last_month) as last_count,
+                (SELECT total FROM current_income) as current_income,
+                (SELECT total FROM last_income) as last_income
+        """)
+        
+        result = await db.execute(comparison_query, {
+            "user_id": current_user.user_id,
+            "current_start": current_month_start,
+            "current_end": current_month_end,
+            "last_start": last_month_start,
+            "last_end": last_month_end
+        })
+        comparison = result.fetchone()
+        
+        current_expenses = float(comparison[0] or 0)
+        current_count = int(comparison[1] or 0)
+        last_expenses = float(comparison[2] or 0)
+        last_count = int(comparison[3] or 0)
+        current_income = float(comparison[4] or 0)
+        last_income = float(comparison[5] or 0)
+        
+        # Расчёт изменений в процентах
+        expense_change = ((current_expenses - last_expenses) / last_expenses * 100) if last_expenses > 0 else 0
+        income_change = ((current_income - last_income) / last_income * 100) if last_income > 0 else 0
+        
+        # Средние траты в день
+        avg_daily_current = current_expenses / days_in_current if days_in_current > 0 else 0
+        days_in_last = (last_month_end - last_month_start).days + 1
+        avg_daily_last = last_expenses / days_in_last if days_in_last > 0 else 0
+        
+        # Прогноз на конец месяца
+        days_left = (current_month_start.replace(month=current_month_start.month % 12 + 1, day=1) - timedelta(days=1) - today).days
+        projected_total = current_expenses + (avg_daily_current * days_left)
+        
+        # Сравнение по категориям (топ-5 с изменениями)
+        category_comparison_query = text("""
+            WITH latest_rates AS (
+                SELECT DISTINCT ON (from_currency, to_currency) 
+                    from_currency, to_currency, rate
+                FROM exchange_rates 
+                ORDER BY from_currency, to_currency, date DESC
+            ),
+            current_cats AS (
+                SELECT category,
+                    SUM(CASE 
+                        WHEN currency = 'KGS' THEN amount
+                        ELSE amount * COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                        )
+                    END) as total
+                FROM expenses e
+                WHERE user_id = :user_id 
+                AND date >= :current_start AND date <= :current_end
+                AND deleted_at IS NULL
+                GROUP BY category
+            ),
+            last_cats AS (
+                SELECT category,
+                    SUM(CASE 
+                        WHEN currency = 'KGS' THEN amount
+                        ELSE amount * COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                        )
+                    END) as total
+                FROM expenses e
+                WHERE user_id = :user_id 
+                AND date >= :last_start AND date <= :last_end
+                AND deleted_at IS NULL
+                GROUP BY category
+            )
+            SELECT 
+                COALESCE(c.category, l.category) as category,
+                COALESCE(c.total, 0) as current_total,
+                COALESCE(l.total, 0) as last_total
+            FROM current_cats c
+            FULL OUTER JOIN last_cats l ON c.category = l.category
+            ORDER BY COALESCE(c.total, 0) DESC
+            LIMIT 5
+        """)
+        
+        cat_result = await db.execute(category_comparison_query, {
+            "user_id": current_user.user_id,
+            "current_start": current_month_start,
+            "current_end": current_month_end,
+            "last_start": last_month_start,
+            "last_end": last_month_end
+        })
+        categories = cat_result.fetchall()
+        
+        category_trends = []
+        for cat in categories:
+            cat_name = cat[0] or "Без категории"
+            current_total = float(cat[1] or 0)
+            last_total = float(cat[2] or 0)
+            change = ((current_total - last_total) / last_total * 100) if last_total > 0 else (100 if current_total > 0 else 0)
+            category_trends.append({
+                "category": cat_name,
+                "current": current_total,
+                "previous": last_total,
+                "change_percent": round(change, 1),
+                "trend": "up" if change > 5 else ("down" if change < -5 else "stable")
+            })
+        
+        return {
+            "period": {
+                "current": {
+                    "start": str(current_month_start),
+                    "end": str(current_month_end),
+                    "label": current_month_start.strftime("%B %Y")
+                },
+                "previous": {
+                    "start": str(last_month_start),
+                    "end": str(last_month_end),
+                    "label": last_month_start.strftime("%B %Y")
+                }
+            },
+            "expenses": {
+                "current": current_expenses,
+                "previous": last_expenses,
+                "change_percent": round(expense_change, 1),
+                "trend": "up" if expense_change > 5 else ("down" if expense_change < -5 else "stable"),
+                "current_count": current_count,
+                "previous_count": last_count
+            },
+            "income": {
+                "current": current_income,
+                "previous": last_income,
+                "change_percent": round(income_change, 1),
+                "trend": "up" if income_change > 5 else ("down" if income_change < -5 else "stable")
+            },
+            "daily_average": {
+                "current": round(avg_daily_current, 0),
+                "previous": round(avg_daily_last, 0)
+            },
+            "projection": {
+                "estimated_total": round(projected_total, 0),
+                "days_left": days_left
+            },
+            "category_trends": category_trends,
+            "currency": "KGS"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get trends: {str(e)}"
+        )
+
+
+@router.get("/patterns")
+async def get_spending_patterns(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Получить паттерны трат: по дням недели, по времени суток
+    """
+    today = date.today()
+    # Берём последние 3 месяца для анализа паттернов
+    start_date = today - timedelta(days=90)
+    
+    try:
+        # Средние траты по дням недели
+        weekday_query = text("""
+            WITH latest_rates AS (
+                SELECT DISTINCT ON (from_currency, to_currency) 
+                    from_currency, to_currency, rate
+                FROM exchange_rates 
+                ORDER BY from_currency, to_currency, date DESC
+            )
+            SELECT 
+                EXTRACT(DOW FROM date) as day_of_week,
+                AVG(CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                    )
+                END) as avg_amount,
+                SUM(CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                    )
+                END) as total_amount,
+                COUNT(*) as transaction_count
+            FROM expenses e
+            WHERE user_id = :user_id 
+            AND date >= :start_date
+            AND deleted_at IS NULL
+            GROUP BY EXTRACT(DOW FROM date)
+            ORDER BY day_of_week
+        """)
+        
+        result = await db.execute(weekday_query, {
+            "user_id": current_user.user_id,
+            "start_date": start_date
+        })
+        weekday_data = result.fetchall()
+        
+        # Названия дней недели
+        day_names = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"]
+        day_names_short = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+        
+        weekday_stats = []
+        max_avg = 0
+        max_day = 0
+        
+        for row in weekday_data:
+            dow = int(row[0])
+            avg = float(row[1] or 0)
+            total = float(row[2] or 0)
+            count = int(row[3] or 0)
+            
+            if avg > max_avg:
+                max_avg = avg
+                max_day = dow
+            
+            weekday_stats.append({
+                "day_index": dow,
+                "day_name": day_names[dow],
+                "day_short": day_names_short[dow],
+                "average": round(avg, 0),
+                "total": round(total, 0),
+                "count": count
+            })
+        
+        # Заполняем пропущенные дни
+        existing_days = {s["day_index"] for s in weekday_stats}
+        for i in range(7):
+            if i not in existing_days:
+                weekday_stats.append({
+                    "day_index": i,
+                    "day_name": day_names[i],
+                    "day_short": day_names_short[i],
+                    "average": 0,
+                    "total": 0,
+                    "count": 0
+                })
+        
+        # Сортируем по дню недели (Пн=1 первый)
+        weekday_stats = sorted(weekday_stats, key=lambda x: (x["day_index"] + 6) % 7)
+        
+        # Топ дни с максимальными тратами за последний месяц
+        top_days_query = text("""
+            WITH latest_rates AS (
+                SELECT DISTINCT ON (from_currency, to_currency) 
+                    from_currency, to_currency, rate
+                FROM exchange_rates 
+                ORDER BY from_currency, to_currency, date DESC
+            )
+            SELECT 
+                date,
+                SUM(CASE 
+                    WHEN currency = 'KGS' THEN amount
+                    ELSE amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS'), 1
+                    )
+                END) as total_amount,
+                COUNT(*) as transaction_count
+            FROM expenses e
+            WHERE user_id = :user_id 
+            AND date >= :start_date
+            AND deleted_at IS NULL
+            GROUP BY date
+            ORDER BY total_amount DESC
+            LIMIT 5
+        """)
+        
+        top_result = await db.execute(top_days_query, {
+            "user_id": current_user.user_id,
+            "start_date": today - timedelta(days=30)
+        })
+        top_days = top_result.fetchall()
+        
+        peak_days = []
+        for row in top_days:
+            d = row[0]
+            peak_days.append({
+                "date": str(d),
+                "day_name": day_names[d.weekday() + 1 if d.weekday() < 6 else 0],
+                "total": round(float(row[1] or 0), 0),
+                "count": int(row[2] or 0)
+            })
+        
+        return {
+            "period": {
+                "start": str(start_date),
+                "end": str(today),
+                "days_analyzed": 90
+            },
+            "weekday_patterns": weekday_stats,
+            "insights": {
+                "most_expensive_day": day_names[max_day] if max_avg > 0 else None,
+                "most_expensive_avg": round(max_avg, 0),
+                "recommendation": f"Больше всего вы тратите в {day_names[max_day].lower()}. Попробуйте планировать крупные покупки на другие дни." if max_avg > 0 else None
+            },
+            "peak_days": peak_days,
+            "currency": "KGS"
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get patterns: {str(e)}"
+        )

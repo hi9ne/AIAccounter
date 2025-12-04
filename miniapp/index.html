@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AIAccounter</title>
     
+    <!-- Critical CSS inline for fast first paint -->
+    <style>
+        :root{--bg-main:#0a0a0f;--bg-card:#12121a;--text-primary:#fff;--text-secondary:#8b8b9e;--accent:#6366f1}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-main);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+        .app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
+        .screen{display:none;min-height:100vh;padding-bottom:80px}
+        .screen.active{display:block}
+        .loading-overlay{position:fixed;inset:0;background:var(--bg-main);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;visibility:hidden;transition:opacity .3s}
+        .loading-overlay.active{opacity:1;visibility:visible}
+        .spinner-large{width:40px;height:40px;border:3px solid var(--bg-card);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+    
     <!-- Theme -->
     <script>
         (function() {
@@ -13,9 +27,13 @@
         })();
     </script>
     
+    <!-- Preload critical resources -->
+    <link rel="preload" href="style.css?v=1.8" as="style">
+    <link rel="preload" href="app.js?v=1.8" as="script">
+    
     <!-- Scripts -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +42,7 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=1.3">
+    <link rel="stylesheet" href="style.css?v=1.8">
     <link rel="stylesheet" href="onboarding.css?v=1.0">
     
     <!-- PWA -->
@@ -141,8 +159,8 @@
             <!-- Recent Transactions -->
             <section class="section-modern">
                 <div class="section-header-modern">
-                    <h2>История операций</h2>
-                    <button class="btn-text" onclick="switchScreen('history')">Все</button>
+                    <h2 data-i18n="recent_operations">История операций</h2>
+                    <button class="btn-text" onclick="switchScreen('history')" data-i18n="all">Все</button>
                 </div>
                 <div id="recent-transactions" class="tx-list-modern">
                     <!-- Skeletons -->
@@ -175,7 +193,7 @@
                 <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h1>Аналитика</h1>
+                <h1 data-i18n="analytics">Аналитика</h1>
                 <select id="analytics-period" class="select-minimal">
                     <option value="week">Неделя</option>
                     <option value="month" selected>Месяц</option>
@@ -249,6 +267,75 @@
                         <div id="ai-insights-list" class="ai-list"></div>
                     </div>
                 </div>
+
+                <!-- Trends Comparison -->
+                <div class="section-block">
+                    <div class="section-head">
+                        <h2><i class="fas fa-chart-line"></i> Тренды</h2>
+                        <span class="badge" id="trends-period-badge">vs прошлый месяц</span>
+                    </div>
+                    <div id="trends-container" class="trends-container">
+                        <div class="trends-grid">
+                            <div class="trend-card">
+                                <div class="trend-card-header">
+                                    <span class="trend-label">Расходы</span>
+                                    <span class="trend-change" id="trend-expense-change">0%</span>
+                                </div>
+                                <div class="trend-values">
+                                    <span class="trend-current" id="trend-expense-current">0 с</span>
+                                    <span class="trend-prev">vs <span id="trend-expense-prev">0 с</span></span>
+                                </div>
+                                <div class="trend-bar-container">
+                                    <div class="trend-bar" id="trend-expense-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="trend-card">
+                                <div class="trend-card-header">
+                                    <span class="trend-label">Доходы</span>
+                                    <span class="trend-change" id="trend-income-change">0%</span>
+                                </div>
+                                <div class="trend-values">
+                                    <span class="trend-current" id="trend-income-current">0 с</span>
+                                    <span class="trend-prev">vs <span id="trend-income-prev">0 с</span></span>
+                                </div>
+                                <div class="trend-bar-container">
+                                    <div class="trend-bar income" id="trend-income-bar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="trend-projection">
+                            <i class="fas fa-bullseye"></i>
+                            <span>Прогноз на конец месяца: <strong id="projection-total">0 с</strong></span>
+                            <span class="projection-days">(<span id="projection-days">0</span> дней осталось)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekday Patterns -->
+                <div class="section-block">
+                    <div class="section-head">
+                        <h2><i class="fas fa-calendar-week"></i> Траты по дням</h2>
+                    </div>
+                    <div id="weekday-chart-container" class="weekday-chart-container">
+                        <div class="weekday-bars" id="weekday-bars">
+                            <!-- Бары будут добавлены через JS -->
+                        </div>
+                        <div class="weekday-insight" id="weekday-insight">
+                            <i class="fas fa-lightbulb"></i>
+                            <span id="weekday-insight-text">Анализируем паттерны...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Trends -->
+                <div class="section-block">
+                    <div class="section-head">
+                        <h2><i class="fas fa-arrow-trend-up"></i> Изменения по категориям</h2>
+                    </div>
+                    <div id="category-trends-list" class="category-trends-list">
+                        <!-- Будет заполнено через JS -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -260,14 +347,30 @@
                 <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h1>История</h1>
-                <button class="btn-icon" onclick="openFilters()">
-                    <i class="fas fa-sliders"></i>
-                </button>
+                <h1 data-i18n="history">История</h1>
+                <div class="header-actions">
+                    <button class="btn-icon" onclick="showExportModal()">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="btn-icon" onclick="toggleFilters()">
+                        <i class="fas fa-sliders"></i>
+                    </button>
+                </div>
             </header>
 
+            <!-- Search Bar -->
+            <div class="search-bar-container">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="history-search" class="search-input" placeholder="Поиск по описанию...">
+                    <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearch()" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
             <!-- Filters -->
-            <div id="filters-panel" class="filters-panel">
+            <div id="filters-panel" class="filters-panel collapsed">
                 <div class="filter-grid">
                     <select id="history-type" class="select-filter">
                         <option value="all">Все типы</option>
@@ -279,6 +382,7 @@
                         <option value="month" selected>Месяц</option>
                         <option value="quarter">Квартал</option>
                         <option value="year">Год</option>
+                        <option value="all">Всё время</option>
                     </select>
                     <select id="history-category" class="select-filter">
                         <option value="all">Все категории</option>
@@ -290,7 +394,20 @@
                         <option value="amount_asc">Сумма ↑</option>
                     </select>
                 </div>
+                <div class="filter-row">
+                    <div class="filter-amount-group">
+                        <input type="number" id="history-amount-min" class="input-filter" placeholder="От суммы">
+                        <span class="filter-separator">—</span>
+                        <input type="number" id="history-amount-max" class="input-filter" placeholder="До суммы">
+                    </div>
+                    <button class="btn-reset-filters" onclick="resetFilters()">
+                        <i class="fas fa-undo"></i> Сбросить
+                    </button>
+                </div>
             </div>
+
+            <!-- Active filters chips -->
+            <div id="active-filters" class="active-filters-container" style="display: none;"></div>
 
             <div class="screen-body">
                 <div id="transactions-history" class="tx-history"></div>
@@ -331,7 +448,7 @@
                 <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h1>Настройки</h1>
+                <h1 data-i18n="settings">Настройки</h1>
                 <div style="width: 40px;"></div>
             </header>
             <div class="screen-body">
@@ -373,7 +490,22 @@
 
                 <!-- Внешний вид -->
                 <div class="settings-group">
-                    <h3>Внешний вид</h3>
+                    <h3 data-i18n="settings">Внешний вид</h3>
+                    
+                    <div class="setting-row">
+                        <div class="setting-left">
+                            <i class="fas fa-globe"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="language">Язык</span>
+                                <span class="setting-desc" id="current-language-name">Русский</span>
+                            </div>
+                        </div>
+                        <select id="language-select" class="select-setting" onchange="changeLanguage(this.value)">
+                            <option value="ru">🇷🇺 Русский</option>
+                            <option value="en">🇬🇧 English</option>
+                            <option value="ky">🇰🇬 Кыргызча</option>
+                        </select>
+                    </div>
                     
                     <div class="setting-row">
                         <div class="setting-left">
@@ -545,21 +677,90 @@
             </div>
         </div>
 
+        <!-- Export Modal -->
+        <div id="export-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeExportModal()"></div>
+            <div class="modal-box">
+                <div class="modal-head">
+                    <h3 data-i18n="export_transactions">Экспорт транзакций</h3>
+                    <button class="btn-icon" onclick="closeExportModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="export-options">
+                    <div class="form-field">
+                        <label data-i18n="file_format">Формат файла</label>
+                        <div class="export-format-selector">
+                            <label class="format-option">
+                                <input type="radio" name="export-format" value="xlsx" checked>
+                                <span class="format-label">
+                                    <i class="fas fa-file-excel"></i>
+                                    <span>Excel (.xlsx)</span>
+                                </span>
+                            </label>
+                            <label class="format-option">
+                                <input type="radio" name="export-format" value="csv">
+                                <span class="format-label">
+                                    <i class="fas fa-file-csv"></i>
+                                    <span>CSV (.csv)</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label data-i18n="period">Период</label>
+                        <select id="export-period" class="select-filter">
+                            <option value="week" data-i18n="last_week">Последняя неделя</option>
+                            <option value="month" selected data-i18n="last_month">Последний месяц</option>
+                            <option value="quarter" data-i18n="last_3_months">Последние 3 месяца</option>
+                            <option value="year" data-i18n="last_year">Последний год</option>
+                            <option value="all" data-i18n="all_time">Всё время</option>
+                            <option value="custom" data-i18n="custom_period">Свой период</option>
+                        </select>
+                    </div>
+                    <div id="export-custom-dates" class="form-field" style="display: none;">
+                        <div class="date-range-row">
+                            <div class="date-input-group">
+                                <label data-i18n="from_date">С</label>
+                                <input type="date" id="export-date-start">
+                            </div>
+                            <div class="date-input-group">
+                                <label data-i18n="to_date">По</label>
+                                <input type="date" id="export-date-end">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-field">
+                        <label data-i18n="operation_type">Тип операций</label>
+                        <select id="export-type" class="select-filter">
+                            <option value="all" selected data-i18n="all_operations">Все</option>
+                            <option value="income" data-i18n="only_income">Только доходы</option>
+                            <option value="expense" data-i18n="only_expenses">Только расходы</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeExportModal()" data-i18n="cancel">Отмена</button>
+                        <button type="button" class="btn primary" onclick="downloadExport()">
+                            <i class="fas fa-download"></i> <span data-i18n="download">Скачать</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Add Category Modal -->
         <div id="add-category-modal" class="modal">
             <div class="modal-backdrop" onclick="closeAddCategoryModal()"></div>
             <div class="modal-box">
                 <div class="modal-head">
-                    <h3>Новая категория</h3>
+                    <h3 data-i18n="new_category">Новая категория</h3>
                     <button class="btn-icon" onclick="closeAddCategoryModal()"><i class="fas fa-xmark"></i></button>
                 </div>
                 <form id="add-category-form" onsubmit="submitAddCategory(event)">
                     <div class="form-field">
-                        <label>Название</label>
-                        <input type="text" id="new-category-name" placeholder="Например: Кофе" required maxlength="50">
+                        <label data-i18n="category_name">Название</label>
+                        <input type="text" id="new-category-name" data-i18n-placeholder="category_name_placeholder" placeholder="Например: Кофе" required maxlength="50">
                     </div>
                     <div class="form-field">
-                        <label>Тип</label>
+                        <label data-i18n="category_type">Тип</label>
                         <div class="type-selector">
                             <label class="type-option">
                                 <input type="radio" name="cat-type" value="expense" checked>
@@ -974,23 +1175,23 @@
         <nav class="bottom-nav">
             <button class="nav-btn active" data-screen="home">
                 <i class="fas fa-house"></i>
-                <span>Главная</span>
+                <span data-i18n="nav_home">Главная</span>
             </button>
             <button class="nav-btn" data-screen="analytics">
                 <i class="fas fa-chart-pie"></i>
-                <span>Аналитика</span>
+                <span data-i18n="nav_analytics">Аналитика</span>
             </button>
             <button class="nav-btn" data-screen="reports">
                 <i class="fas fa-file-lines"></i>
-                <span>Отчёты</span>
+                <span data-i18n="reports">Отчёты</span>
             </button>
             <button class="nav-btn" data-screen="history">
                 <i class="fas fa-clock-rotate-left"></i>
-                <span>История</span>
+                <span data-i18n="nav_history">История</span>
             </button>
             <button class="nav-btn" data-screen="settings">
                 <i class="fas fa-gear"></i>
-                <span>Ещё</span>
+                <span data-i18n="nav_settings">Ещё</span>
             </button>
         </nav>
     </div>
@@ -1007,10 +1208,11 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
+    <script src="i18n.js?v=1.0"></script>
     <script src="miniapp-config.js?v=1.2"></script>
     <script src="websocket.js?v=1.2"></script>
-    <script src="api-helper.js?v=1.2"></script>
+    <script src="api-helper.js?v=1.4"></script>
     <script src="onboarding.js?v=1.0"></script>
-    <script src="app.js?v=1.3"></script>
+    <script src="app.js?v=1.8"></script>
 </body>
 </html>

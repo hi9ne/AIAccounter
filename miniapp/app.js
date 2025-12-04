@@ -217,15 +217,84 @@ function convertAmount(amount, fromCurrency, toCurrency) {
     }
 }
 
+// ===== LANGUAGE FUNCTIONS =====
+const languageDisplayNames = {
+    ru: 'Русский',
+    en: 'English',
+    ky: 'Кыргызча'
+};
+
+function changeLanguage(lang) {
+    if (window.i18n && window.i18n.setLanguage(lang)) {
+        localStorage.setItem('app_language', lang);
+        updateLanguageDisplay(lang);
+        showToast(window.i18n.t('settings_saved'), 'success');
+        debug.log('🌍 Language changed to:', lang);
+    }
+}
+
+function updateLanguageDisplay(lang) {
+    const langNameEl = document.getElementById('current-language-name');
+    if (langNameEl) {
+        langNameEl.textContent = languageDisplayNames[lang] || lang;
+    }
+}
+
 // ===== UTILITY FUNCTIONS =====
-function formatCurrency(amount, currency = state.currency) {
+
+// Performance utilities
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function throttle(func, limit) {
+    let inThrottle;
+    return function(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// Memoization for expensive computations
+const memoize = (fn) => {
+    const cache = new Map();
+    return (...args) => {
+        const key = JSON.stringify(args);
+        if (cache.has(key)) return cache.get(key);
+        const result = fn(...args);
+        cache.set(key, result);
+        // Limit cache size
+        if (cache.size > 100) {
+            const firstKey = cache.keys().next().value;
+            cache.delete(firstKey);
+        }
+        return result;
+    };
+};
+
+// Cached formatters
+const currencyFormatter = memoize((amount, currency) => {
     const symbols = { KGS: 'с', USD: '$', EUR: '€', RUB: '₽' };
     const formatted = new Intl.NumberFormat('ru-RU', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
     }).format(Math.abs(amount));
-    
     return `${formatted} ${symbols[currency] || currency}`;
+});
+
+function formatCurrency(amount, currency = state.currency) {
+    return currencyFormatter(Math.round(amount * 100) / 100, currency);
 }
 
 function formatDate(dateString) {
@@ -955,6 +1024,12 @@ async function loadAnalytics() {
         // Ленивая загрузка графиков - загружаем через небольшую задержку
         setTimeout(() => loadCharts(analyticsData), 100);
         
+        // Загружаем тренды и паттерны
+        setTimeout(() => {
+            loadTrendsData();
+            loadPatternsData();
+        }, 200);
+        
         perf.end('loadAnalytics');
         debug.log('✅ Analytics loaded');
     } catch (error) {
@@ -1128,14 +1203,245 @@ let historyFilters = {
     type: 'all',
     period: 'month',
     category: 'all',
-    sortBy: 'date_desc' // date_desc, date_asc, amount_desc, amount_asc
+    sortBy: 'date_desc', // date_desc, date_asc, amount_desc, amount_asc
+    search: '',
+    amountMin: null,
+    amountMax: null
 };
+
+let searchDebounceTimer = null;
+
+// === EXPORT FUNCTIONS ===
+function showExportModal() {
+    const modal = document.getElementById('export-modal');
+    if (modal) {
+        modal.classList.add('open');
+        // Setup custom period toggle
+        const periodSelect = document.getElementById('export-period');
+        if (periodSelect) {
+            periodSelect.onchange = toggleExportCustomDates;
+        }
+        // Set default dates for custom period
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 1);
+        
+        document.getElementById('export-date-end').value = endDate.toISOString().split('T')[0];
+        document.getElementById('export-date-start').value = startDate.toISOString().split('T')[0];
+    }
+}
+
+function closeExportModal() {
+    const modal = document.getElementById('export-modal');
+    if (modal) {
+        modal.classList.remove('open');
+    }
+}
+
+function toggleExportCustomDates() {
+    const periodSelect = document.getElementById('export-period');
+    const customDates = document.getElementById('export-custom-dates');
+    if (periodSelect && customDates) {
+        customDates.style.display = periodSelect.value === 'custom' ? 'block' : 'none';
+    }
+}
+
+async function downloadExport() {
+    const format = document.querySelector('input[name="export-format"]:checked')?.value || 'xlsx';
+    const period = document.getElementById('export-period')?.value || 'month';
+    const type = document.getElementById('export-type')?.value || 'all';
+    
+    // Calculate dates based on period
+    let startDate, endDate;
+    const now = new Date();
+    endDate = now.toISOString().split('T')[0];
+    
+    switch (period) {
+        case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            break;
+        case 'month':
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString().split('T')[0];
+            break;
+        case 'quarter':
+            startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()).toISOString().split('T')[0];
+            break;
+        case 'year':
+            startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+            break;
+        case 'all':
+            startDate = null;
+            break;
+        case 'custom':
+            startDate = document.getElementById('export-date-start')?.value;
+            endDate = document.getElementById('export-date-end')?.value;
+            break;
+    }
+    
+    const params = { format };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    if (type !== 'all') params.type = type;
+    
+    try {
+        showToast('Подготовка файла...', 'info');
+        await api.exportTransactions(params);
+        showToast('Файл скачан!', 'success');
+        closeExportModal();
+    } catch (error) {
+        console.error('Export error:', error);
+        showToast('Ошибка экспорта', 'error');
+    }
+}
+
+function toggleFilters() {
+    const panel = document.getElementById('filters-panel');
+    if (panel) {
+        panel.classList.toggle('collapsed');
+    }
+}
 
 function openFilters() {
     const panel = document.getElementById('filters-panel');
     if (panel) {
-        panel.classList.toggle('active');
+        panel.classList.remove('collapsed');
     }
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('history-search');
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (searchInput) {
+        searchInput.value = '';
+        historyFilters.search = '';
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+    loadHistory();
+    updateActiveFiltersUI();
+}
+
+function resetFilters() {
+    // Сбрасываем все фильтры
+    historyFilters = {
+        type: 'all',
+        period: 'month',
+        category: 'all',
+        sortBy: 'date_desc',
+        search: '',
+        amountMin: null,
+        amountMax: null
+    };
+    
+    // Обновляем UI
+    const typeSelect = document.getElementById('history-type');
+    const periodSelect = document.getElementById('history-period');
+    const categorySelect = document.getElementById('history-category');
+    const sortSelect = document.getElementById('history-sort');
+    const searchInput = document.getElementById('history-search');
+    const amountMinInput = document.getElementById('history-amount-min');
+    const amountMaxInput = document.getElementById('history-amount-max');
+    const clearBtn = document.getElementById('search-clear-btn');
+    
+    if (typeSelect) typeSelect.value = 'all';
+    if (periodSelect) periodSelect.value = 'month';
+    if (categorySelect) categorySelect.value = 'all';
+    if (sortSelect) sortSelect.value = 'date_desc';
+    if (searchInput) searchInput.value = '';
+    if (amountMinInput) amountMinInput.value = '';
+    if (amountMaxInput) amountMaxInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    
+    updateActiveFiltersUI();
+    loadHistory();
+}
+
+function updateActiveFiltersUI() {
+    const container = document.getElementById('active-filters');
+    if (!container) return;
+    
+    const chips = [];
+    
+    if (historyFilters.search) {
+        chips.push(`<div class="filter-chip">
+            <span class="filter-chip-label">Поиск:</span>
+            <span class="filter-chip-value">${historyFilters.search}</span>
+            <button class="filter-chip-remove" onclick="removeFilter('search')"><i class="fas fa-times"></i></button>
+        </div>`);
+    }
+    
+    if (historyFilters.type !== 'all') {
+        const typeLabel = historyFilters.type === 'income' ? 'Доходы' : 'Расходы';
+        chips.push(`<div class="filter-chip">
+            <span class="filter-chip-label">Тип:</span>
+            <span class="filter-chip-value">${typeLabel}</span>
+            <button class="filter-chip-remove" onclick="removeFilter('type')"><i class="fas fa-times"></i></button>
+        </div>`);
+    }
+    
+    if (historyFilters.category !== 'all') {
+        chips.push(`<div class="filter-chip">
+            <span class="filter-chip-label">Категория:</span>
+            <span class="filter-chip-value">${historyFilters.category}</span>
+            <button class="filter-chip-remove" onclick="removeFilter('category')"><i class="fas fa-times"></i></button>
+        </div>`);
+    }
+    
+    if (historyFilters.amountMin !== null) {
+        chips.push(`<div class="filter-chip">
+            <span class="filter-chip-label">От:</span>
+            <span class="filter-chip-value">${formatAmount(historyFilters.amountMin)}</span>
+            <button class="filter-chip-remove" onclick="removeFilter('amountMin')"><i class="fas fa-times"></i></button>
+        </div>`);
+    }
+    
+    if (historyFilters.amountMax !== null) {
+        chips.push(`<div class="filter-chip">
+            <span class="filter-chip-label">До:</span>
+            <span class="filter-chip-value">${formatAmount(historyFilters.amountMax)}</span>
+            <button class="filter-chip-remove" onclick="removeFilter('amountMax')"><i class="fas fa-times"></i></button>
+        </div>`);
+    }
+    
+    if (chips.length > 0) {
+        container.style.display = 'flex';
+        container.innerHTML = chips.join('');
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function removeFilter(filterName) {
+    switch(filterName) {
+        case 'search':
+            historyFilters.search = '';
+            const searchInput = document.getElementById('history-search');
+            const clearBtn = document.getElementById('search-clear-btn');
+            if (searchInput) searchInput.value = '';
+            if (clearBtn) clearBtn.style.display = 'none';
+            break;
+        case 'type':
+            historyFilters.type = 'all';
+            const typeSelect = document.getElementById('history-type');
+            if (typeSelect) typeSelect.value = 'all';
+            break;
+        case 'category':
+            historyFilters.category = 'all';
+            const categorySelect = document.getElementById('history-category');
+            if (categorySelect) categorySelect.value = 'all';
+            break;
+        case 'amountMin':
+            historyFilters.amountMin = null;
+            const amountMinInput = document.getElementById('history-amount-min');
+            if (amountMinInput) amountMinInput.value = '';
+            break;
+        case 'amountMax':
+            historyFilters.amountMax = null;
+            const amountMaxInput = document.getElementById('history-amount-max');
+            if (amountMaxInput) amountMaxInput.value = '';
+            break;
+    }
+    updateActiveFiltersUI();
+    loadHistory();
 }
 
 // История транзакций с pagination
@@ -1198,6 +1504,9 @@ async function loadHistory(loadMore = false) {
         
         const type = historyFilters.type;
         
+        // Вычисляем даты для периода
+        const dateRange = getDateRangeFor(historyFilters.period);
+        
         // Загружаем через единый endpoint /transactions
         const params = { 
             page: historyState.currentPage, 
@@ -1207,6 +1516,30 @@ async function loadHistory(loadMore = false) {
         // Добавляем type только если не 'all'
         if (type && type !== 'all') {
             params.type = type;
+        }
+        
+        // Добавляем поиск
+        if (historyFilters.search) {
+            params.search = historyFilters.search;
+        }
+        
+        // Добавляем фильтр по сумме
+        if (historyFilters.amountMin !== null) {
+            params.amount_min = historyFilters.amountMin;
+        }
+        if (historyFilters.amountMax !== null) {
+            params.amount_max = historyFilters.amountMax;
+        }
+        
+        // Добавляем категорию (на бэкенде)
+        if (historyFilters.category && historyFilters.category !== 'all') {
+            params.category = historyFilters.category;
+        }
+        
+        // Добавляем период
+        if (historyFilters.period !== 'all' && dateRange.start_date) {
+            params.start_date = dateRange.start_date;
+            params.end_date = dateRange.end_date;
         }
         
         const data = await api.getTransactions(params);
@@ -1231,12 +1564,7 @@ async function loadHistory(loadMore = false) {
             };
         });
         
-        // Фильтрация по категории
-        if (historyFilters.category !== 'all') {
-            newTransactions = newTransactions.filter(t => t.category === historyFilters.category);
-        }
-        
-        // Сортировка
+        // Сортировка на клиенте (серверная сортировка по умолчанию по дате)
         newTransactions = sortTransactions(newTransactions, historyFilters.sortBy);
         
         // Обновляем массив всех транзакций
@@ -1343,7 +1671,7 @@ function updateHistoryUI(transactions) {
     `).join('');
 }
 
-// Render paginated transactions (always replace)
+// Render paginated transactions (optimized with DocumentFragment)
 function renderHistoryTransactions(transactions) {
     debug.log('🎨 renderHistoryTransactions called:', { count: transactions.length, hasMore: historyState.hasMore, loading: historyState.loading });
     const container = document.getElementById('transactions-history');
@@ -1366,27 +1694,42 @@ function renderHistoryTransactions(transactions) {
         grouped[dateKey].push(t);
     });
     
-    const html = Object.entries(grouped).map(([date, items]) => `
-        <div class="date-group">
-            <div class="date-header">${date}</div>
-            ${items.map(t => `
-                <div class="transaction-item">
-                    <div class="transaction-icon ${t.type}">
-                        <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
-                    </div>
-                    <div class="transaction-info">
-                        <div class="transaction-category">${t.category || 'Без категории'}</div>
-                        <div class="transaction-description">${t.description || '—'}</div>
-                    </div>
-                    <div class="transaction-amount">
-                        <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `).join('');
+    // Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
     
-    container.innerHTML = html;
+    Object.entries(grouped).forEach(([date, items]) => {
+        const dateGroup = document.createElement('div');
+        dateGroup.className = 'date-group';
+        
+        const dateHeader = document.createElement('div');
+        dateHeader.className = 'date-header';
+        dateHeader.textContent = date;
+        dateGroup.appendChild(dateHeader);
+        
+        items.forEach(t => {
+            const item = document.createElement('div');
+            item.className = 'transaction-item';
+            item.innerHTML = `
+                <div class="transaction-icon ${t.type}">
+                    <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
+                </div>
+                <div class="transaction-info">
+                    <div class="transaction-category">${t.category || 'Без категории'}</div>
+                    <div class="transaction-description">${t.description || '—'}</div>
+                </div>
+                <div class="transaction-amount">
+                    <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
+                </div>
+            `;
+            dateGroup.appendChild(item);
+        });
+        
+        fragment.appendChild(dateGroup);
+    });
+    
+    // Single DOM update
+    container.innerHTML = '';
+    container.appendChild(fragment);
     
     // Add load more button if there are more pages
     if (historyState.hasMore) {
@@ -1414,6 +1757,14 @@ async function loadSettings() {
     const savedCurrency = localStorage.getItem('currency') || 'KGS';
     const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
     const savedTheme = localStorage.getItem('theme') || 'auto';
+    const savedLanguage = localStorage.getItem('app_language') || 'ru';
+    
+    // Apply language
+    const languageSelect = document.getElementById('language-select');
+    if (languageSelect) {
+        languageSelect.value = savedLanguage;
+    }
+    updateLanguageDisplay(savedLanguage);
     
     // Apply currency
     state.currency = savedCurrency;
@@ -1728,6 +2079,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyPeriod = document.getElementById('history-period');
     const historyCategory = document.getElementById('history-category');
     const historySort = document.getElementById('history-sort');
+    const historySearch = document.getElementById('history-search');
+    const historyAmountMin = document.getElementById('history-amount-min');
+    const historyAmountMax = document.getElementById('history-amount-max');
+    const searchClearBtn = document.getElementById('search-clear-btn');
     
     // Дебаунсинг для фильтров - задержка 300мс
     let historyDebounceTimer;
@@ -1735,8 +2090,49 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(historyDebounceTimer);
         // Очищаем кэш истории при изменении фильтров
         cache.clearMatching('history');
-        historyDebounceTimer = setTimeout(() => loadHistory(), 300);
+        historyDebounceTimer = setTimeout(() => {
+            loadHistory();
+            updateActiveFiltersUI();
+        }, 300);
     };
+    
+    // Поиск с дебаунсом 500мс
+    if (historySearch) {
+        historySearch.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            historyFilters.search = value;
+            
+            // Показываем/скрываем кнопку очистки
+            if (searchClearBtn) {
+                searchClearBtn.style.display = value ? 'flex' : 'none';
+            }
+            
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                cache.clearMatching('history');
+                loadHistory();
+                updateActiveFiltersUI();
+            }, 500);
+        });
+    }
+    
+    // Фильтр по минимальной сумме
+    if (historyAmountMin) {
+        historyAmountMin.addEventListener('change', (e) => {
+            const value = e.target.value;
+            historyFilters.amountMin = value ? parseFloat(value) : null;
+            debouncedLoadHistory();
+        });
+    }
+    
+    // Фильтр по максимальной сумме
+    if (historyAmountMax) {
+        historyAmountMax.addEventListener('change', (e) => {
+            const value = e.target.value;
+            historyFilters.amountMax = value ? parseFloat(value) : null;
+            debouncedLoadHistory();
+        });
+    }
     
     if (historyType) {
         historyType.addEventListener('change', (e) => {
@@ -2747,6 +3143,182 @@ const aiState = {
     recommendations: [],
     loading: false
 };
+
+// ===== TRENDS & PATTERNS =====
+
+async function loadTrendsData() {
+    debug.log('📈 Loading trends data...');
+    
+    try {
+        const data = await api.getSpendingTrends();
+        debug.log('📈 Trends data:', data);
+        
+        if (!data) return;
+        
+        // Конвертируем в выбранную валюту
+        const origCurrency = data.currency || 'KGS';
+        
+        // Расходы
+        const expenseCurrent = convertAmount(data.expenses?.current || 0, origCurrency, state.currency);
+        const expensePrev = convertAmount(data.expenses?.previous || 0, origCurrency, state.currency);
+        const expenseChange = data.expenses?.change_percent || 0;
+        
+        document.getElementById('trend-expense-current').textContent = formatCurrency(expenseCurrent);
+        document.getElementById('trend-expense-prev').textContent = formatCurrency(expensePrev);
+        
+        const expenseChangeEl = document.getElementById('trend-expense-change');
+        if (expenseChangeEl) {
+            const sign = expenseChange > 0 ? '+' : '';
+            expenseChangeEl.textContent = `${sign}${expenseChange}%`;
+            expenseChangeEl.className = 'trend-change ' + 
+                (expenseChange > 5 ? '' : (expenseChange < -5 ? 'positive' : 'neutral'));
+        }
+        
+        // Прогресс-бар расходов (относительно прошлого месяца)
+        const expenseBarWidth = expensePrev > 0 ? Math.min((expenseCurrent / expensePrev) * 100, 150) : 0;
+        document.getElementById('trend-expense-bar').style.width = `${Math.min(expenseBarWidth, 100)}%`;
+        
+        // Доходы
+        const incomeCurrent = convertAmount(data.income?.current || 0, origCurrency, state.currency);
+        const incomePrev = convertAmount(data.income?.previous || 0, origCurrency, state.currency);
+        const incomeChange = data.income?.change_percent || 0;
+        
+        document.getElementById('trend-income-current').textContent = formatCurrency(incomeCurrent);
+        document.getElementById('trend-income-prev').textContent = formatCurrency(incomePrev);
+        
+        const incomeChangeEl = document.getElementById('trend-income-change');
+        if (incomeChangeEl) {
+            const sign = incomeChange > 0 ? '+' : '';
+            incomeChangeEl.textContent = `${sign}${incomeChange}%`;
+            incomeChangeEl.className = 'trend-change ' + 
+                (incomeChange > 5 ? 'positive' : (incomeChange < -5 ? '' : 'neutral'));
+        }
+        
+        // Прогресс-бар доходов
+        const incomeBarWidth = incomePrev > 0 ? Math.min((incomeCurrent / incomePrev) * 100, 150) : 0;
+        document.getElementById('trend-income-bar').style.width = `${Math.min(incomeBarWidth, 100)}%`;
+        
+        // Прогноз
+        const projectedTotal = convertAmount(data.projection?.estimated_total || 0, origCurrency, state.currency);
+        document.getElementById('projection-total').textContent = formatCurrency(projectedTotal);
+        document.getElementById('projection-days').textContent = data.projection?.days_left || 0;
+        
+        // Тренды по категориям
+        renderCategoryTrends(data.category_trends || [], origCurrency);
+        
+        debug.log('✅ Trends loaded');
+        
+    } catch (error) {
+        debug.error('❌ Error loading trends:', error);
+    }
+}
+
+function renderCategoryTrends(trends, origCurrency) {
+    const container = document.getElementById('category-trends-list');
+    if (!container) return;
+    
+    if (!trends.length) {
+        container.innerHTML = '<p class="empty-text">Нет данных для сравнения</p>';
+        return;
+    }
+    
+    const categoryIcons = {
+        'Продукты': '🛒',
+        'Транспорт': '🚗',
+        'Кафе': '☕',
+        'Развлечения': '🎮',
+        'Жильё': '🏠',
+        'Здоровье': '💊',
+        'Одежда': '👕',
+        'Подписки': '📱',
+        'Образование': '📚',
+        'Путешествия': '✈️'
+    };
+    
+    container.innerHTML = trends.map(trend => {
+        const current = convertAmount(trend.current || 0, origCurrency, state.currency);
+        const previous = convertAmount(trend.previous || 0, origCurrency, state.currency);
+        const change = trend.change_percent || 0;
+        const icon = categoryIcons[trend.category] || '📦';
+        
+        const changeClass = trend.trend === 'up' ? 'up' : (trend.trend === 'down' ? 'down' : 'stable');
+        const sign = change > 0 ? '+' : '';
+        
+        return `
+            <div class="category-trend-item">
+                <div class="category-trend-icon">${icon}</div>
+                <div class="category-trend-info">
+                    <div class="category-trend-name">${escapeHtml(trend.category)}</div>
+                    <div class="category-trend-values">
+                        ${formatCurrency(current)} vs ${formatCurrency(previous)}
+                    </div>
+                </div>
+                <span class="category-trend-change ${changeClass}">${sign}${change}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+async function loadPatternsData() {
+    debug.log('📅 Loading patterns data...');
+    
+    try {
+        const data = await api.getSpendingPatterns();
+        debug.log('📅 Patterns data:', data);
+        
+        if (!data) return;
+        
+        // Рендерим бары по дням недели
+        renderWeekdayBars(data.weekday_patterns || [], data.currency || 'KGS');
+        
+        // Инсайт
+        const insightEl = document.getElementById('weekday-insight-text');
+        if (insightEl && data.insights?.recommendation) {
+            insightEl.textContent = data.insights.recommendation;
+        } else if (insightEl) {
+            insightEl.textContent = 'Недостаточно данных для анализа паттернов';
+        }
+        
+        debug.log('✅ Patterns loaded');
+        
+    } catch (error) {
+        debug.error('❌ Error loading patterns:', error);
+    }
+}
+
+function renderWeekdayBars(patterns, origCurrency) {
+    const container = document.getElementById('weekday-bars');
+    if (!container) return;
+    
+    if (!patterns.length) {
+        container.innerHTML = '<p class="empty-text">Нет данных</p>';
+        return;
+    }
+    
+    // Находим максимальное значение для масштабирования
+    const maxAvg = Math.max(...patterns.map(p => p.average || 0));
+    
+    // Находим самый затратный день
+    const maxDayIndex = patterns.reduce((maxIdx, p, idx, arr) => 
+        (p.average || 0) > (arr[maxIdx]?.average || 0) ? idx : maxIdx, 0);
+    
+    container.innerHTML = patterns.map((p, idx) => {
+        const avg = convertAmount(p.average || 0, origCurrency, state.currency);
+        const heightPercent = maxAvg > 0 ? ((p.average || 0) / maxAvg * 100) : 0;
+        const isHighlight = idx === maxDayIndex && (p.average || 0) > 0;
+        
+        return `
+            <div class="weekday-bar-item ${isHighlight ? 'highlight' : ''}">
+                <div class="weekday-bar-wrap">
+                    <div class="weekday-bar ${isHighlight ? 'highlight' : ''}" style="height: ${heightPercent}%">
+                        ${heightPercent > 20 ? `<span class="weekday-bar-value">${formatAmount(avg)}</span>` : ''}
+                    </div>
+                </div>
+                <span class="weekday-label">${p.day_short}</span>
+            </div>
+        `;
+    }).join('');
+}
 
 async function loadAIInsights() {
     if (aiState.loading) return;
