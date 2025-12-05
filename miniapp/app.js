@@ -3217,8 +3217,16 @@ function renderCategoryTrends(trends, origCurrency) {
     const container = document.getElementById('category-trends-list');
     if (!container) return;
     
+    const t = window.i18n?.t || (k => k);
+    
     if (!trends.length) {
-        container.innerHTML = '<p class="empty-text">Нет данных для сравнения</p>';
+        container.innerHTML = `
+            <div class="empty-state-card">
+                <div class="empty-state-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="empty-state-text">${t('insufficient_data')}</div>
+                <div class="empty-state-hint">${t('need_2_months')}</div>
+            </div>
+        `;
         return;
     }
     
@@ -3288,12 +3296,24 @@ async function loadPatternsData() {
 
 function renderWeekdayBars(patterns, origCurrency) {
     const container = document.getElementById('weekday-bars');
+    const insightEl = document.getElementById('weekday-insight');
     if (!container) return;
     
-    if (!patterns.length) {
-        container.innerHTML = '<p class="empty-text">Нет данных</p>';
+    const t = window.i18n?.t || (k => k);
+    
+    if (!patterns.length || patterns.every(p => !p.average)) {
+        container.innerHTML = `
+            <div class="empty-state-card">
+                <div class="empty-state-icon"><i class="fas fa-calendar-week"></i></div>
+                <div class="empty-state-text">${t('no_expense_data')}</div>
+                <div class="empty-state-hint">${t('add_transactions_patterns')}</div>
+            </div>
+        `;
+        if (insightEl) insightEl.style.display = 'none';
         return;
     }
+    
+    if (insightEl) insightEl.style.display = 'flex';
     
     // Находим максимальное значение для масштабирования
     const maxAvg = Math.max(...patterns.map(p => p.average || 0));

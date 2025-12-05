@@ -1,8 +1,8 @@
 // Service Worker for AIAccounter Mini App
 // Provides offline caching and PWA capabilities
 
-const CACHE_NAME = 'aiaccounter-v1.3';
-const RUNTIME_CACHE = 'aiaccounter-runtime-v1.3';
+const CACHE_NAME = 'aiaccounter-v1.4';
+const RUNTIME_CACHE = 'aiaccounter-runtime-v1.4';
 
 // Critical assets to cache on install
 const PRECACHE_ASSETS = [
@@ -21,7 +21,7 @@ const PRECACHE_ASSETS = [
 
 // Install: Cache critical assets and skip waiting
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing v1.3...');
+    console.log('[SW] Installing v1.4...');
     
     event.waitUntil(
         caches.open(CACHE_NAME)
