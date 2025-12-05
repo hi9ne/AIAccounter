@@ -18,7 +18,7 @@ class User(Base):
     last_activity = Column(DateTime)
     registered_date = Column(DateTime, server_default=func.now())
     preferred_currency = Column(String, default="KGS")
-    usage_type = Column(String, nullable=True)  # personal, business, freelance, family
+    usage_type = Column(String, nullable=True)  # personal, business
     monthly_budget = Column(Float, nullable=True)
     occupation = Column(String, nullable=True)
     country = Column(String, default="Кыргызстан")
@@ -227,6 +227,115 @@ class SavedReport(Base):
     report_data = Column(JSON, nullable=True)  # сохраненные данные отчета
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=True)  # когда истечет PDF URL
+    
+    # Relationships
+    user = relationship("User")
+
+
+# ============================================
+# GAMIFICATION MODELS
+# ============================================
+
+class Achievement(Base):
+    """Справочник достижений"""
+    __tablename__ = "achievements"
+    
+    id = Column(String(50), primary_key=True)
+    name = Column(String(100), nullable=False)
+    name_en = Column(String(100), nullable=True)
+    name_ky = Column(String(100), nullable=True)
+    description = Column(Text, nullable=True)
+    description_en = Column(Text, nullable=True)
+    description_ky = Column(Text, nullable=True)
+    category = Column(String(50), nullable=False)  # tracking, savings, analytics, goals, debts, special, rare
+    icon = Column(String(10), default='🏆')
+    xp_reward = Column(Integer, default=0)
+    rarity = Column(String(20), default='common')  # common, rare, epic, legendary
+    condition_type = Column(String(50), nullable=False)  # count, streak, percentage, combo
+    condition_value = Column(Integer, default=1)
+    condition_extra = Column(JSON, nullable=True)
+    sort_order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class UserGamification(Base):
+    """Профиль геймификации пользователя"""
+    __tablename__ = "user_gamification"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, unique=True)
+    
+    # Уровень и опыт
+    level = Column(Integer, default=1)
+    xp = Column(Integer, default=0)
+    total_xp = Column(Integer, default=0)
+    
+    # Streak
+    current_streak = Column(Integer, default=0)
+    max_streak = Column(Integer, default=0)
+    last_activity_date = Column(Date, nullable=True)
+    grace_used_this_month = Column(Boolean, default=False)
+    
+    # Статистика
+    total_transactions = Column(Integer, default=0)
+    total_achievements = Column(Integer, default=0)
+    
+    # Настройки
+    notifications_enabled = Column(Boolean, default=True)
+    show_on_home = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+
+
+class UserAchievement(Base):
+    """Достижения пользователя"""
+    __tablename__ = "user_achievements"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    achievement_id = Column(String(50), ForeignKey("achievements.id", ondelete="CASCADE"), nullable=False)
+    progress = Column(Integer, default=0)
+    max_progress = Column(Integer, default=1)
+    unlocked_at = Column(DateTime, nullable=True)
+    notified = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    achievement = relationship("Achievement")
+
+
+class DailyQuest(Base):
+    """Ежедневные задания"""
+    __tablename__ = "daily_quests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    quest_date = Column(Date, nullable=False)
+    quests = Column(JSON, nullable=False, default=[])
+    all_completed = Column(Boolean, default=False)
+    bonus_claimed = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    # Relationships
+    user = relationship("User")
+
+
+class XPHistory(Base):
+    """История начисления XP"""
+    __tablename__ = "xp_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    amount = Column(Integer, nullable=False)
+    reason = Column(String(100), nullable=False)  # transaction, achievement, daily_quest, streak_bonus
+    details = Column(JSON, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
     
     # Relationships
     user = relationship("User")

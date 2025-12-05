@@ -502,8 +502,14 @@ function loadScreenData(screenName) {
         case 'history':
             loadHistory();
             break;
-        case 'settings':
-            loadSettings();
+        case 'profile':
+            loadProfile();
+            break;
+        case 'achievements':
+            loadAchievements();
+            break;
+        case 'more':
+            // Статический экран, не требует загрузки данных
             break;
         case 'reports':
             loadReports();
@@ -707,6 +713,9 @@ async function loadDashboard() {
         
         // Загружаем виджет бюджета
         loadBudgetWidget();
+        
+        // Загружаем геймификацию для хедера (в фоне)
+        loadGamificationHeader();
         
         perf.end('loadDashboard');
         debug.log('✅ Dashboard loaded');
@@ -1747,6 +1756,327 @@ function renderHistoryTransactions(transactions) {
     } else {
         debug.log('❌ No more pages, button not added');
     }
+}
+
+// ===== PROFILE & GAMIFICATION =====
+
+let gamificationData = null;
+let achievementsData = null;
+
+async function loadProfile() {
+    debug.log('👤 Loading profile...');
+    
+    const lang = localStorage.getItem('app_language') || 'ru';
+    
+    try {
+        // Загружаем данные геймификации
+        const response = await api.getGamificationProfile(lang);
+        debug.log('👤 Profile response:', response);
+        
+        if (response.success) {
+            gamificationData = response.data;
+            debug.log('👤 Gamification data:', gamificationData);
+            updateProfileUI(gamificationData);
+        } else {
+            debug.error('Profile API error:', response);
+        }
+    } catch (error) {
+        debug.error('Failed to load profile:', error);
+    }
+    
+    // Синхронизируем настройки с профилем
+    syncProfileSettings();
+}
+
+function updateProfileUI(data) {
+    if (!data) return;
+    
+    // Обновляем бейдж на главной
+    const levelBadge = document.getElementById('user-level-badge');
+    const levelText = document.getElementById('user-level-text');
+    if (levelText) {
+        levelText.textContent = `Ур. ${data.level}`;
+    }
+    
+    // Обновляем профиль
+    const profileUsername = document.getElementById('profile-username');
+    if (profileUsername) {
+        profileUsername.textContent = localStorage.getItem('user_name') || 'Пользователь';
+    }
+    
+    const profileLevelName = document.getElementById('profile-level-name');
+    if (profileLevelName) {
+        profileLevelName.textContent = data.level_name;
+    }
+    
+    const profileLevelNum = document.getElementById('profile-level-num');
+    if (profileLevelNum) {
+        profileLevelNum.textContent = `(Ур. ${data.level})`;
+    }
+    
+    // XP бар
+    const xpBar = document.getElementById('profile-xp-bar');
+    if (xpBar) {
+        xpBar.style.width = `${data.xp_percentage}%`;
+    }
+    
+    const xpText = document.getElementById('profile-xp-text');
+    if (xpText) {
+        xpText.textContent = `${data.xp_progress} / ${data.xp_for_level} XP`;
+    }
+    
+    // Статистика
+    const streakEl = document.getElementById('profile-streak');
+    if (streakEl) {
+        streakEl.textContent = data.current_streak;
+    }
+    
+    const achievementsEl = document.getElementById('profile-achievements');
+    if (achievementsEl) {
+        achievementsEl.textContent = data.total_achievements;
+    }
+    
+    const transactionsEl = document.getElementById('profile-transactions');
+    if (transactionsEl) {
+        transactionsEl.textContent = data.total_transactions;
+    }
+}
+
+function syncProfileSettings() {
+    // Синхронизируем значения настроек с профилем
+    const savedCurrency = localStorage.getItem('currency') || 'KGS';
+    const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
+    const savedTheme = localStorage.getItem('theme') || 'auto';
+    const savedLanguage = localStorage.getItem('app_language') || 'ru';
+    
+    // Профиль - валюта
+    const profileCurrency = document.getElementById('profile-currency-select');
+    if (profileCurrency) profileCurrency.value = savedCurrency;
+    
+    // Профиль - язык
+    const profileLanguage = document.getElementById('profile-language-select');
+    if (profileLanguage) profileLanguage.value = savedLanguage;
+    
+    // Профиль - тема
+    const profileTheme = document.getElementById('profile-theme-select');
+    if (profileTheme) profileTheme.value = savedTheme;
+    
+    // Профиль - период
+    const profilePeriod = document.getElementById('profile-default-period');
+    if (profilePeriod) profilePeriod.value = savedPeriod;
+}
+
+// Обработчики настроек в профиле
+function updateUsageType(value) {
+    localStorage.setItem('usage_type', value);
+    showSuccess('Режим обновлён');
+}
+
+function updateCurrency(value) {
+    state.currency = value;
+    localStorage.setItem('currency', value);
+    showSuccess('Валюта обновлена');
+    loadDashboard();
+}
+
+function updateTheme(value) {
+    localStorage.setItem('theme', value);
+    
+    // Apply theme directly
+    if (value === 'auto') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', value);
+    }
+    
+    showSuccess('Тема обновлена');
+}
+
+function updateDefaultPeriod(value) {
+    state.currentPeriod = value;
+    localStorage.setItem('defaultPeriod', value);
+    showSuccess('Период обновлён');
+}
+
+// Загрузка геймификации для хедера (легковесная)
+async function loadGamificationHeader() {
+    try {
+        const lang = localStorage.getItem('app_language') || 'ru';
+        const response = await api.getGamificationProfile(lang);
+        
+        if (response.success && response.data) {
+            gamificationData = response.data;
+            
+            // Обновляем бейдж уровня в хедере
+            const levelText = document.getElementById('user-level-text');
+            if (levelText) {
+                levelText.textContent = `Ур. ${response.data.level}`;
+            }
+        }
+    } catch (error) {
+        debug.warn('Failed to load gamification header:', error);
+    }
+}
+
+// ===== ACHIEVEMENTS =====
+
+async function loadAchievements() {
+    debug.log('🏆 Loading achievements...');
+    
+    const lang = localStorage.getItem('app_language') || 'ru';
+    const listEl = document.getElementById('achievements-list');
+    
+    if (listEl) {
+        listEl.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;padding:60px 0;width:100%"><div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite"></div></div>';
+    }
+    
+    try {
+        const response = await api.getAchievements(lang);
+        debug.log('🏆 Achievements response:', response);
+        
+        if (response.success) {
+            achievementsData = response.data;
+            debug.log('🏆 Achievements data:', achievementsData);
+            renderAchievements(achievementsData.achievements);
+            updateAchievementsStats(achievementsData.stats);
+        } else {
+            debug.error('Achievements API error:', response);
+        }
+    } catch (error) {
+        debug.error('Failed to load achievements:', error);
+        if (listEl) {
+            listEl.innerHTML = '<div class="empty-state">Не удалось загрузить достижения</div>';
+        }
+    }
+}
+
+function renderAchievements(achievements, filter = 'all') {
+    const listEl = document.getElementById('achievements-list');
+    if (!listEl) return;
+    
+    let filtered = achievements;
+    
+    if (filter === 'unlocked') {
+        filtered = achievements.filter(a => a.unlocked);
+    } else if (filter === 'locked') {
+        filtered = achievements.filter(a => !a.unlocked);
+    }
+    
+    if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">Нет достижений в этой категории</div>';
+        return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    
+    filtered.forEach(ach => {
+        const card = document.createElement('div');
+        card.className = `achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
+        
+        card.innerHTML = `
+            <div class="achievement-icon">${ach.icon}</div>
+            <div class="achievement-info">
+                <div class="achievement-name">${ach.name}</div>
+                <div class="achievement-desc">${ach.description}</div>
+                ${!ach.unlocked ? `
+                    <div class="achievement-progress">
+                        <div class="achievement-progress-bar">
+                            <div class="achievement-progress-fill" style="width: ${ach.percentage}%"></div>
+                        </div>
+                        <span class="achievement-progress-text">${ach.progress}/${ach.max_progress}</span>
+                    </div>
+                ` : ''}
+            </div>
+            <div class="achievement-xp">+${ach.xp_reward} XP</div>
+        `;
+        
+        fragment.appendChild(card);
+    });
+    
+    listEl.innerHTML = '';
+    listEl.appendChild(fragment);
+}
+
+function updateAchievementsStats(stats) {
+    const countEl = document.getElementById('achievements-count');
+    if (countEl) {
+        countEl.textContent = `${stats.unlocked}/${stats.total}`;
+    }
+    
+    const ringEl = document.getElementById('achievements-ring');
+    if (ringEl) {
+        const circumference = 283; // 2 * PI * 45
+        const offset = circumference - (circumference * stats.percentage / 100);
+        ringEl.style.strokeDashoffset = offset;
+    }
+}
+
+function filterAchievements(filter) {
+    // Обновляем активную кнопку
+    document.querySelectorAll('.achievements-filter .filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === filter);
+    });
+    
+    if (achievementsData) {
+        renderAchievements(achievementsData.achievements, filter);
+    }
+}
+
+// ===== GAMIFICATION NOTIFICATIONS =====
+
+function showGamificationNotification(data) {
+    if (!data) return;
+    
+    // Level up
+    if (data.xp?.level_up) {
+        showAchievementToast({
+            icon: '⬆️',
+            title: 'Новый уровень!',
+            message: `Вы достигли уровня ${data.xp.new_level}!`
+        });
+    }
+    
+    // Новые достижения
+    if (data.achievements?.length > 0) {
+        data.achievements.forEach(ach => {
+            showAchievementToast({
+                icon: ach.icon,
+                title: ach.name,
+                message: `+${ach.xp_reward} XP`
+            });
+        });
+    }
+    
+    // Streak milestone
+    if (data.streak?.streak_milestone) {
+        showAchievementToast({
+            icon: '🔥',
+            title: `${data.streak.streak_milestone} дней подряд!`,
+            message: `+${data.streak.bonus_xp} XP бонус`
+        });
+    }
+}
+
+function showAchievementToast(data) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast achievement-toast';
+    toast.innerHTML = `
+        <span class="toast-icon">${data.icon}</span>
+        <div class="toast-content">
+            <div class="toast-title">${data.title}</div>
+            <div class="toast-message">${data.message}</div>
+        </div>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }
 
 // ===== SETTINGS =====

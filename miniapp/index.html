@@ -28,7 +28,7 @@
     </script>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="style.css?v=2.0" as="style">
+    <link rel="preload" href="style.css?v=2.1" as="style">
     <link rel="preload" href="app.js?v=1.9" as="script">
     
     <!-- Scripts -->
@@ -55,20 +55,20 @@
              🏠 HOME / DASHBOARD (REDESIGNED)
         ═══════════════════════════════════════════════════════════════ -->
         <div id="home-screen" class="screen active">
-            <!-- Modern Header -->
+            <!-- Modern Header - Clickable Profile -->
             <header class="home-header">
-                <div class="user-block">
+                <div class="user-block clickable" onclick="switchScreen('profile')">
                     <div class="user-avatar-glow" id="user-avatar">
                         <i class="fas fa-user"></i>
                     </div>
                     <div class="header-greeting">
                         <h1 class="greeting-name" id="user-name" data-i18n="user">Пользователь</h1>
+                        <span class="user-level-badge" id="user-level-badge">
+                            <i class="fas fa-star"></i>
+                            <span id="user-level-text">Ур. 1</span>
+                        </span>
                     </div>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-icon-glass" onclick="loadDashboard()">
-                        <i class="fas fa-rotate"></i>
-                    </button>
+                    <i class="fas fa-chevron-right profile-arrow"></i>
                 </div>
             </header>
 
@@ -443,17 +443,70 @@
         <!-- ═══════════════════════════════════════════════════════════════
              ⚙️ SETTINGS
         ═══════════════════════════════════════════════════════════════ -->
-        <div id="settings-screen" class="screen">
+        <!-- ═══════════════════════════════════════════════════════════════
+             👤 PROFILE (NEW)
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="profile-screen" class="screen">
             <header class="screen-header">
                 <button class="btn-back" onclick="switchScreen('home')">
                     <i class="fas fa-arrow-left"></i>
                 </button>
-                <h1 data-i18n="settings">Настройки</h1>
+                <h1 data-i18n="profile">Профиль</h1>
                 <div style="width: 40px;"></div>
             </header>
             <div class="screen-body">
                 
-                <!-- Аккаунт -->
+                <!-- Gamification Card -->
+                <div class="profile-gamification-card">
+                    <div class="profile-avatar-section">
+                        <div class="profile-avatar-large">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="profile-user-info">
+                            <h2 id="profile-username">Пользователь</h2>
+                            <div class="profile-level-badge">
+                                <span class="level-icon">⭐</span>
+                                <span id="profile-level-name">Новичок</span>
+                                <span class="level-number" id="profile-level-num">(Ур. 1)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-xp-section">
+                        <div class="xp-bar-container">
+                            <div class="xp-bar-fill" id="profile-xp-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="xp-info">
+                            <span id="profile-xp-text">0 / 100 XP</span>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-stats-row">
+                        <div class="profile-stat">
+                            <span class="stat-icon">🔥</span>
+                            <span class="stat-value" id="profile-streak">0</span>
+                            <span class="stat-label" data-i18n="streak_days">дней подряд</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="stat-icon">🏆</span>
+                            <span class="stat-value" id="profile-achievements">0</span>
+                            <span class="stat-label" data-i18n="achievements_unlocked">достижений</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="stat-icon">📝</span>
+                            <span class="stat-value" id="profile-transactions">0</span>
+                            <span class="stat-label" data-i18n="total_entries">записей</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-achievements" onclick="switchScreen('achievements')">
+                        <i class="fas fa-trophy"></i>
+                        <span data-i18n="all_achievements">Все достижения</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Настройки аккаунта -->
                 <div class="settings-group">
                     <h3 data-i18n="account">Аккаунт</h3>
                     
@@ -462,10 +515,10 @@
                             <i class="fas fa-user-circle"></i>
                             <div>
                                 <span class="setting-title" data-i18n="mode">Режим</span>
-                                <span class="setting-desc" id="usage-type-desc" data-i18n="personal_finances">Личные финансы</span>
+                                <span class="setting-desc" id="profile-usage-type-desc" data-i18n="personal_finances">Личные финансы</span>
                             </div>
                         </div>
-                        <select id="usage-type-select" class="select-setting">
+                        <select id="profile-usage-type-select" class="select-setting" onchange="updateUsageType(this.value)">
                             <option value="personal" data-i18n="personal">Личный</option>
                             <option value="business" data-i18n="business">Бизнес</option>
                         </select>
@@ -479,7 +532,7 @@
                                 <span class="setting-desc" data-i18n="main_currency">Основная валюта</span>
                             </div>
                         </div>
-                        <select id="currency-select" class="select-setting">
+                        <select id="profile-currency-select" class="select-setting" onchange="updateCurrency(this.value)">
                             <option value="KGS">KGS (сом)</option>
                             <option value="USD">USD ($)</option>
                             <option value="EUR">EUR (€)</option>
@@ -497,10 +550,10 @@
                             <i class="fas fa-globe"></i>
                             <div>
                                 <span class="setting-title" data-i18n="language">Язык</span>
-                                <span class="setting-desc" id="current-language-name">Русский</span>
+                                <span class="setting-desc" id="profile-current-language-name">Русский</span>
                             </div>
                         </div>
-                        <select id="language-select" class="select-setting" onchange="changeLanguage(this.value)">
+                        <select id="profile-language-select" class="select-setting" onchange="changeLanguage(this.value)">
                             <option value="ru">RU Русский</option>
                             <option value="en">EN English</option>
                             <option value="ky">KG Кыргызча</option>
@@ -515,7 +568,7 @@
                                 <span class="setting-desc" data-i18n="color_scheme">Цветовая схема</span>
                             </div>
                         </div>
-                        <select id="theme-select" class="select-setting">
+                        <select id="profile-theme-select" class="select-setting" onchange="updateTheme(this.value)">
                             <option value="auto" data-i18n="auto">Авто</option>
                             <option value="dark" data-i18n="dark">Тёмная</option>
                             <option value="light" data-i18n="light">Светлая</option>
@@ -530,61 +583,12 @@
                                 <span class="setting-desc" data-i18n="on_home_screen">На главном экране</span>
                             </div>
                         </div>
-                        <select id="default-period" class="select-setting">
+                        <select id="profile-default-period" class="select-setting" onchange="updateDefaultPeriod(this.value)">
                             <option value="day" data-i18n="day">День</option>
                             <option value="week" selected data-i18n="week">Неделя</option>
                             <option value="month" data-i18n="month">Месяц</option>
                             <option value="year" data-i18n="year">Год</option>
                         </select>
-                    </div>
-                </div>
-
-                <!-- Управление -->
-                <div class="settings-group">
-                    <h3 data-i18n="management">Управление</h3>
-                    
-                    <div class="setting-row clickable" onclick="switchScreen('budgets')">
-                        <div class="setting-left">
-                            <i class="fas fa-wallet"></i>
-                            <div>
-                                <span class="setting-title" data-i18n="budgets">Бюджеты</span>
-                                <span class="setting-desc" data-i18n="monthly_limits">Месячные лимиты расходов</span>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-                    
-                    <div class="setting-row clickable" onclick="switchScreen('categories')">
-                        <div class="setting-left">
-                            <i class="fas fa-tags"></i>
-                            <div>
-                                <span class="setting-title" data-i18n="categories">Категории</span>
-                                <span class="setting-desc" data-i18n="configure_categories">Настроить категории расходов и доходов</span>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <div class="setting-row clickable" onclick="switchScreen('recurring')">
-                        <div class="setting-left">
-                            <i class="fas fa-sync-alt"></i>
-                            <div>
-                                <span class="setting-title" data-i18n="subscriptions_auto">Подписки и автоплатежи</span>
-                                <span class="setting-desc" data-i18n="regular_payments">Регулярные списания</span>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
-
-                    <div class="setting-row clickable" onclick="switchScreen('debts')">
-                        <div class="setting-left">
-                            <i class="fas fa-handshake"></i>
-                            <div>
-                                <span class="setting-title" data-i18n="debts">Долги</span>
-                                <span class="setting-desc" data-i18n="debts_management">Учёт займов и долгов</span>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
 
@@ -615,7 +619,126 @@
                                 <span class="setting-desc" data-i18n="smart_finance">Умный учёт финансов</span>
                             </div>
                         </div>
-                        <span class="version-tag">v1.2</span>
+                        <span class="version-tag">v1.3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             🏆 ACHIEVEMENTS
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="achievements-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('profile')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 data-i18n="achievements">Достижения</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div class="screen-body">
+                <div class="achievements-stats">
+                    <div class="achievements-progress-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="ring-bg" cx="50" cy="50" r="45"/>
+                            <circle class="ring-fill" id="achievements-ring" cx="50" cy="50" r="45" 
+                                    stroke-dasharray="283" stroke-dashoffset="283"/>
+                        </svg>
+                        <div class="ring-text">
+                            <span id="achievements-count">0/0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="achievements-filter">
+                    <button class="filter-btn active" data-category="all" onclick="filterAchievements('all')">
+                        <span data-i18n="all">Все</span>
+                    </button>
+                    <button class="filter-btn" data-category="unlocked" onclick="filterAchievements('unlocked')">
+                        <span data-i18n="unlocked">Открытые</span>
+                    </button>
+                    <button class="filter-btn" data-category="locked" onclick="filterAchievements('locked')">
+                        <span data-i18n="locked">Закрытые</span>
+                    </button>
+                </div>
+                
+                <div class="achievements-list" id="achievements-list">
+                    <!-- Achievements will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             📁 MORE (RENAMED FROM SETTINGS)
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="settings-screen" class="screen">
+            <header class="screen-header">
+                <h1 data-i18n="more">Ещё</h1>
+            </header>
+            <div class="screen-body">
+                
+                <!-- Управление финансами -->
+                <div class="settings-group">
+                    <h3 data-i18n="management">Управление</h3>
+                    
+                    <div class="setting-row clickable" onclick="switchScreen('budgets')">
+                        <div class="setting-left">
+                            <i class="fas fa-wallet"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="budgets">Бюджеты</span>
+                                <span class="setting-desc" data-i18n="monthly_limits">Месячные лимиты расходов</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    
+                    <div class="setting-row clickable" onclick="switchScreen('categories')">
+                        <div class="setting-left">
+                            <i class="fas fa-tags"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="categories">Категории</span>
+                                <span class="setting-desc" data-i18n="configure_categories">Настроить категории</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <div class="setting-row clickable" onclick="switchScreen('recurring')">
+                        <div class="setting-left">
+                            <i class="fas fa-sync-alt"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="subscriptions">Подписки</span>
+                                <span class="setting-desc" data-i18n="regular_payments">Регулярные платежи</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+
+                    <div class="setting-row clickable" onclick="switchScreen('debts')">
+                        <div class="setting-left">
+                            <i class="fas fa-handshake"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="debts">Долги</span>
+                                <span class="setting-desc" data-i18n="debts_management">Учёт займов</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <!-- Быстрые действия -->
+                <div class="settings-group">
+                    <h3 data-i18n="quick_actions">Быстрые действия</h3>
+                    
+                    <div class="setting-row clickable" onclick="showExportModal()">
+                        <div class="setting-left">
+                            <i class="fas fa-file-export"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="export_data">Экспорт данных</span>
+                                <span class="setting-desc" data-i18n="download_csv_excel">Скачать CSV/Excel</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
                     </div>
                 </div>
             </div>
@@ -1181,17 +1304,17 @@
                 <i class="fas fa-chart-pie"></i>
                 <span data-i18n="nav_analytics">Аналитика</span>
             </button>
-            <button class="nav-btn" data-screen="reports">
-                <i class="fas fa-file-lines"></i>
-                <span data-i18n="reports">Отчёты</span>
-            </button>
             <button class="nav-btn" data-screen="history">
                 <i class="fas fa-clock-rotate-left"></i>
                 <span data-i18n="nav_history">История</span>
             </button>
+            <button class="nav-btn" data-screen="reports">
+                <i class="fas fa-file-lines"></i>
+                <span data-i18n="reports">Отчёты</span>
+            </button>
             <button class="nav-btn" data-screen="settings">
-                <i class="fas fa-gear"></i>
-                <span data-i18n="nav_more">Ещё</span>
+                <i class="fas fa-ellipsis"></i>
+                <span data-i18n="more">Ещё</span>
             </button>
         </nav>
     </div>

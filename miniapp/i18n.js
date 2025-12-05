@@ -29,6 +29,24 @@ const translations = {
         nav_history: 'История',
         nav_settings: 'Настройки',
         nav_more: 'Ещё',
+        more: 'Ещё',
+        
+        // Profile & Gamification
+        profile: 'Профиль',
+        level: 'Уровень',
+        streak_days: 'дней подряд',
+        achievements_unlocked: 'достижений',
+        total_entries: 'записей',
+        all_achievements: 'Все достижения',
+        achievements: 'Достижения',
+        unlocked: 'Открытые',
+        locked: 'Закрытые',
+        xp: 'XP',
+        daily_quests: 'Ежедневные задания',
+        quick_actions: 'Быстрые действия',
+        export_data: 'Экспорт данных',
+        download_csv_excel: 'Скачать CSV/Excel',
+        subscriptions: 'Подписки',
         
         // Home Screen
         greeting: 'Привет',
@@ -307,6 +325,24 @@ const translations = {
         nav_history: 'History',
         nav_settings: 'Settings',
         nav_more: 'More',
+        more: 'More',
+        
+        // Profile & Gamification
+        profile: 'Profile',
+        level: 'Level',
+        streak_days: 'days streak',
+        achievements_unlocked: 'achievements',
+        total_entries: 'entries',
+        all_achievements: 'All Achievements',
+        achievements: 'Achievements',
+        unlocked: 'Unlocked',
+        locked: 'Locked',
+        xp: 'XP',
+        daily_quests: 'Daily Quests',
+        quick_actions: 'Quick Actions',
+        export_data: 'Export Data',
+        download_csv_excel: 'Download CSV/Excel',
+        subscriptions: 'Subscriptions',
         
         // Home Screen
         greeting: 'Hello',
@@ -585,6 +621,24 @@ const translations = {
         nav_history: 'Тарых',
         nav_settings: 'Жөндөөлөр',
         nav_more: 'Дагы',
+        more: 'Дагы',
+        
+        // Profile & Gamification
+        profile: 'Профиль',
+        level: 'Деңгээл',
+        streak_days: 'күн катары',
+        achievements_unlocked: 'жетишкендик',
+        total_entries: 'жазуу',
+        all_achievements: 'Бардык жетишкендиктер',
+        achievements: 'Жетишкендиктер',
+        unlocked: 'Ачылган',
+        locked: 'Жабык',
+        xp: 'XP',
+        daily_quests: 'Күнүмдүк тапшырмалар',
+        quick_actions: 'Тез аракеттер',
+        export_data: 'Маалыматты экспорттоо',
+        download_csv_excel: 'CSV/Excel жүктөө',
+        subscriptions: 'Жазылуулар',
         
         // Home Screen
         greeting: 'Салам',

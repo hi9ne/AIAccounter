@@ -10,6 +10,7 @@ from ...schemas import IncomeCreate, IncomeUpdate, Income as IncomeSchema, Pagin
 from ...utils.auth import get_current_user
 from ...services.cache import cache_service
 from ...services.websocket import ws_manager
+from ...services.gamification import GamificationService
 
 router = APIRouter()
 
@@ -37,6 +38,14 @@ async def create_income(
     await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
     await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
     
+    # Геймификация
+    gamification = GamificationService(db)
+    gamification_result = await gamification.on_transaction_added(
+        current_user.user_id,
+        "income",
+        has_description=bool(income.description)
+    )
+    
     # WebSocket уведомление
     await ws_manager.send_personal_message({
         "type": "transaction_created",
@@ -46,7 +55,8 @@ async def create_income(
             "amount": db_income.amount,
             "currency": db_income.currency,
             "category": db_income.category,
-            "date": db_income.date.isoformat()
+            "date": db_income.date.isoformat(),
+            "gamification": gamification_result
         }
     }, current_user.user_id)
     

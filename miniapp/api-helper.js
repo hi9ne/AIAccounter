@@ -289,6 +289,34 @@ class APIHelper {
         return this.get('/analytics/patterns');
     }
 
+    // ===== GAMIFICATION =====
+    
+    async getGamificationProfile(lang = 'ru') {
+        return this.get('/gamification/profile', { lang });
+    }
+
+    async getAchievements(lang = 'ru', category = null) {
+        const params = { lang };
+        if (category) params.category = category;
+        return this.get('/gamification/achievements', params);
+    }
+
+    async getDailyQuests(lang = 'ru') {
+        return this.get('/gamification/daily-quests', { lang });
+    }
+
+    async getXPHistory(limit = 20) {
+        return this.get('/gamification/xp-history', { limit });
+    }
+
+    async updateGamificationSettings(settings) {
+        return this.post('/gamification/settings', settings);
+    }
+
+    async getLeaderboard(period = 'week', limit = 10) {
+        return this.get('/gamification/leaderboard', { period, limit });
+    }
+
     // ===== EXPORT =====
     
     async exportTransactions(params = {}) {

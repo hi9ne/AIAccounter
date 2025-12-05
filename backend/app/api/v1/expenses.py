@@ -10,6 +10,7 @@ from ...schemas import ExpenseCreate, ExpenseUpdate, Expense as ExpenseSchema, P
 from ...utils.auth import get_current_user
 from ...services.cache import cache_service
 from ...services.websocket import ws_manager
+from ...services.gamification import GamificationService
 
 router = APIRouter()
 
@@ -38,6 +39,14 @@ async def create_expense(
     await cache_service.delete_pattern(f"top_categories:{current_user.user_id}:*")
     await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
     
+    # Геймификация
+    gamification = GamificationService(db)
+    gamification_result = await gamification.on_transaction_added(
+        current_user.user_id,
+        "expense",
+        has_description=bool(expense.description)
+    )
+    
     # WebSocket уведомление
     await ws_manager.send_personal_message({
         "type": "transaction_created",
@@ -47,7 +56,8 @@ async def create_expense(
             "amount": db_expense.amount,
             "currency": db_expense.currency,
             "category": db_expense.category,
-            "date": db_expense.date.isoformat()
+            "date": db_expense.date.isoformat(),
+            "gamification": gamification_result
         }
     }, current_user.user_id)
     
