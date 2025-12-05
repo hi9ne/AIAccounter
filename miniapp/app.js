@@ -3493,19 +3493,26 @@ async function loadTrendsData() {
         const expensePrev = convertAmount(data.expenses?.previous || 0, origCurrency, state.currency);
         const expenseChange = data.expenses?.change_percent || 0;
         
-        document.getElementById('trend-expense-current').textContent = formatCurrency(expenseCurrent);
-        document.getElementById('trend-expense-prev').textContent = formatCurrency(expensePrev);
+        // Показываем актуальные данные или placeholder
+        const hasExpenseData = expenseCurrent > 0 || expensePrev > 0;
+        document.getElementById('trend-expense-current').textContent = hasExpenseData ? formatCurrency(expenseCurrent) : '0 с';
+        document.getElementById('trend-expense-prev').textContent = hasExpenseData ? formatCurrency(expensePrev) : '0 с';
         
         const expenseChangeEl = document.getElementById('trend-expense-change');
         if (expenseChangeEl) {
-            const sign = expenseChange > 0 ? '+' : '';
-            expenseChangeEl.textContent = `${sign}${expenseChange}%`;
-            expenseChangeEl.className = 'trend-change ' + 
-                (expenseChange > 5 ? '' : (expenseChange < -5 ? 'positive' : 'neutral'));
+            if (hasExpenseData) {
+                const sign = expenseChange > 0 ? '+' : '';
+                expenseChangeEl.textContent = `${sign}${expenseChange}%`;
+                expenseChangeEl.className = 'trend-change ' + 
+                    (expenseChange > 5 ? '' : (expenseChange < -5 ? 'positive' : 'neutral'));
+            } else {
+                expenseChangeEl.textContent = '0%';
+                expenseChangeEl.className = 'trend-change neutral';
+            }
         }
         
         // Прогресс-бар расходов (относительно прошлого месяца)
-        const expenseBarWidth = expensePrev > 0 ? Math.min((expenseCurrent / expensePrev) * 100, 150) : 0;
+        const expenseBarWidth = expensePrev > 0 ? Math.min((expenseCurrent / expensePrev) * 100, 150) : (expenseCurrent > 0 ? 100 : 0);
         document.getElementById('trend-expense-bar').style.width = `${Math.min(expenseBarWidth, 100)}%`;
         
         // Доходы
@@ -3513,19 +3520,25 @@ async function loadTrendsData() {
         const incomePrev = convertAmount(data.income?.previous || 0, origCurrency, state.currency);
         const incomeChange = data.income?.change_percent || 0;
         
-        document.getElementById('trend-income-current').textContent = formatCurrency(incomeCurrent);
-        document.getElementById('trend-income-prev').textContent = formatCurrency(incomePrev);
+        const hasIncomeData = incomeCurrent > 0 || incomePrev > 0;
+        document.getElementById('trend-income-current').textContent = hasIncomeData ? formatCurrency(incomeCurrent) : '0 с';
+        document.getElementById('trend-income-prev').textContent = hasIncomeData ? formatCurrency(incomePrev) : '0 с';
         
         const incomeChangeEl = document.getElementById('trend-income-change');
         if (incomeChangeEl) {
-            const sign = incomeChange > 0 ? '+' : '';
-            incomeChangeEl.textContent = `${sign}${incomeChange}%`;
-            incomeChangeEl.className = 'trend-change ' + 
-                (incomeChange > 5 ? 'positive' : (incomeChange < -5 ? '' : 'neutral'));
+            if (hasIncomeData) {
+                const sign = incomeChange > 0 ? '+' : '';
+                incomeChangeEl.textContent = `${sign}${incomeChange}%`;
+                incomeChangeEl.className = 'trend-change ' + 
+                    (incomeChange > 5 ? 'positive' : (incomeChange < -5 ? '' : 'neutral'));
+            } else {
+                incomeChangeEl.textContent = '0%';
+                incomeChangeEl.className = 'trend-change neutral';
+            }
         }
         
         // Прогресс-бар доходов
-        const incomeBarWidth = incomePrev > 0 ? Math.min((incomeCurrent / incomePrev) * 100, 150) : 0;
+        const incomeBarWidth = incomePrev > 0 ? Math.min((incomeCurrent / incomePrev) * 100, 150) : (incomeCurrent > 0 ? 100 : 0);
         document.getElementById('trend-income-bar').style.width = `${Math.min(incomeBarWidth, 100)}%`;
         
         // Прогноз

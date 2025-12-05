@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, extract, func, desc
+from sqlalchemy import select, and_, extract, func, desc, text
 from typing import Optional, List
 from datetime import datetime
 
@@ -71,21 +71,48 @@ async def get_current_budget_status(
                 "message": "Бюджет не установлен"
             }
     
-    # Получаем сумму расходов за месяц
+    # Получаем сумму расходов за месяц с конвертацией валют
     year, month_num = current_month.split("-")
-    expenses_query = select(
-        func.sum(Expense.amount).label("total_spent"),
-        func.count(Expense.id).label("transaction_count")
-    ).where(
-        and_(
-            Expense.user_id == current_user.user_id,
-            Expense.deleted_at.is_(None),
-            extract('year', Expense.date) == int(year),
-            extract('month', Expense.date) == int(month_num)
-        )
-    )
+    budget_currency = budget.currency or "KGS"
     
-    expenses_result = await db.execute(expenses_query)
+    # Запрос с конвертацией валют в валюту бюджета
+    expenses_query = text("""
+        WITH latest_rates AS (
+            SELECT DISTINCT ON (from_currency, to_currency) 
+                from_currency, to_currency, rate
+            FROM exchange_rates 
+            ORDER BY from_currency, to_currency, date DESC
+        )
+        SELECT 
+            COALESCE(SUM(
+                CASE 
+                    WHEN e.currency = :budget_currency THEN e.amount
+                    WHEN e.currency = 'KGS' AND :budget_currency != 'KGS' THEN 
+                        e.amount / COALESCE(
+                            (SELECT rate FROM latest_rates WHERE from_currency = :budget_currency AND to_currency = 'KGS'),
+                            1
+                        )
+                    ELSE e.amount * COALESCE(
+                        (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = :budget_currency),
+                        (SELECT rate FROM latest_rates WHERE from_currency = e.currency AND to_currency = 'KGS') /
+                        NULLIF((SELECT rate FROM latest_rates WHERE from_currency = :budget_currency AND to_currency = 'KGS'), 0)
+                    )
+                END
+            ), 0) as total_spent,
+            COUNT(*) as transaction_count
+        FROM expenses e
+        WHERE e.user_id = :user_id 
+        AND e.deleted_at IS NULL
+        AND EXTRACT(YEAR FROM e.date) = :year
+        AND EXTRACT(MONTH FROM e.date) = :month
+    """)
+    
+    expenses_result = await db.execute(expenses_query, {
+        "user_id": current_user.user_id,
+        "budget_currency": budget_currency,
+        "year": int(year),
+        "month": int(month_num)
+    })
     expenses_data = expenses_result.one()
     
     total_spent = float(expenses_data.total_spent or 0)
