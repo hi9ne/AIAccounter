@@ -1,4 +1,5 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import timedelta
@@ -7,11 +8,13 @@ import logging
 from ...database import get_db
 from ...models import User
 from ...schemas import TelegramAuthData, Token
-from ...utils.auth import create_access_token, get_current_user
+from ...utils.auth import create_access_token, get_current_user, verify_token_only
 from ...config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
 
 
 @router.post("/telegram", response_model=Token)
@@ -96,4 +99,15 @@ async def get_current_user_info(
         "language_code": current_user.language_code,
         "is_active": current_user.is_active,
     }
+
+
+@router.get("/verify")
+async def verify_token(
+    token: str = Depends(oauth2_scheme)
+):
+    """
+    Быстрая проверка валидности токена БЕЗ запроса к БД.
+    Только декодирует JWT и проверяет подпись.
+    """
+    return verify_token_only(token)
 

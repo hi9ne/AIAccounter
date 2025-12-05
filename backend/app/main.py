@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from .config import settings
 from .api.v1 import router as api_v1_router
 from .services.cache import cache_service
+from .services.memory_cache import hybrid_cache
 import logging
 import os
 
@@ -62,6 +64,9 @@ app.add_middleware(
     max_age=3600
 )
 
+# GZip compression для ответов > 500 байт
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 # Подключаем API роуты
 app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
 
@@ -71,6 +76,13 @@ async def startup_event():
     """Инициализация при запуске"""
     logger.info("🚀 Starting AIAccounter API...")
     await cache_service.connect()
+    
+    # Подключаем Redis к гибридному кэшу если доступен
+    if cache_service.enabled:
+        hybrid_cache.set_redis(cache_service)
+        logger.info("✅ Hybrid cache connected to Redis")
+    else:
+        logger.info("⚡ Using in-memory cache (Redis not available)")
 
 
 @app.on_event("shutdown")
@@ -97,6 +109,15 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "AIAccounter API"
+    }
+
+
+@app.get("/cache/stats")
+async def cache_stats():
+    """Статистика кэша (для отладки)"""
+    return {
+        "hybrid_cache": hybrid_cache.stats,
+        "redis_enabled": cache_service.enabled
     }
 
 

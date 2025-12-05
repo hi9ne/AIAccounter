@@ -118,3 +118,25 @@ def create_telegram_token(telegram_chat_id: str, expires_delta: Optional[timedel
     """
     token_data = {"sub": telegram_chat_id, "type": "telegram"}
     return create_access_token(token_data, expires_delta)
+
+
+def verify_token_only(token: str) -> dict:
+    """
+    Быстрая проверка токена БЕЗ запроса к БД.
+    Возвращает payload если токен валидный.
+    Raises HTTPException если токен невалидный.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id_str = payload.get("sub")
+        if user_id_str is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
+            )
+        return {"valid": True, "user_id": int(user_id_str)}
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )

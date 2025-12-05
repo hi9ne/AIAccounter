@@ -264,6 +264,14 @@ class APIHelper {
     async getOverview(params = {}) {
         return this.get('/analytics/dashboard', params);
     }
+    
+    /**
+     * 🚀 BATCH API - Загружает ВСЕ данные за один запрос
+     * Значительно быстрее чем множество отдельных запросов
+     */
+    async getBatchAnalytics(period = 'month', include = 'all') {
+        return this.get('/analytics/batch', { period, include });
+    }
 
     async getIncomeExpenseStats(params = {}) {
         return this.get('/analytics/stats', params);

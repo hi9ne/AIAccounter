@@ -9,6 +9,7 @@ from ...models import Expense, User
 from ...schemas import ExpenseCreate, ExpenseUpdate, Expense as ExpenseSchema, PaginatedResponse
 from ...utils.auth import get_current_user
 from ...services.cache import cache_service
+from ...services.memory_cache import hybrid_cache
 from ...services.websocket import ws_manager
 from ...services.gamification import GamificationService
 
@@ -38,6 +39,8 @@ async def create_expense(
     await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
     await cache_service.delete_pattern(f"top_categories:{current_user.user_id}:*")
     await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+    await hybrid_cache.delete_pattern(f"batch:{current_user.user_id}:*")
+    await hybrid_cache.delete_pattern(f"transactions:{current_user.user_id}:*")
     
     # Геймификация
     gamification = GamificationService(db)
@@ -193,6 +196,8 @@ async def delete_expense(
     await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
     await cache_service.delete_pattern(f"top_categories:{current_user.user_id}:*")
     await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+    await hybrid_cache.delete_pattern(f"batch:{current_user.user_id}:*")
+    await hybrid_cache.delete_pattern(f"transactions:{current_user.user_id}:*")
     
     # WebSocket уведомление
     await ws_manager.send_personal_message({

@@ -1261,3 +1261,296 @@ async def get_spending_patterns(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get patterns: {str(e)}"
         )
+
+
+@router.get("/batch")
+async def get_batch_analytics(
+    period: str = Query("month", description="Период: day, week, month, quarter, year"),
+    include: str = Query("all", description="Что включить: all, dashboard, trends, patterns, budget"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    🚀 BATCH ENDPOINT - все данные для приложения за один запрос
+    
+    Использует простые параллельные запросы вместо сложного CTE.
+    """
+    import asyncio
+    import time as time_module
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    start_time = time_module.time()
+    logger.warning(f"[BATCH] Started for user {current_user.user_id}, period={period}")
+    
+    from zoneinfo import ZoneInfo
+    from app.models.models import Expense, Income, ExchangeRate, Budget
+    from sqlalchemy import select, func, and_, desc, extract
+    from app.services.memory_cache import hybrid_cache
+    
+    # Проверяем кэш
+    cache_key = hybrid_cache.make_key("batch", current_user.user_id, period, include)
+    cached = await hybrid_cache.get(cache_key)
+    if cached:
+        logger.warning(f"[BATCH] Cache HIT in {time_module.time() - start_time:.3f}s")
+        return cached
+    
+    logger.warning(f"[BATCH] Cache MISS, executing queries...")
+    
+    # Определяем даты
+    user_tz = ZoneInfo("Asia/Bishkek")
+    today = datetime.now(user_tz).date()
+    
+    if period == "day":
+        start_date = today
+    elif period == "week":
+        start_date = today - timedelta(days=7)
+    elif period == "month":
+        start_date = today - timedelta(days=30)
+    elif period == "quarter":
+        start_date = today - timedelta(days=90)
+    elif period == "year":
+        start_date = today - timedelta(days=365)
+    else:
+        start_date = today - timedelta(days=30)
+    
+    # Даты для трендов
+    current_month_start = today.replace(day=1)
+    last_month_end = current_month_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    try:
+        # === ОДИН БОЛЬШОЙ SQL ЗАПРОС ДЛЯ ВСЕХ ДАННЫХ ===
+        # Это быстрее чем 10 параллельных запросов через сеть
+        
+        all_in_one_query = text("""
+            WITH rates AS (
+                SELECT DISTINCT ON (from_currency) from_currency, rate
+                FROM exchange_rates WHERE to_currency = 'KGS'
+                ORDER BY from_currency, date DESC
+            ),
+            period_income AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN i.currency = 'KGS' THEN i.amount ELSE i.amount * COALESCE(r.rate, 1) END
+                ), 0) as total, COUNT(*) as cnt
+                FROM income i LEFT JOIN rates r ON r.from_currency = i.currency
+                WHERE i.user_id = :user_id AND i.date >= :start_date AND i.date <= :end_date AND i.deleted_at IS NULL
+            ),
+            period_expense AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN e.currency = 'KGS' THEN e.amount ELSE e.amount * COALESCE(r.rate, 1) END
+                ), 0) as total, COUNT(*) as cnt
+                FROM expenses e LEFT JOIN rates r ON r.from_currency = e.currency
+                WHERE e.user_id = :user_id AND e.date >= :start_date AND e.date <= :end_date AND e.deleted_at IS NULL
+            ),
+            curr_month_exp AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN e.currency = 'KGS' THEN e.amount ELSE e.amount * COALESCE(r.rate, 1) END
+                ), 0) as total
+                FROM expenses e LEFT JOIN rates r ON r.from_currency = e.currency
+                WHERE e.user_id = :user_id AND e.date >= :month_start AND e.date <= :end_date AND e.deleted_at IS NULL
+            ),
+            prev_month_exp AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN e.currency = 'KGS' THEN e.amount ELSE e.amount * COALESCE(r.rate, 1) END
+                ), 0) as total
+                FROM expenses e LEFT JOIN rates r ON r.from_currency = e.currency
+                WHERE e.user_id = :user_id AND e.date >= :prev_start AND e.date <= :prev_end AND e.deleted_at IS NULL
+            ),
+            curr_month_inc AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN i.currency = 'KGS' THEN i.amount ELSE i.amount * COALESCE(r.rate, 1) END
+                ), 0) as total
+                FROM income i LEFT JOIN rates r ON r.from_currency = i.currency
+                WHERE i.user_id = :user_id AND i.date >= :month_start AND i.date <= :end_date AND i.deleted_at IS NULL
+            ),
+            prev_month_inc AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN i.currency = 'KGS' THEN i.amount ELSE i.amount * COALESCE(r.rate, 1) END
+                ), 0) as total
+                FROM income i LEFT JOIN rates r ON r.from_currency = i.currency
+                WHERE i.user_id = :user_id AND i.date >= :prev_start AND i.date <= :prev_end AND i.deleted_at IS NULL
+            ),
+            budget_exp AS (
+                SELECT COALESCE(SUM(
+                    CASE WHEN e.currency = 'KGS' THEN e.amount ELSE e.amount * COALESCE(r.rate, 1) END
+                ), 0) as total
+                FROM expenses e LEFT JOIN rates r ON r.from_currency = e.currency
+                WHERE e.user_id = :user_id AND EXTRACT(YEAR FROM e.date) = :year AND EXTRACT(MONTH FROM e.date) = :month AND e.deleted_at IS NULL
+            ),
+            top_cats AS (
+                SELECT e.category, SUM(CASE WHEN e.currency = 'KGS' THEN e.amount ELSE e.amount * COALESCE(r.rate, 1) END) as total, COUNT(*) as cnt
+                FROM expenses e LEFT JOIN rates r ON r.from_currency = e.currency
+                WHERE e.user_id = :user_id AND e.date >= :start_date AND e.date <= :end_date AND e.deleted_at IS NULL
+                GROUP BY e.category ORDER BY total DESC LIMIT 5
+            ),
+            recent_exp AS (
+                SELECT json_agg(t ORDER BY t.created_at DESC) FROM (
+                    SELECT id, amount, currency, category, description, date::text, created_at
+                    FROM expenses WHERE user_id = :user_id AND deleted_at IS NULL
+                    ORDER BY created_at DESC LIMIT 5
+                ) t
+            ),
+            recent_inc AS (
+                SELECT json_agg(t ORDER BY t.created_at DESC) FROM (
+                    SELECT id, amount, currency, category, description, date::text, created_at
+                    FROM income WHERE user_id = :user_id AND deleted_at IS NULL
+                    ORDER BY created_at DESC LIMIT 3
+                ) t
+            )
+            SELECT 
+                (SELECT total FROM period_income) as income_total,
+                (SELECT cnt FROM period_income) as income_count,
+                (SELECT total FROM period_expense) as expense_total,
+                (SELECT cnt FROM period_expense) as expense_count,
+                (SELECT total FROM curr_month_exp) as curr_exp,
+                (SELECT total FROM prev_month_exp) as prev_exp,
+                (SELECT total FROM curr_month_inc) as curr_inc,
+                (SELECT total FROM prev_month_inc) as prev_inc,
+                (SELECT total FROM budget_exp) as budget_spent,
+                (SELECT json_agg(json_build_object('category', category, 'total', total, 'cnt', cnt)) FROM top_cats) as top_categories,
+                (SELECT * FROM recent_exp) as recent_expenses,
+                (SELECT * FROM recent_inc) as recent_income
+        """)
+        
+        # Запрос бюджета и курсов - простые, можно параллельно
+        budget_query = select(Budget).where(
+            and_(Budget.user_id == current_user.user_id, Budget.month == current_month)
+        )
+        
+        rates_query = text("""
+            SELECT DISTINCT ON (from_currency, to_currency) from_currency, to_currency, rate
+            FROM exchange_rates ORDER BY from_currency, to_currency, date DESC
+        """)
+        
+        # Выполняем 3 запроса вместо 10
+        query_start = time_module.time()
+        params = {
+            "user_id": current_user.user_id,
+            "start_date": start_date,
+            "end_date": today,
+            "month_start": current_month_start,
+            "prev_start": last_month_start,
+            "prev_end": last_month_end,
+            "year": int(current_month.split("-")[0]),
+            "month": int(current_month.split("-")[1])
+        }
+        
+        main_result, budget_result, rates_result = await asyncio.gather(
+            db.execute(all_in_one_query, params),
+            db.execute(budget_query),
+            db.execute(rates_query)
+        )
+        
+        logger.warning(f"[BATCH] Queries done in {time_module.time() - query_start:.3f}s")
+        
+        # Парсим результаты из одного большого запроса
+        main_row = main_result.fetchone()
+        budget = budget_result.scalar_one_or_none()
+        rates_rows = rates_result.fetchall()
+        
+        # income_total, income_count, expense_total, expense_count, curr_exp, prev_exp, curr_inc, prev_inc, budget_spent, top_categories, recent_expenses, recent_income
+        total_income = float(main_row[0] or 0)
+        income_count = int(main_row[1] or 0)
+        total_expense = float(main_row[2] or 0)
+        expense_count = int(main_row[3] or 0)
+        curr_exp = float(main_row[4] or 0)
+        prev_exp = float(main_row[5] or 0)
+        curr_inc = float(main_row[6] or 0)
+        prev_inc = float(main_row[7] or 0)
+        budget_spent = float(main_row[8] or 0)
+        top_cats_raw = main_row[9] or []
+        recent_expenses_raw = main_row[10] or []
+        recent_income_raw = main_row[11] or []
+        
+        # Топ категории (уже в JSON формате)
+        top_categories = []
+        if top_cats_raw:
+            total_cat = sum(float(c.get('total', 0) or 0) for c in top_cats_raw)
+            for cat in top_cats_raw:
+                cat_total = float(cat.get('total', 0) or 0)
+                pct = (cat_total / total_cat * 100) if total_cat > 0 else 0
+                top_categories.append({
+                    "category": cat.get('category') or "Без категории",
+                    "total_amount": round(cat_total, 2),
+                    "transaction_count": int(cat.get('cnt', 0) or 0),
+                    "percentage": round(pct, 1),
+                    "currency": "KGS"
+                })
+        
+        # Тренды
+        curr_exp = float(curr_exp or 0)
+        prev_exp = float(prev_exp or 0)
+        curr_inc = float(curr_inc or 0)
+        prev_inc = float(prev_inc or 0)
+        
+        expense_change = ((curr_exp - prev_exp) / prev_exp * 100) if prev_exp > 0 else 0
+        income_change = ((curr_inc - prev_inc) / prev_inc * 100) if prev_inc > 0 else 0
+        
+        days_in_current = (today - current_month_start).days + 1
+        avg_daily = curr_exp / days_in_current if days_in_current > 0 else 0
+        days_left = (current_month_start.replace(month=current_month_start.month % 12 + 1, day=1) - timedelta(days=1) - today).days
+        days_left = max(0, days_left)
+        projected_total = curr_exp + (avg_daily * days_left)
+        
+        # Бюджет
+        budget_spent = float(budget_spent or 0)
+        budget_data = {"has_budget": False}
+        if budget:
+            budget_amount = float(budget.budget_amount)
+            remaining = budget_amount - budget_spent
+            pct_used = (budget_spent / budget_amount * 100) if budget_amount > 0 else 0
+            budget_data = {
+                "has_budget": True,
+                "budget_amount": budget_amount,
+                "total_spent": budget_spent,
+                "remaining": remaining,
+                "percentage_used": round(pct_used, 1),
+                "currency": budget.currency,
+                "status": "over_budget" if remaining < 0 else ("warning" if pct_used >= 80 else "on_track")
+            }
+        
+        # Курсы валют
+        exchange_rates = [
+            {"from_currency": r[0], "to_currency": r[1], "rate": float(r[2])}
+            for r in rates_rows
+        ]
+        
+        result = {
+            "balance": {
+                "total_income": total_income,
+                "total_expense": total_expense,
+                "balance": total_income - total_expense,
+                "income_count": income_count,
+                "expense_count": expense_count,
+                "currency": "KGS",
+                "period": {"start": str(start_date), "end": str(today)}
+            },
+            "top_categories": top_categories,
+            "trends": {
+                "expenses": {"current": curr_exp, "previous": prev_exp, "change_percent": round(expense_change, 1)},
+                "income": {"current": curr_inc, "previous": prev_inc, "change_percent": round(income_change, 1)},
+                "projection": {"estimated_total": round(projected_total, 0), "days_left": days_left}
+            },
+            "patterns": {"weekday_patterns": []},  # Упрощаем - убираем паттерны
+            "budget": budget_data,
+            "exchange_rates": exchange_rates,
+            "recent_transactions": {
+                "expenses": recent_expenses_raw or [],
+                "income": recent_income_raw or []
+            }
+        }
+        
+        # Кэшируем на 5 минут (данные не меняются часто)
+        await hybrid_cache.set(cache_key, result, ttl=300)
+        
+        logger.warning(f"[BATCH] Completed in {time_module.time() - start_time:.3f}s")
+        return result
+        
+    except Exception as e:
+        logger.error(f"[BATCH] Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get batch data: {str(e)}"
+        )

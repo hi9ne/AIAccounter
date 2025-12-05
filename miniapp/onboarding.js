@@ -58,9 +58,22 @@ const OnboardingModule = (() => {
 
     // ===== API Calls =====
     async function checkOnboardingStatus() {
+        // Проверяем кэш - если онбординг завершён, не делаем запрос
+        const cachedCompleted = localStorage.getItem('onboarding_completed');
+        if (cachedCompleted === 'true') {
+            debug.log('Onboarding status from cache: completed');
+            return { completed: true, current_step: 5 };
+        }
+        
         try {
             const response = await api.get('/onboarding/status');
             debug.log('Onboarding status:', response);
+            
+            // Кэшируем если завершён
+            if (response.completed) {
+                localStorage.setItem('onboarding_completed', 'true');
+            }
+            
             return response;
         } catch (e) {
             debug.error('Failed to check onboarding status:', e);

@@ -539,9 +539,9 @@ async function authenticate() {
         debug.log('✅ Token found, setting...');
         api.setToken(existingToken);
         
-        // Проверим валидность токена простым запросом
+        // Быстрая проверка токена через /auth/verify
         try {
-            await api.getOverview({ period: 'week' });
+            await api.get('/auth/verify');
             debug.log('✅ Token is valid');
             return true;
         } catch (e) {
@@ -625,16 +625,8 @@ async function loadDashboard() {
     perf.start('loadDashboard');
     debug.log(`📊 Loading dashboard for period: ${state.currentPeriod}, currency: ${state.currency}`);
     
-    const cacheKey = `dashboard:${state.currentPeriod}:${state.currency}`;
+    const cacheKey = `batch:${state.currentPeriod}:${state.currency}`;
     const cached = cache.get(cacheKey);
-    
-    // Preload analytics в фоне для быстрого перехода (только если нет кэша)
-    if (!cache.get(`analytics:${state.currentPeriod}:${state.currency}`)) {
-        setTimeout(() => {
-            debug.log('📦 Preloading analytics in background...');
-            loadAnalytics().catch(e => debug.warn('Preload analytics failed:', e));
-        }, 2000);
-    }
     
     // Показываем skeleton только если нет кэша
     if (!cached && !state.preloadedData) {
@@ -652,81 +644,132 @@ async function loadDashboard() {
     if (refreshBtn) refreshBtn.classList.add('loading');
     
     try {
+        let batchData;
+        
         // Используем предзагруженные данные при первой загрузке
         if (!state.isInitialized && state.preloadedData) {
-            debug.log('⚡ Using preloaded data');
-            const { overview, topCategories, rates } = state.preloadedData;
-            exchangeRates = rates;
-            
-            // Данные уже сконвертированы на сервере
-            if (Array.isArray(topCategories)) {
-                const cleanedTop = topCategories.slice(0, 3).map(cat => ({
-                    ...cat,
-                    category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim()
-                }));
-                updateHomeTopCategories(cleanedTop);
-            }
-            
-            updateDashboardUI(overview);
-            cache.set(cacheKey, overview, 300);
+            debug.log('⚡ Using preloaded batch data');
+            batchData = state.preloadedData;
             state.isInitialized = true;
             state.preloadedData = null;
+        } else if (cached) {
+            debug.log('📦 Using cached batch data');
+            batchData = cached;
+        } else {
+            // 🚀 ОДИН ЗАПРОС ВМЕСТО МНОЖЕСТВА!
+            debug.log('🚀 Loading batch data...');
+            batchData = await api.getBatchAnalytics(state.currentPeriod);
             
-            // Загружаем виджет бюджета
-            loadBudgetWidget();
-            
-            debug.log('✅ Dashboard loaded from preload');
-            return;
+            // Кэшируем на 5 минут
+            cache.set(cacheKey, batchData, 300);
         }
         
-        let dashboardData;
+        // Обновляем курсы валют из batch данных
+        if (batchData.exchange_rates && batchData.exchange_rates.length > 0) {
+            exchangeRates = {};
+            batchData.exchange_rates.forEach(rate => {
+                const key = `${rate.from_currency}_${rate.to_currency}`;
+                exchangeRates[key] = rate.rate;
+            });
+            cache.set('exchange_rates', exchangeRates, 3600);
+        }
         
-        if (cached) {
-            debug.log('📦 Using cached dashboard data');
-            dashboardData = cached;
-        } else {
-            // Параллельная загрузка всех данных сразу
-            const range = getDateRangeFor(state.currentPeriod);
-            const loadRates = Object.keys(exchangeRates).length === 0 ? loadExchangeRates() : Promise.resolve();
-            
-            const [data, topCategories] = await Promise.all([
-                api.getOverview({ period: state.currentPeriod }),
-                api.getCategoryAnalytics({ ...range, limit: 3 }),
-                loadRates
-            ]);
-            
-            // Данные уже сконвертированы на сервере, только чистим названия
-            const cleanedTop = Array.isArray(topCategories) ? topCategories.map(cat => ({
+        // Обновляем Dashboard UI
+        updateDashboardUI({ balance: batchData.balance });
+        
+        // Обновляем топ категории
+        if (batchData.top_categories) {
+            const cleanedTop = batchData.top_categories.slice(0, 3).map(cat => ({
                 ...cat,
                 category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim()
-            })) : [];
-            
-            dashboardData = { ...data, topCategories: cleanedTop };
-            cache.set(cacheKey, dashboardData, 300);
+            }));
+            updateHomeTopCategories(cleanedTop);
         }
         
-        // Обновляем UI
-        updateDashboardUI(dashboardData);
-        if (dashboardData.topCategories) {
-            updateHomeTopCategories(dashboardData.topCategories);
+        // Обновляем виджет бюджета
+        if (batchData.budget) {
+            updateBudgetWidget(batchData.budget);
         }
         
-        // Загружаем виджет бюджета
-        loadBudgetWidget();
+        // Обновляем последние транзакции
+        if (batchData.recent_transactions) {
+            updateRecentTransactions(batchData.recent_transactions);
+        }
         
         // Загружаем геймификацию для хедера (в фоне)
         loadGamificationHeader();
         
         perf.end('loadDashboard');
-        debug.log('✅ Dashboard loaded');
+        debug.log('✅ Dashboard loaded via batch API');
     } catch (error) {
         handleError(error, 'Не удалось загрузить данные');
+        // Fallback к старому методу
+        debug.warn('⚠️ Batch API failed, falling back...');
+        await loadDashboardFallback();
     } finally {
         if (refreshBtn) refreshBtn.classList.remove('loading');
         // Убираем skeleton
         const skeleton = document.querySelector('.balance-card .loading-placeholder');
         if (skeleton) skeleton.remove();
     }
+}
+
+// Fallback функция для старого метода загрузки
+async function loadDashboardFallback() {
+    try {
+        const range = getDateRangeFor(state.currentPeriod);
+        const loadRates = Object.keys(exchangeRates).length === 0 ? loadExchangeRates() : Promise.resolve();
+        
+        const [data, topCategories] = await Promise.all([
+            api.getOverview({ period: state.currentPeriod }),
+            api.getCategoryAnalytics({ ...range, limit: 3 }),
+            loadRates
+        ]);
+        
+        updateDashboardUI(data);
+        if (topCategories) {
+            const cleanedTop = topCategories.map(cat => ({
+                ...cat,
+                category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim()
+            }));
+            updateHomeTopCategories(cleanedTop);
+        }
+        loadBudgetWidget();
+    } catch (error) {
+        handleError(error, 'Не удалось загрузить данные');
+    }
+}
+
+// Обновление виджета бюджета из batch данных
+function updateBudgetWidget(budgetData) {
+    const widget = document.getElementById('budget-widget');
+    if (!widget) return;
+    
+    const emptyState = document.getElementById('budget-empty');
+    const progressContainer = widget.querySelector('.budget-progress-container');
+    const header = widget.querySelector('.budget-widget-header');
+    
+    if (!budgetData.has_budget) {
+        widget.className = 'budget-widget budget-widget-mini';
+        if (progressContainer) progressContainer.style.display = 'none';
+        if (header) header.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'flex';
+        return;
+    }
+    
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (header) header.style.display = 'flex';
+    if (emptyState) emptyState.style.display = 'none';
+    
+    widget.className = `budget-widget budget-widget-mini ${budgetData.status}`;
+    
+    const percentage = Math.min(budgetData.percentage_used, 100);
+    document.getElementById('budget-progress-fill').style.width = `${percentage}%`;
+    
+    const currency = getCurrencySymbol(budgetData.currency);
+    document.getElementById('budget-spent').textContent = formatAmount(budgetData.total_spent) + ' ' + currency;
+    document.getElementById('budget-total').textContent = formatAmount(budgetData.budget_amount) + ' ' + currency;
+    document.getElementById('budget-percentage').textContent = `${budgetData.percentage_used}%`;
 }
 
 function updateDashboardUI(data) {
@@ -922,7 +965,6 @@ async function loadAnalytics() {
     
     // Показываем лоадер
     const chartContainer = document.querySelector('.chart-container canvas')?.parentElement;
-    const categoriesContainer = document.getElementById('categories-chart-container');
     
     if (chartContainer) {
         chartContainer.innerHTML = '<div class="loading-placeholder" style="height: 200px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--text-secondary);"></i></div>';
@@ -940,6 +982,85 @@ async function loadAnalytics() {
         
         const period = periodSelect?.value || 'month';
         
+        // Для custom периода используем старый метод
+        if (period === 'custom') {
+            await loadAnalyticsLegacy(period);
+            return;
+        }
+        
+        // Пробуем использовать batch данные
+        const batchCacheKey = `batch:${period}:${state.currency}`;
+        let batchData = cache.get(batchCacheKey);
+        
+        // Если нет в кэше, загружаем batch
+        if (!batchData) {
+            debug.log('🚀 Loading batch analytics...');
+            batchData = await api.getBatchAnalytics(period);
+            cache.set(batchCacheKey, batchData, 120);
+        }
+        
+        // Обновляем курсы валют
+        if (batchData.exchange_rates && batchData.exchange_rates.length > 0) {
+            exchangeRates = {};
+            batchData.exchange_rates.forEach(rate => {
+                const key = `${rate.from_currency}_${rate.to_currency}`;
+                exchangeRates[key] = rate.rate;
+            });
+        }
+        
+        // Обновляем бейдж периода
+        const periodBadge = document.getElementById('top-categories-period-badge');
+        if (periodBadge) {
+            const periodTexts = { 'week': 'За неделю', 'month': 'За месяц', 'year': 'За год' };
+            periodBadge.textContent = periodTexts[period] || 'За месяц';
+        }
+        
+        // Конвертируем в выбранную валюту
+        const origCurrency = 'KGS';
+        const stats = {
+            total_income: convertAmount(batchData.balance.total_income, origCurrency, state.currency),
+            total_expense: convertAmount(batchData.balance.total_expense, origCurrency, state.currency),
+            balance: convertAmount(batchData.balance.balance, origCurrency, state.currency),
+            currency: state.currency
+        };
+        
+        // Конвертируем категории
+        const convertedCategories = (batchData.top_categories || []).map(cat => ({
+            ...cat,
+            category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim(),
+            amount: convertAmount(cat.total_amount || 0, origCurrency, state.currency),
+            total: convertAmount(cat.total_amount || 0, origCurrency, state.currency),
+            total_amount: convertAmount(cat.total_amount || 0, origCurrency, state.currency),
+            currency: state.currency
+        }));
+        
+        const analyticsData = { ...stats, top_categories: convertedCategories };
+        
+        updateAnalyticsUI(analyticsData);
+        setTimeout(() => loadCharts(analyticsData), 100);
+        
+        // Используем тренды и паттерны из batch данных
+        if (batchData.trends) {
+            updateTrendsFromBatch(batchData.trends);
+        }
+        if (batchData.patterns) {
+            updatePatternsFromBatch(batchData.patterns);
+        }
+        
+        perf.end('loadAnalytics');
+        debug.log('✅ Analytics loaded via batch API');
+        
+    } catch (error) {
+        debug.warn('⚠️ Batch analytics failed, falling back...', error);
+        await loadAnalyticsLegacy();
+    }
+}
+
+// Legacy функция для custom периодов и fallback
+async function loadAnalyticsLegacy(period = null) {
+    try {
+        const periodSelect = document.getElementById('analytics-period');
+        period = period || periodSelect?.value || 'month';
         let params = {};
         if (period === 'custom') {
             const panel = document.getElementById('custom-period-panel');
@@ -1464,6 +1585,13 @@ let historyState = {
 
 async function loadHistory(loadMore = false) {
     perf.start('loadHistory');
+    
+    // Сбрасываем состояние при новой загрузке (не loadMore)
+    if (!loadMore) {
+        historyState.currentPage = 1;
+        historyState.hasMore = true;
+    }
+    
     debug.log('📜 Loading history...', { loadMore, currentPage: historyState.currentPage, hasMore: historyState.hasMore, loading: historyState.loading });
     
     if (historyState.loading) {
@@ -1473,9 +1601,9 @@ async function loadHistory(loadMore = false) {
     
     const container = document.getElementById('transactions-history');
     
-    // Кэш только для первой страницы без фильтров
-    const cacheKey = `history:${historyFilters.type}:${historyFilters.category}:${state.currency}:p1`;
-    if (!loadMore && historyState.currentPage === 1) {
+    // Кэш для первой страницы с учётом всех фильтров
+    const cacheKey = `history:${historyFilters.type}:${historyFilters.category}:${historyFilters.period}:${historyFilters.search || ''}:${state.currency}`;
+    if (!loadMore) {
         const cached = cache.get(cacheKey);
         if (cached) {
             debug.log('📦 Using cached history');
@@ -1593,13 +1721,13 @@ async function loadHistory(loadMore = false) {
         // ВАЖНО: Устанавливаем loading = false ДО рендера
         historyState.loading = false;
         
-        // Кэшируем первую страницу (2 минуты)
+        // Кэшируем первую страницу (5 минут) с учётом всех фильтров
         if (historyState.currentPage === 2) {  // currentPage уже увеличен
-            const historyCacheKey = `history:${historyFilters.type}:${historyFilters.category}:${state.currency}:p1`;
+            const historyCacheKey = `history:${historyFilters.type}:${historyFilters.category}:${historyFilters.period}:${historyFilters.search || ''}:${state.currency}`;
             cache.set(historyCacheKey, {
                 transactions: historyState.allTransactions,
                 hasMore: historyState.hasMore
-            }, 120);
+            }, 300);
         }
         
         // Рендерим все транзакции
@@ -1768,6 +1896,17 @@ async function loadProfile() {
     
     const lang = localStorage.getItem('app_language') || 'ru';
     
+    // Проверяем кэш
+    const cacheKey = `profile:${lang}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+        debug.log('📦 Using cached profile');
+        gamificationData = cached;
+        updateProfileUI(gamificationData);
+        syncProfileSettings();
+        return;
+    }
+    
     try {
         // Загружаем данные геймификации
         const response = await api.getGamificationProfile(lang);
@@ -1777,6 +1916,9 @@ async function loadProfile() {
             gamificationData = response.data;
             debug.log('👤 Gamification data:', gamificationData);
             updateProfileUI(gamificationData);
+            
+            // Кэшируем на 5 минут
+            cache.set(cacheKey, gamificationData, 300);
         } else {
             debug.error('Profile API error:', response);
         }
@@ -1926,6 +2068,17 @@ async function loadAchievements() {
     const lang = localStorage.getItem('app_language') || 'ru';
     const listEl = document.getElementById('achievements-list');
     
+    // Проверяем кэш
+    const cacheKey = `achievements:${lang}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+        debug.log('📦 Using cached achievements');
+        achievementsData = cached;
+        renderAchievements(achievementsData.achievements);
+        updateAchievementsStats(achievementsData.stats);
+        return;
+    }
+    
     if (listEl) {
         listEl.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;padding:60px 0;width:100%"><div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite"></div></div>';
     }
@@ -1939,6 +2092,9 @@ async function loadAchievements() {
             debug.log('🏆 Achievements data:', achievementsData);
             renderAchievements(achievementsData.achievements);
             updateAchievementsStats(achievementsData.stats);
+            
+            // Кэшируем на 5 минут
+            cache.set(cacheKey, achievementsData, 300);
         } else {
             debug.error('Achievements API error:', response);
         }
@@ -2418,8 +2574,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let historyDebounceTimer;
     const debouncedLoadHistory = () => {
         clearTimeout(historyDebounceTimer);
-        // Очищаем кэш истории при изменении фильтров
-        cache.clearMatching('history');
+        // НЕ очищаем кэш - каждая комбинация фильтров имеет свой кэш
         historyDebounceTimer = setTimeout(() => {
             loadHistory();
             updateActiveFiltersUI();
@@ -2439,7 +2594,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => {
-                cache.clearMatching('history');
+                // НЕ очищаем кэш - каждый поиск имеет свой кэш
                 loadHistory();
                 updateActiveFiltersUI();
             }, 500);
@@ -2641,28 +2796,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         debug.log('✅ Onboarding completed or skipped');
         
-        // 3. Предзагрузка данных УЖЕ С ТОКЕНОМ
-        debug.log('⚡ Starting data preload with token...');
+        // 3. Предзагрузка данных через BATCH API
+        debug.log('⚡ Starting batch data preload...');
         try {
-            const range = getDateRangeFor(state.currentPeriod);
-            const [rates, overview, topCategories] = await Promise.all([
-                api.get('/rates/latest').then(r => {
-                    const ratesObj = {};
-                    r.forEach(rate => {
-                        const key = `${rate.from_currency}_${rate.to_currency}`;
-                        ratesObj[key] = rate.rate;
-                    });
-                    debug.log('✅ Rates preloaded:', Object.keys(ratesObj).length, 'pairs');
-                    return ratesObj;
-                }),
-                api.getOverview({ period: state.currentPeriod }),
-                api.getCategoryAnalytics({ ...range, limit: 10 })
-            ]);
+            const batchData = await api.getBatchAnalytics(state.currentPeriod);
             
-            state.preloadedData = { rates, overview, topCategories };
-            debug.log('⚡ All data preloaded successfully');
+            // Обновляем курсы валют
+            if (batchData.exchange_rates) {
+                const ratesObj = {};
+                batchData.exchange_rates.forEach(rate => {
+                    const key = `${rate.from_currency}_${rate.to_currency}`;
+                    ratesObj[key] = rate.rate;
+                });
+                exchangeRates = ratesObj;
+                cache.set('exchange_rates', ratesObj, 3600);
+            }
+            
+            // Кэшируем batch данные
+            cache.set(`batch:${state.currentPeriod}:${state.currency}`, batchData, 120);
+            state.preloadedData = batchData;
+            
+            debug.log('⚡ Batch data preloaded successfully');
         } catch (e) {
-            debug.warn('⚠️ Preload failed, will load on demand:', e);
+            debug.warn('⚠️ Batch preload failed, will load on demand:', e);
         }
         
         // 4. Финальная инициализация
@@ -3476,6 +3632,105 @@ const aiState = {
 
 // ===== TRENDS & PATTERNS =====
 
+// Обновление трендов из batch данных
+function updateTrendsFromBatch(trends) {
+    debug.log('📈 Updating trends from batch...', trends);
+    
+    const origCurrency = 'KGS';
+    
+    // Расходы
+    const expenseCurrent = convertAmount(trends.expenses?.current || 0, origCurrency, state.currency);
+    const expensePrev = convertAmount(trends.expenses?.previous || 0, origCurrency, state.currency);
+    const expenseChange = trends.expenses?.change_percent || 0;
+    
+    const hasExpenseData = expenseCurrent > 0 || expensePrev > 0;
+    document.getElementById('trend-expense-current').textContent = hasExpenseData ? formatCurrency(expenseCurrent) : '0 с';
+    document.getElementById('trend-expense-prev').textContent = hasExpenseData ? formatCurrency(expensePrev) : '0 с';
+    
+    const expenseChangeEl = document.getElementById('trend-expense-change');
+    if (expenseChangeEl) {
+        if (hasExpenseData) {
+            const sign = expenseChange > 0 ? '+' : '';
+            expenseChangeEl.textContent = `${sign}${expenseChange}%`;
+            expenseChangeEl.className = 'trend-change ' + 
+                (expenseChange > 5 ? '' : (expenseChange < -5 ? 'positive' : 'neutral'));
+        } else {
+            expenseChangeEl.textContent = '0%';
+            expenseChangeEl.className = 'trend-change neutral';
+        }
+    }
+    
+    const expenseBarWidth = expensePrev > 0 ? Math.min((expenseCurrent / expensePrev) * 100, 150) : (expenseCurrent > 0 ? 100 : 0);
+    document.getElementById('trend-expense-bar').style.width = `${Math.min(expenseBarWidth, 100)}%`;
+    
+    // Доходы
+    const incomeCurrent = convertAmount(trends.income?.current || 0, origCurrency, state.currency);
+    const incomePrev = convertAmount(trends.income?.previous || 0, origCurrency, state.currency);
+    const incomeChange = trends.income?.change_percent || 0;
+    
+    const hasIncomeData = incomeCurrent > 0 || incomePrev > 0;
+    document.getElementById('trend-income-current').textContent = hasIncomeData ? formatCurrency(incomeCurrent) : '0 с';
+    document.getElementById('trend-income-prev').textContent = hasIncomeData ? formatCurrency(incomePrev) : '0 с';
+    
+    const incomeChangeEl = document.getElementById('trend-income-change');
+    if (incomeChangeEl) {
+        if (hasIncomeData) {
+            const sign = incomeChange > 0 ? '+' : '';
+            incomeChangeEl.textContent = `${sign}${incomeChange}%`;
+            incomeChangeEl.className = 'trend-change ' + 
+                (incomeChange > 5 ? 'positive' : (incomeChange < -5 ? '' : 'neutral'));
+        } else {
+            incomeChangeEl.textContent = '0%';
+            incomeChangeEl.className = 'trend-change neutral';
+        }
+    }
+    
+    const incomeBarWidth = incomePrev > 0 ? Math.min((incomeCurrent / incomePrev) * 100, 150) : (incomeCurrent > 0 ? 100 : 0);
+    document.getElementById('trend-income-bar').style.width = `${Math.min(incomeBarWidth, 100)}%`;
+    
+    // Прогноз
+    if (trends.projection) {
+        const projectedTotal = convertAmount(trends.projection.estimated_total || 0, origCurrency, state.currency);
+        document.getElementById('projection-total').textContent = formatCurrency(projectedTotal);
+        document.getElementById('projection-days').textContent = trends.projection.days_left || 0;
+    }
+    
+    // Очищаем категории трендов (их нет в batch)
+    const container = document.getElementById('category-trends-list');
+    if (container) {
+        container.innerHTML = `
+            <div class="empty-state-card">
+                <div class="empty-state-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="empty-state-text">Анализ категорий</div>
+                <div class="empty-state-hint">Данные обновляются ежемесячно</div>
+            </div>
+        `;
+    }
+    
+    debug.log('✅ Trends updated from batch');
+}
+
+// Обновление паттернов из batch данных
+function updatePatternsFromBatch(patterns) {
+    debug.log('📅 Updating patterns from batch...', patterns);
+    
+    const weekdayPatterns = patterns.weekday_patterns || [];
+    renderWeekdayBars(weekdayPatterns, 'KGS');
+    
+    const insightEl = document.getElementById('weekday-insight-text');
+    if (insightEl) {
+        const maxDay = weekdayPatterns.reduce((max, p) => 
+            (p.average || 0) > (max.average || 0) ? p : max, { average: 0 });
+        if (maxDay.average > 0) {
+            insightEl.textContent = `Больше всего вы тратите в ${maxDay.day_short || 'N/A'}`;
+        } else {
+            insightEl.textContent = 'Недостаточно данных для анализа';
+        }
+    }
+    
+    debug.log('✅ Patterns updated from batch');
+}
+
 async function loadTrendsData() {
     debug.log('📈 Loading trends data...');
     
@@ -4013,6 +4268,17 @@ function getMonthNameFull(monthStr) {
 async function loadBudgetsScreen() {
     debug.log('💰 Loading budgets screen...');
     
+    // Проверяем кэш
+    const cacheKey = `budgets:${state.currency}`;
+    const cached = cache.get(cacheKey);
+    
+    if (cached) {
+        debug.log('📦 Using cached budgets screen');
+        updateBudgetCurrentCard(cached.currentStatus);
+        updateBudgetsHistory(cached.budgets, cached.currentStatus, true); // true = fromCache
+        return;
+    }
+    
     try {
         // Загружаем текущий статус
         const currentStatus = await api.getCurrentBudgetStatus();
@@ -4020,7 +4286,27 @@ async function loadBudgetsScreen() {
         
         // Загружаем историю
         const budgets = await api.getBudgets({ limit: 12 });
-        updateBudgetsHistory(budgets, currentStatus);
+        
+        // Обогащаем бюджеты статусами и кэшируем результат
+        const currentMonth = currentStatus?.month || new Date().toISOString().slice(0, 7);
+        const historyBudgets = budgets.filter(b => b.month !== currentMonth);
+        
+        const enrichedBudgets = await Promise.all(
+            historyBudgets.slice(0, 6).map(async (budget) => {
+                try {
+                    const status = await api.getBudgetStatus(budget.month);
+                    return { ...budget, ...status };
+                } catch {
+                    return { ...budget, total_spent: 0, percentage_used: 0, status: 'on_track' };
+                }
+            })
+        );
+        
+        // Показываем историю
+        updateBudgetsHistory(enrichedBudgets, currentStatus, true);
+        
+        // Кэшируем на 5 минут (с уже обогащёнными данными)
+        cache.set(cacheKey, { currentStatus, budgets: enrichedBudgets }, 300);
         
     } catch (error) {
         debug.error('❌ Error loading budgets screen:', error);
@@ -4079,15 +4365,42 @@ function updateBudgetCurrentCard(data) {
         data.percentage_used + '%';
 }
 
-async function updateBudgetsHistory(budgets, currentStatus) {
+async function updateBudgetsHistory(budgets, currentStatus, fromCache = false) {
     const listEl = document.getElementById('budgets-history-list');
     if (!listEl) return;
     
-    // Фильтруем - убираем текущий месяц
-    const currentMonth = currentStatus?.month || new Date().toISOString().slice(0, 7);
-    const historyBudgets = budgets.filter(b => b.month !== currentMonth);
+    // Если данные уже обогащены (из кэша или после loadBudgetsScreen)
+    let historyWithStatus = budgets;
     
-    if (historyBudgets.length === 0) {
+    // Если это сырые данные - нужно фильтровать и обогащать
+    if (!fromCache) {
+        const currentMonth = currentStatus?.month || new Date().toISOString().slice(0, 7);
+        const historyBudgets = budgets.filter(b => b.month !== currentMonth);
+        
+        if (historyBudgets.length === 0) {
+            listEl.innerHTML = `
+                <div class="empty-state small">
+                    <i class="fas fa-calendar-check"></i>
+                    <p>История бюджетов появится здесь</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Для каждого бюджета получаем статус (расходы)
+        historyWithStatus = await Promise.all(
+            historyBudgets.slice(0, 6).map(async (budget) => {
+                try {
+                    const status = await api.getBudgetStatus(budget.month);
+                    return { ...budget, ...status };
+                } catch {
+                    return { ...budget, total_spent: 0, percentage_used: 0, status: 'on_track' };
+                }
+            })
+        );
+    }
+    
+    if (historyWithStatus.length === 0) {
         listEl.innerHTML = `
             <div class="empty-state small">
                 <i class="fas fa-calendar-check"></i>
@@ -4096,18 +4409,6 @@ async function updateBudgetsHistory(budgets, currentStatus) {
         `;
         return;
     }
-    
-    // Для каждого бюджета получаем статус (расходы)
-    const historyWithStatus = await Promise.all(
-        historyBudgets.slice(0, 6).map(async (budget) => {
-            try {
-                const status = await api.getBudgetStatus(budget.month);
-                return { ...budget, ...status };
-            } catch {
-                return { ...budget, total_spent: 0, percentage_used: 0, status: 'on_track' };
-            }
-        })
-    );
     
     listEl.innerHTML = historyWithStatus.map(budget => {
         const [year, month] = budget.month.split('-');

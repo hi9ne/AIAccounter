@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.models import User, Expense, Income
 from app.utils.auth import get_current_user
 from app.schemas.schemas import PaginatedResponse
+from app.services.memory_cache import hybrid_cache
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -32,6 +33,24 @@ async def get_transactions(
     Транзакции возвращаются отсортированными по дате (сначала новые).
     Конвертация валют выполняется на фронтенде.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Кэшируем только первую страницу без поиска (основной кейс)
+    cache_key = None
+    if page == 1 and not search and not amount_min and not amount_max:
+        cache_key = hybrid_cache.make_key(
+            "transactions", 
+            current_user.user_id, 
+            type or "all", 
+            category or "all",
+            str(start_date) if start_date else "none",
+            str(end_date) if end_date else "none"
+        )
+        cached = await hybrid_cache.get(cache_key)
+        if cached:
+            logger.warning(f"[TRANSACTIONS] Cache HIT for user {current_user.user_id}")
+            return cached
     
     # Базовый запрос для expenses
     expenses_query = select(
@@ -175,7 +194,7 @@ async def get_transactions(
         
         items.append(item)
     
-    return {
+    result_data = {
         "items": items,
         "total": total,
         "page": page,
@@ -183,3 +202,10 @@ async def get_transactions(
         "has_next": skip + page_size < total,
         "has_prev": page > 1
     }
+    
+    # Кэшируем на 5 минут
+    if cache_key:
+        await hybrid_cache.set(cache_key, result_data, ttl=300)
+        logger.warning(f"[TRANSACTIONS] Cached for user {current_user.user_id}")
+    
+    return result_data
