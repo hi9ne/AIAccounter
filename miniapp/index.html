@@ -499,11 +499,32 @@
                         </div>
                     </div>
                     
-                    <button class="btn-achievements" onclick="switchScreen('achievements')">
-                        <i class="fas fa-trophy"></i>
-                        <span data-i18n="all_achievements">Все достижения</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
+                    <div class="profile-action-buttons">
+                        <button class="btn-achievements" onclick="switchScreen('achievements')">
+                            <i class="fas fa-trophy"></i>
+                            <span data-i18n="all_achievements">Все достижения</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button class="btn-achievements" onclick="switchScreen('leaderboard')">
+                            <i class="fas fa-medal"></i>
+                            <span data-i18n="leaderboard">Лидерборд</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ежедневные задания -->
+                <div class="daily-quests-card" id="daily-quests-card">
+                    <div class="daily-quests-header">
+                        <h3><span class="quest-icon">📋</span> <span data-i18n="daily_quests">Ежедневные задания</span></h3>
+                        <span class="daily-quests-bonus" id="daily-bonus-badge" style="display:none">+25 XP</span>
+                    </div>
+                    <div class="daily-quests-list" id="daily-quests-list">
+                        <!-- Загружается динамически -->
+                    </div>
+                    <div class="daily-quests-footer" id="daily-quests-footer" style="display:none">
+                        <span class="all-completed-text" data-i18n="all_quests_completed">✨ Все задания выполнены!</span>
+                    </div>
                 </div>
 
                 <!-- Настройки аккаунта -->
@@ -664,6 +685,48 @@
                 
                 <div class="achievements-list" id="achievements-list">
                     <!-- Achievements will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             🏆 LEADERBOARD
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="leaderboard-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('profile')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 data-i18n="leaderboard">Лидерборд</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div class="screen-body">
+                <!-- Текущая позиция пользователя -->
+                <div class="leaderboard-user-position" id="leaderboard-user-card">
+                    <div class="position-badge" id="user-position-badge">#1</div>
+                    <div class="position-info">
+                        <span class="position-label" data-i18n="your_position">Ваша позиция</span>
+                        <span class="position-level" id="user-position-level">Ур. 1</span>
+                    </div>
+                    <div class="position-xp" id="user-position-xp">0 XP</div>
+                </div>
+
+                <!-- Фильтр периода -->
+                <div class="leaderboard-period-filter">
+                    <button class="period-btn active" data-period="week" onclick="loadLeaderboard('week')">
+                        <span data-i18n="week">Неделя</span>
+                    </button>
+                    <button class="period-btn" data-period="month" onclick="loadLeaderboard('month')">
+                        <span data-i18n="month">Месяц</span>
+                    </button>
+                    <button class="period-btn" data-period="all" onclick="loadLeaderboard('all')">
+                        <span data-i18n="all_time">Всё время</span>
+                    </button>
+                </div>
+
+                <!-- Список лидеров -->
+                <div class="leaderboard-list" id="leaderboard-list">
+                    <!-- Загружается динамически -->
                 </div>
             </div>
         </div>

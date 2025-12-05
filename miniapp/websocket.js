@@ -1,6 +1,6 @@
 // ============================================================================
-// WebSocket Manager для AIAccounter Mini App
-// Real-time updates для транзакций
+// WebSocket Manager пїЅпїЅпїЅ AIAccounter Mini App
+// Real-time updates пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 // ============================================================================
 
 const wsDebug = {
@@ -21,7 +21,7 @@ class WebSocketManager {
     }
     
     /**
-     * Подключиться к WebSocket
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ WebSocket
      */
     async connect(token) {
         if (this.isConnecting || this.isConnected()) {
@@ -62,7 +62,7 @@ class WebSocketManager {
                 this.stopPingInterval();
                 this.emit('disconnected');
                 
-                // Попытка переподключения
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
                     wsDebug.log(`?? WebSocket: Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
@@ -82,7 +82,7 @@ class WebSocketManager {
     }
     
     /**
-     * Переподключиться
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     async reconnect(token) {
         this.disconnect();
@@ -90,7 +90,7 @@ class WebSocketManager {
     }
     
     /**
-     * Отключиться
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     disconnect() {
         if (this.ws) {
@@ -102,14 +102,14 @@ class WebSocketManager {
     }
     
     /**
-     * Проверить состояние соединения
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
     
     /**
-     * Отправить сообщение
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     send(data) {
         if (!this.isConnected()) {
@@ -127,7 +127,7 @@ class WebSocketManager {
     }
     
     /**
-     * Ping для поддержания соединения
+     * Ping пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     startPingInterval() {
         this.stopPingInterval();
@@ -135,7 +135,7 @@ class WebSocketManager {
             if (this.isConnected()) {
                 this.send('ping');
             }
-        }, 30000); // Каждые 30 секунд
+        }, 30000); // пїЅпїЅпїЅпїЅпїЅпїЅ 30 пїЅпїЅпїЅпїЅпїЅпїЅ
     }
     
     stopPingInterval() {
@@ -146,53 +146,58 @@ class WebSocketManager {
     }
     
     /**
-     * Обработать сообщение от сервера
+     * РћР±СЂР°Р±РѕС‚РєР° СЃРѕРѕР±С‰РµРЅРёР№ РѕС‚ СЃРµСЂРІРµСЂР°
      */
     handleMessage(message) {
         const { type, data } = message;
         
         switch (type) {
             case 'connection':
-                wsDebug.log('? WebSocket: Connection confirmed', data);
+                wsDebug.log('вњ… WebSocket: Connection confirmed', data);
                 break;
             
             case 'pong':
-                console.debug('?? WebSocket: Pong received');
+                console.debug('рџЏ“ WebSocket: Pong received');
                 break;
             
             case 'transaction_created':
-                wsDebug.log('?? WebSocket: Transaction created', data);
+                wsDebug.log('рџ’° WebSocket: Transaction created', data);
                 this.emit('transaction_created', data);
                 this.refreshDashboard();
+                
+                // РџРѕРєР°Р·С‹РІР°РµРј РіРµР№РјРёС„РёРєР°С†РёСЋ РµСЃР»Рё РµСЃС‚СЊ
+                if (data.gamification && typeof showGamificationNotificationEnhanced === 'function') {
+                    showGamificationNotificationEnhanced(data.gamification);
+                }
                 break;
             
             case 'transaction_deleted':
-                wsDebug.log('??? WebSocket: Transaction deleted', data);
+                wsDebug.log('рџ—‘пёЏ WebSocket: Transaction deleted', data);
                 this.emit('transaction_deleted', data);
                 this.refreshDashboard();
                 break;
             
             case 'budget_alert':
-                wsDebug.log('?? WebSocket: Budget alert', data);
+                wsDebug.log('вљ пёЏ WebSocket: Budget alert', data);
                 this.emit('budget_alert', data);
                 this.showBudgetAlert(data);
                 break;
             
             default:
-                wsDebug.log('?? WebSocket: Unknown message type', type, data);
+                wsDebug.log('вќ“ WebSocket: Unknown message type', type, data);
         }
     }
     
     /**
-     * Обновить дашборд при получении новых данных
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
      */
     refreshDashboard() {
-        // Очистить кэш
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
         cache.clearMatching('stats');
         cache.clearMatching('top_categories');
         cache.clearMatching('overview');
         
-        // Перезагрузить текущий экран
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         if (state.currentScreen === 'home') {
             loadDashboard();
         } else if (state.currentScreen === 'analytics') {
@@ -203,14 +208,14 @@ class WebSocketManager {
     }
     
     /**
-     * Показать уведомление о бюджете
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     showBudgetAlert(data) {
-        showNotification(`?? Бюджет: ${data.message}`, 'warning');
+        showNotification(`?? пїЅпїЅпїЅпїЅпїЅпїЅ: ${data.message}`, 'warning');
     }
     
     /**
-     * Подписаться на событие
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     on(event, callback) {
         if (!this.listeners.has(event)) {
@@ -220,7 +225,7 @@ class WebSocketManager {
     }
     
     /**
-     * Отписаться от события
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     off(event, callback) {
         if (!this.listeners.has(event)) return;
@@ -233,7 +238,7 @@ class WebSocketManager {
     }
     
     /**
-     * Вызвать событие
+     * пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
      */
     emit(event, data) {
         if (!this.listeners.has(event)) return;
@@ -249,10 +254,10 @@ class WebSocketManager {
     }
 }
 
-// Глобальный экземпляр
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 const wsManager = new WebSocketManager();
 
-// Экспорт для использования
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 if (typeof window !== 'undefined') {
     window.wsManager = wsManager;
 }

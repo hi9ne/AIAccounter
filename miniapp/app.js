@@ -20,6 +20,52 @@ const debug = {
     info: (...args) => window.IS_LOCALHOST && console.info('[APP]', ...args)
 };
 
+// ===== HAPTIC FEEDBACK UTILITY =====
+const haptic = {
+    // Light impact - для мелких действий (нажатие кнопки, переключение)
+    light: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('light');
+        }
+    },
+    // Medium impact - для заметных действий (выбор элемента, открытие модалки)
+    medium: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+    },
+    // Heavy impact - для важных действий (сохранение, удаление)
+    heavy: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('heavy');
+        }
+    },
+    // Success notification - для успешных операций
+    success: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+    },
+    // Warning notification - для предупреждений
+    warning: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('warning');
+        }
+    },
+    // Error notification - для ошибок
+    error: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+    },
+    // Selection changed - для выбора из списка
+    selection: () => {
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.selectionChanged();
+        }
+    }
+};
+
 debug.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
 
 if (tg) {
@@ -413,10 +459,8 @@ function hideLoading() {
 function showError(message) {
     console.error('❌ Error:', message);
     
-    // Используем HapticFeedback вместо showAlert
-    if (tg.HapticFeedback) {
-        tg.HapticFeedback.notificationOccurred('error');
-    }
+    // Haptic feedback for error
+    haptic.error();
     
     // Показываем визуальное уведомление
     const toast = document.createElement('div');
@@ -466,6 +510,9 @@ function handleError(error, customMessage = 'Произошла ошибка') {
 function switchScreen(screenName) {
     debug.log(`📍 Navigate to: ${screenName}`);
     
+    // Haptic feedback for navigation
+    haptic.light();
+    
     // Hide all screens
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     
@@ -504,9 +551,13 @@ function loadScreenData(screenName) {
             break;
         case 'profile':
             loadProfile();
+            loadDailyQuests();
             break;
         case 'achievements':
             loadAchievements();
+            break;
+        case 'leaderboard':
+            loadLeaderboard();
             break;
         case 'more':
             // Статический экран, не требует загрузки данных
@@ -2100,8 +2151,9 @@ async function loadAchievements() {
         }
     } catch (error) {
         debug.error('Failed to load achievements:', error);
+        const t = window.i18n?.t || (k => k);
         if (listEl) {
-            listEl.innerHTML = '<div class="empty-state">Не удалось загрузить достижения</div>';
+            listEl.innerHTML = `<div class="empty-state">${t('failed_load_achievements')}</div>`;
         }
     }
 }
@@ -2214,6 +2266,9 @@ function showGamificationNotification(data) {
 }
 
 function showAchievementToast(data) {
+    // Haptic feedback for achievement
+    haptic.medium();
+    
     const container = document.getElementById('toast-container');
     if (!container) return;
     
@@ -2233,6 +2288,278 @@ function showAchievementToast(data) {
         toast.classList.add('fade-out');
         setTimeout(() => toast.remove(), 300);
     }, 4000);
+}
+
+// ===== DAILY QUESTS =====
+
+async function loadDailyQuests() {
+    debug.log('📋 Loading daily quests...');
+    
+    const lang = localStorage.getItem('app_language') || 'ru';
+    const listEl = document.getElementById('daily-quests-list');
+    
+    if (!listEl) return;
+    
+    try {
+        const response = await api.getDailyQuests(lang);
+        debug.log('📋 Daily quests response:', response);
+        
+        if (response.success && response.data) {
+            renderDailyQuests(response.data);
+        }
+    } catch (error) {
+        debug.error('Failed to load daily quests:', error);
+        const t = window.i18n?.t || (k => k);
+        listEl.innerHTML = `<div class="empty-state" style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px">${t('failed_load_quests')}</div>`;
+    }
+}
+
+function renderDailyQuests(data) {
+    const listEl = document.getElementById('daily-quests-list');
+    const footerEl = document.getElementById('daily-quests-footer');
+    const bonusBadge = document.getElementById('daily-bonus-badge');
+    const t = window.i18n?.t || (k => k);
+    
+    if (!listEl) return;
+    
+    const quests = data.quests || [];
+    
+    if (quests.length === 0) {
+        listEl.innerHTML = `<div class="empty-state" style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px">${t('no_quests')}</div>`;
+        return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    
+    quests.forEach(quest => {
+        const item = document.createElement('div');
+        item.className = `daily-quest-item ${quest.completed ? 'completed' : ''}`;
+        
+        const progress = Math.min(100, (quest.progress / quest.target) * 100);
+        
+        item.innerHTML = `
+            <div class="daily-quest-check">
+                ${quest.completed ? '<i class="fas fa-check"></i>' : ''}
+            </div>
+            <div class="daily-quest-info">
+                <div class="daily-quest-title">${quest.title}</div>
+                <div class="daily-quest-progress-bar">
+                    <div class="daily-quest-progress-fill" style="width: ${progress}%"></div>
+                </div>
+            </div>
+            <div class="daily-quest-xp">+${quest.xp} XP</div>
+        `;
+        
+        fragment.appendChild(item);
+    });
+    
+    listEl.innerHTML = '';
+    listEl.appendChild(fragment);
+    
+    // Показываем бонус если все выполнены
+    if (data.all_completed) {
+        if (footerEl) footerEl.style.display = 'block';
+        if (bonusBadge) {
+            bonusBadge.style.display = 'inline-block';
+            if (data.bonus_claimed) {
+                bonusBadge.textContent = '✓ +25 XP';
+                bonusBadge.style.background = 'rgba(34, 197, 94, 0.15)';
+                bonusBadge.style.color = '#22c55e';
+            }
+        }
+    } else {
+        if (footerEl) footerEl.style.display = 'none';
+        if (bonusBadge) bonusBadge.style.display = 'none';
+    }
+}
+
+// ===== LEADERBOARD =====
+
+let currentLeaderboardPeriod = 'week';
+
+async function loadLeaderboard(period = null) {
+    if (period) {
+        currentLeaderboardPeriod = period;
+        
+        // Обновляем активную кнопку
+        document.querySelectorAll('.leaderboard-period-filter .period-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.period === period);
+        });
+    }
+    
+    debug.log('🏆 Loading leaderboard:', currentLeaderboardPeriod);
+    
+    const listEl = document.getElementById('leaderboard-list');
+    const userCard = document.getElementById('leaderboard-user-card');
+    const t = window.i18n?.t || (k => k);
+    
+    if (listEl) {
+        listEl.innerHTML = '<div style="display:flex;justify-content:center;padding:40px"><div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite"></div></div>';
+    }
+    
+    try {
+        const response = await api.getLeaderboard(currentLeaderboardPeriod, 20);
+        debug.log('🏆 Leaderboard response:', response);
+        
+        if (response.success && response.data) {
+            renderLeaderboard(response.data);
+        }
+    } catch (error) {
+        debug.error('Failed to load leaderboard:', error);
+        if (listEl) {
+            listEl.innerHTML = `<div class="empty-state">${t('failed_load_leaderboard')}</div>`;
+        }
+    }
+}
+
+function renderLeaderboard(data) {
+    const listEl = document.getElementById('leaderboard-list');
+    const t = window.i18n?.t || (k => k);
+    
+    // Обновляем карточку пользователя
+    const positionBadge = document.getElementById('user-position-badge');
+    const positionLevel = document.getElementById('user-position-level');
+    const positionXp = document.getElementById('user-position-xp');
+    
+    if (positionBadge) positionBadge.textContent = `#${data.user_position || '?'}`;
+    
+    // Находим данные текущего пользователя
+    const currentUser = data.leaders?.find(l => l.is_current_user);
+    if (currentUser) {
+        if (positionLevel) positionLevel.textContent = `Ур. ${currentUser.level} - ${currentUser.level_name}`;
+        if (positionXp) positionXp.textContent = `${currentUser.total_xp} XP`;
+    }
+    
+    if (!listEl) return;
+    
+    const leaders = data.leaders || [];
+    
+    if (leaders.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">${t('no_participants')}</div>`;
+        return;
+    }
+    
+    const fragment = document.createDocumentFragment();
+    
+    leaders.forEach((leader, index) => {
+        const item = document.createElement('div');
+        const isTop3 = index < 3;
+        item.className = `leaderboard-item ${isTop3 ? 'top-3' : ''} ${leader.is_current_user ? 'current-user' : ''}`;
+        
+        item.innerHTML = `
+            <div class="leaderboard-rank">${leader.position}</div>
+            <div class="leaderboard-user-info">
+                <div class="leaderboard-level-name">${leader.level_name}</div>
+                <div class="leaderboard-streak">
+                    <span>🔥</span>
+                    <span>${leader.current_streak} ${t('days_streak')}</span>
+                </div>
+            </div>
+            <div class="leaderboard-xp">${leader.total_xp} XP</div>
+        `;
+        
+        fragment.appendChild(item);
+    });
+    
+    listEl.innerHTML = '';
+    listEl.appendChild(fragment);
+}
+
+// ===== XP & LEVEL UP ANIMATIONS =====
+
+function showXPPopup(amount, reason = '') {
+    // Haptic feedback for XP gain
+    haptic.light();
+    
+    // Удаляем предыдущий попап если есть
+    const existing = document.querySelector('.xp-popup');
+    if (existing) existing.remove();
+    
+    const popup = document.createElement('div');
+    popup.className = 'xp-popup';
+    popup.innerHTML = `
+        <div class="xp-popup-icon">⭐</div>
+        <div class="xp-popup-amount">+${amount} XP</div>
+        ${reason ? `<div class="xp-popup-text">${reason}</div>` : ''}
+    `;
+    
+    document.body.appendChild(popup);
+    
+    setTimeout(() => popup.remove(), 2500);
+}
+
+function showLevelUpPopup(level, levelName) {
+    // Strong haptic feedback for level up!
+    haptic.heavy();
+    setTimeout(() => haptic.success(), 200);
+    
+    const popup = document.createElement('div');
+    popup.className = 'level-up-popup';
+    popup.innerHTML = `
+        <div class="level-up-content">
+            <div class="level-up-icon">🎉</div>
+            <div class="level-up-title">Новый уровень!</div>
+            <div class="level-up-level">${level}</div>
+            <div class="level-up-name">${levelName}</div>
+        </div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Закрыть по клику
+    popup.addEventListener('click', () => {
+        haptic.light();
+        popup.style.animation = 'levelUpBgIn 0.3s ease reverse';
+        setTimeout(() => popup.remove(), 300);
+    });
+    
+    // Автозакрытие через 4 секунды
+    setTimeout(() => {
+        if (popup.parentNode) {
+            popup.style.animation = 'levelUpBgIn 0.3s ease reverse';
+            setTimeout(() => popup.remove(), 300);
+        }
+    }, 4000);
+}
+
+// Улучшенная версия showGamificationNotification
+function showGamificationNotificationEnhanced(data) {
+    if (!data) return;
+    
+    // Level up - показываем большой попап
+    if (data.xp?.level_up) {
+        showLevelUpPopup(data.xp.new_level, data.xp.new_level_name || `Уровень ${data.xp.new_level}`);
+    } else if (data.xp?.amount) {
+        // Показываем XP попап только если нет level up
+        showXPPopup(data.xp.amount);
+    }
+    
+    // Новые достижения
+    if (data.achievements?.length > 0) {
+        // Показываем с задержкой если был level up
+        const delay = data.xp?.level_up ? 2500 : 0;
+        
+        data.achievements.forEach((ach, index) => {
+            setTimeout(() => {
+                showAchievementToast({
+                    icon: ach.icon,
+                    title: ach.name,
+                    message: `+${ach.xp_reward} XP`
+                });
+            }, delay + (index * 500));
+        });
+    }
+    
+    // Streak milestone
+    if (data.streak?.streak_milestone) {
+        setTimeout(() => {
+            showAchievementToast({
+                icon: '🔥',
+                title: `${data.streak.streak_milestone} дней подряд!`,
+                message: `+${data.streak.bonus_xp} XP бонус`
+            });
+        }, data.achievements?.length ? 1500 : 0);
+    }
 }
 
 // ===== SETTINGS =====
@@ -2430,6 +2757,9 @@ function clearCache() {
 
 function showSuccess(message) {
     debug.log('✅', message);
+    
+    // Haptic feedback for success
+    haptic.success();
     
     // Показываем toast
     const toast = document.createElement('div');
