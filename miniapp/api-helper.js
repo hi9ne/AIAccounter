@@ -292,8 +292,7 @@ class APIHelper {
     // ===== EXPORT =====
     
     async exportTransactions(params = {}) {
-        const token = this.getToken();
-        if (!token) {
+        if (!this.token) {
             throw new Error('No token available');
         }
         
@@ -303,7 +302,7 @@ class APIHelper {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${this.token}`
             }
         });
         

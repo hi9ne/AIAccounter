@@ -95,7 +95,7 @@ async def export_transactions(
     rows = []
     for t in transactions:
         rows.append([
-            t[0].strftime("%d.%m.%Y") if t[0] else "",
+            t[0].strftime("%Y-%m-%d") if t[0] else "",
             t[1] or "",
             t[2] or "",
             float(t[3]) if t[3] else 0,
