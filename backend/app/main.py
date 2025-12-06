@@ -83,6 +83,16 @@ async def startup_event():
         logger.info("✅ Hybrid cache connected to Redis")
     else:
         logger.info("⚡ Using in-memory cache (Redis not available)")
+    
+    # Прогрев connection pool - создаём первое подключение к БД
+    try:
+        from .database import engine
+        from sqlalchemy import text
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        logger.info("✅ Database connection pool warmed up")
+    except Exception as e:
+        logger.warning(f"⚠️ Database warmup failed: {e}")
 
 
 @app.on_event("shutdown")
@@ -106,9 +116,45 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Проверка здоровья приложения"""
+    from .database import engine
+    from sqlalchemy import text
+    db_status = "unknown"
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
     return {
         "status": "healthy",
-        "service": "AIAccounter API"
+        "service": "AIAccounter API",
+        "database": db_status,
+        "cache": "redis" if cache_service.enabled else "memory"
+    }
+
+
+@app.get("/warmup")
+async def warmup():
+    """Прогрев приложения - вызывать после деплоя или для keepalive"""
+    from .database import engine
+    from sqlalchemy import text
+    import time
+    
+    start = time.time()
+    
+    # Прогреваем connection pool
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        db_time = time.time() - start
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    
+    return {
+        "status": "warm",
+        "db_ping_ms": round(db_time * 1000, 1),
+        "cache": "redis" if cache_service.enabled else "memory"
     }
 
 

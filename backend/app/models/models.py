@@ -339,3 +339,66 @@ class XPHistory(Base):
     
     # Relationships
     user = relationship("User")
+
+
+# ============================================
+# SAVINGS GOALS
+# ============================================
+
+class SavingsGoal(Base):
+    """Цели накоплений"""
+    __tablename__ = "savings_goals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    
+    # Основная информация
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    target_amount = Column(Float, nullable=False)
+    current_amount = Column(Float, default=0)
+    currency = Column(String(10), default="KGS")
+    
+    # Визуализация
+    icon = Column(String(10), default="🎯")
+    color = Column(String(7), default="#6366F1")  # Indigo
+    
+    # Сроки
+    deadline = Column(Date, nullable=True)
+    
+    # Статус
+    is_completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+    
+    # Настройки
+    auto_contribute = Column(Boolean, default=False)  # Автоматическое отчисление
+    auto_contribute_percent = Column(Float, nullable=True)  # % от дохода
+    
+    # Метаданные
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    contributions = relationship("GoalContribution", back_populates="goal", cascade="all, delete-orphan")
+
+
+class GoalContribution(Base):
+    """История пополнений цели"""
+    __tablename__ = "goal_contributions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    goal_id = Column(Integer, ForeignKey("savings_goals.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    
+    amount = Column(Float, nullable=False)
+    type = Column(String(20), default="deposit")  # deposit, withdraw
+    note = Column(Text, nullable=True)
+    source = Column(String(20), default="manual")  # manual, auto, telegram
+    
+    created_at = Column(DateTime, server_default=func.now())
+    
+    # Relationships
+    goal = relationship("SavingsGoal", back_populates="contributions")
+    user = relationship("User")

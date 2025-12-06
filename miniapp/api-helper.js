@@ -64,17 +64,22 @@ class APIHelper {
                     let errorMessage = `HTTP ${response.status}`;
                     try {
                         const error = await response.json();
-                        // ��������� ������� ������ FastAPI
+                        // Обработка формата ошибок FastAPI
                         if (Array.isArray(error)) {
                             errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
                         } else {
                             errorMessage = error.detail || error.message || errorMessage;
                         }
                     } catch (e) {
-                        // �� JSON �����
+                        // Не JSON ответ
                     }
                     console.error('API Error:', errorMessage);
                     throw new Error(errorMessage);
+                }
+                
+                // 204 No Content - возвращаем пустой объект
+                if (response.status === 204) {
+                    return { success: true };
                 }
                 
                 return await response.json();
@@ -609,6 +614,56 @@ class APIHelper {
 
     async getSpendingTrends(months = 6) {
         return this.get('/ai-analytics/trends', { months });
+    }
+
+    // ===== SAVINGS GOALS =====
+
+    async getGoals(activeOnly = true) {
+        return this.get('/goals', { active_only: activeOnly });
+    }
+
+    async getGoalsStats() {
+        return this.get('/goals/stats');
+    }
+
+    async getGoal(id) {
+        return this.get(`/goals/${id}`);
+    }
+
+    async createGoal(data) {
+        return this.post('/goals', data);
+    }
+
+    async updateGoal(id, data) {
+        return this.put(`/goals/${id}`, data);
+    }
+
+    async deleteGoal(id) {
+        return this.delete(`/goals/${id}`);
+    }
+
+    async contributeToGoal(goalId, data) {
+        return this.post(`/goals/${goalId}/contribute`, data);
+    }
+
+    async quickDeposit(goalId, amount, note = null) {
+        return this.post('/goals/quick-deposit', {
+            goal_id: goalId,
+            amount: amount,
+            note: note
+        });
+    }
+
+    async getGoalContributions(goalId, limit = 50) {
+        return this.get(`/goals/${goalId}/contributions`, { limit });
+    }
+
+    async completeGoal(id) {
+        return this.post(`/goals/${id}/complete`);
+    }
+
+    async reactivateGoal(id) {
+        return this.post(`/goals/${id}/reactivate`);
     }
 }
 

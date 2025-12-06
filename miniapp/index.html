@@ -787,6 +787,17 @@
                         </div>
                         <i class="fas fa-chevron-right"></i>
                     </div>
+
+                    <div class="setting-row clickable" onclick="switchScreen('goals')">
+                        <div class="setting-left">
+                            <i class="fas fa-bullseye"></i>
+                            <div>
+                                <span class="setting-title" data-i18n="goals">Цели</span>
+                                <span class="setting-desc" data-i18n="savings_goals">Накопления на цели</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
                 </div>
 
                 <!-- Быстрые действия -->
@@ -1245,6 +1256,222 @@
                         <button type="submit" class="btn primary" data-i18n="make_payment">Внести</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Budget Modal -->
+        
+        <!-- ═══════════════════════════════════════════════════════════════
+             🎯 SAVINGS GOALS
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="goals-screen" class="screen">
+            <header class="screen-header">
+                <button class="btn-back" onclick="switchScreen('settings')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 data-i18n="goals">Цели</h1>
+                <button class="btn-icon" onclick="openGoalModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </header>
+            <div class="screen-body">
+                <!-- Goals Summary -->
+                <div class="goals-summary">
+                    <div class="goal-stat-box">
+                        <i class="fas fa-bullseye"></i>
+                        <span class="goal-stat-label" data-i18n="active_goals">Активные</span>
+                        <span class="goal-stat-value" id="goals-active-count">0</span>
+                    </div>
+                    <div class="goal-stat-box">
+                        <i class="fas fa-piggy-bank"></i>
+                        <span class="goal-stat-label" data-i18n="total_saved">Накоплено</span>
+                        <span class="goal-stat-value" id="goals-total-saved">0 с</span>
+                    </div>
+                    <div class="goal-stat-box highlight">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="goal-stat-label" data-i18n="overall_progress">Прогресс</span>
+                        <span class="goal-stat-value" id="goals-overall-progress">0%</span>
+                    </div>
+                </div>
+
+                <!-- Tab Filter -->
+                <div class="tab-bar compact">
+                    <button class="tab active" data-filter="active" onclick="filterGoals('active')" data-i18n="active">Активные</button>
+                    <button class="tab" data-filter="completed" onclick="filterGoals('completed')" data-i18n="achieved">Достигнутые</button>
+                    <button class="tab" data-filter="all" onclick="filterGoals('all')" data-i18n="all">Все</button>
+                </div>
+
+                <!-- Goals List -->
+                <div id="goals-list" class="goals-list"></div>
+                
+                <!-- Empty State -->
+                <div id="goals-empty" class="empty-state" style="display:none;">
+                    <i class="fas fa-bullseye"></i>
+                    <h3 data-i18n="no_goals">Нет целей</h3>
+                    <p data-i18n="create_first_goal">Создайте первую цель накопления</p>
+                    <button class="btn primary" onclick="openGoalModal()">
+                        <i class="fas fa-plus"></i> <span data-i18n="create_goal">Создать цель</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goal Modal (Create/Edit) -->
+        <div id="goal-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeGoalModal()"></div>
+            <div class="modal-box large">
+                <div class="modal-head">
+                    <h3 id="goal-modal-title" data-i18n="new_goal">Новая цель</h3>
+                    <button class="btn-icon" onclick="closeGoalModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <form id="goal-form" onsubmit="submitGoal(event)">
+                    <input type="hidden" id="goal-edit-id" value="">
+                    
+                    <div class="form-field">
+                        <label data-i18n="goal_name">Название цели</label>
+                        <input type="text" id="goal-name" data-i18n-placeholder="goal_name_placeholder" placeholder="iPhone 16 Pro Max" required maxlength="100">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label data-i18n="target_amount">Целевая сумма</label>
+                            <input type="number" id="goal-target" placeholder="100000" required min="1" step="0.01">
+                        </div>
+                        <div class="form-field">
+                            <label data-i18n="currency">Валюта</label>
+                            <select id="goal-currency">
+                                <option value="KGS">KGS</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="RUB">RUB</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label data-i18n="initial_amount">Начальная сумма (опционально)</label>
+                        <input type="number" id="goal-initial" placeholder="0" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label data-i18n="deadline">Дедлайн (опционально)</label>
+                        <input type="date" id="goal-deadline">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label data-i18n="icon_and_color">Иконка и цвет</label>
+                        <div class="icon-color-picker">
+                            <div class="icon-picker">
+                                <button type="button" class="icon-btn active" data-icon="🎯">🎯</button>
+                                <button type="button" class="icon-btn" data-icon="🏠">🏠</button>
+                                <button type="button" class="icon-btn" data-icon="🚗">🚗</button>
+                                <button type="button" class="icon-btn" data-icon="✈️">✈️</button>
+                                <button type="button" class="icon-btn" data-icon="📱">📱</button>
+                                <button type="button" class="icon-btn" data-icon="💻">💻</button>
+                                <button type="button" class="icon-btn" data-icon="🎓">🎓</button>
+                                <button type="button" class="icon-btn" data-icon="💍">💍</button>
+                                <button type="button" class="icon-btn" data-icon="🎁">🎁</button>
+                                <button type="button" class="icon-btn" data-icon="💰">💰</button>
+                            </div>
+                            <input type="hidden" id="goal-icon" value="🎯">
+                            <div class="color-picker">
+                                <button type="button" class="color-btn active" data-color="#6366F1" style="background:#6366F1"></button>
+                                <button type="button" class="color-btn" data-color="#8B5CF6" style="background:#8B5CF6"></button>
+                                <button type="button" class="color-btn" data-color="#EC4899" style="background:#EC4899"></button>
+                                <button type="button" class="color-btn" data-color="#EF4444" style="background:#EF4444"></button>
+                                <button type="button" class="color-btn" data-color="#F59E0B" style="background:#F59E0B"></button>
+                                <button type="button" class="color-btn" data-color="#10B981" style="background:#10B981"></button>
+                                <button type="button" class="color-btn" data-color="#06B6D4" style="background:#06B6D4"></button>
+                                <button type="button" class="color-btn" data-color="#3B82F6" style="background:#3B82F6"></button>
+                            </div>
+                            <input type="hidden" id="goal-color" value="#6366F1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label data-i18n="description">Описание (опционально)</label>
+                        <textarea id="goal-description" placeholder="..." rows="2" maxlength="500"></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeGoalModal()" data-i18n="cancel">Отмена</button>
+                        <button type="submit" class="btn primary" id="goal-submit-btn" data-i18n="create">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Goal Detail Modal -->
+        <div id="goal-detail-modal" class="modal">
+            <div class="modal-backdrop" onclick="closeGoalDetailModal()"></div>
+            <div class="modal-box large">
+                <div class="modal-head">
+                    <h3 id="goal-detail-title">Цель</h3>
+                    <button class="btn-icon" onclick="closeGoalDetailModal()"><i class="fas fa-xmark"></i></button>
+                </div>
+                <div class="goal-detail-content">
+                    <div class="goal-detail-hero" id="goal-detail-hero">
+                        <span class="goal-icon" id="goal-detail-icon">🎯</span>
+                        <div class="goal-amounts">
+                            <span class="goal-current" id="goal-detail-current">0</span>
+                            <span class="goal-separator">/</span>
+                            <span class="goal-target" id="goal-detail-target">0 с</span>
+                        </div>
+                        <div class="goal-progress-bar large">
+                            <div class="goal-progress-fill" id="goal-detail-progress" style="width: 0%"></div>
+                        </div>
+                        <span class="goal-progress-text" id="goal-detail-percent">0%</span>
+                    </div>
+                    
+                    <div class="goal-detail-info">
+                        <div class="goal-info-row" id="goal-detail-deadline-row" style="display:none;">
+                            <i class="fas fa-calendar"></i>
+                            <span data-i18n="deadline">Дедлайн</span>
+                            <strong id="goal-detail-deadline">-</strong>
+                        </div>
+                        <div class="goal-info-row" id="goal-detail-monthly-row" style="display:none;">
+                            <i class="fas fa-calculator"></i>
+                            <span data-i18n="monthly_target">В месяц нужно</span>
+                            <strong id="goal-detail-monthly">0 с</strong>
+                        </div>
+                        <div class="goal-info-row">
+                            <i class="fas fa-coins"></i>
+                            <span data-i18n="remaining">Осталось</span>
+                            <strong id="goal-detail-remaining">0 с</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Deposit -->
+                    <div class="goal-quick-deposit">
+                        <h4 data-i18n="add_funds">Пополнить</h4>
+                        <div class="quick-deposit-row">
+                            <input type="number" id="goal-deposit-amount" placeholder="1000" min="1">
+                            <button class="btn primary" onclick="quickDepositGoal()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="quick-deposit-presets">
+                            <button class="preset-btn" onclick="setDepositAmount(500)">500</button>
+                            <button class="preset-btn" onclick="setDepositAmount(1000)">1000</button>
+                            <button class="preset-btn" onclick="setDepositAmount(5000)">5000</button>
+                            <button class="preset-btn" onclick="setDepositAmount(10000)">10000</button>
+                        </div>
+                    </div>
+                    
+                    <!-- History -->
+                    <div class="goal-history">
+                        <h4 data-i18n="history">История</h4>
+                        <div id="goal-contributions-list" class="contributions-list"></div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn danger small" onclick="deleteCurrentGoal()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button type="button" class="btn secondary" onclick="editCurrentGoal()" data-i18n="edit">Редактировать</button>
+                    <button type="button" class="btn success" id="goal-complete-btn" onclick="completeCurrentGoal()" data-i18n="mark_achieved">Цель достигнута</button>
+                </div>
             </div>
         </div>
 

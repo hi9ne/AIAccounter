@@ -21,46 +21,49 @@ const debug = {
 };
 
 // ===== HAPTIC FEEDBACK UTILITY =====
+// HapticFeedback требует версию WebApp 6.1+
+const isHapticSupported = tg?.HapticFeedback && parseFloat(tg?.version || '0') >= 6.1;
+
 const haptic = {
     // Light impact - для мелких действий (нажатие кнопки, переключение)
     light: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.impactOccurred('light');
         }
     },
     // Medium impact - для заметных действий (выбор элемента, открытие модалки)
     medium: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.impactOccurred('medium');
         }
     },
     // Heavy impact - для важных действий (сохранение, удаление)
     heavy: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.impactOccurred('heavy');
         }
     },
     // Success notification - для успешных операций
     success: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.notificationOccurred('success');
         }
     },
     // Warning notification - для предупреждений
     warning: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.notificationOccurred('warning');
         }
     },
     // Error notification - для ошибок
     error: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.notificationOccurred('error');
         }
     },
     // Selection changed - для выбора из списка
     selection: () => {
-        if (tg?.HapticFeedback) {
+        if (isHapticSupported) {
             tg.HapticFeedback.selectionChanged();
         }
     }
@@ -97,6 +100,41 @@ let state = {
     theme: 'auto',
     isInitialized: false,
     preloadedData: null
+};
+
+// ===== SCREEN DATA CACHE =====
+const screenCache = {
+    data: {},
+    timestamps: {},
+    TTL: 60000, // 1 минута кэш
+    
+    set(screen, data) {
+        this.data[screen] = data;
+        this.timestamps[screen] = Date.now();
+    },
+    
+    get(screen) {
+        const timestamp = this.timestamps[screen];
+        if (timestamp && (Date.now() - timestamp) < this.TTL) {
+            return this.data[screen];
+        }
+        return null;
+    },
+    
+    invalidate(screen) {
+        if (screen) {
+            delete this.data[screen];
+            delete this.timestamps[screen];
+        } else {
+            this.data = {};
+            this.timestamps = {};
+        }
+    },
+    
+    isValid(screen) {
+        const timestamp = this.timestamps[screen];
+        return timestamp && (Date.now() - timestamp) < this.TTL;
+    }
 };
 
 // ===== API =====
@@ -361,6 +399,31 @@ function formatDate(dateString) {
     }).format(date);
 }
 
+function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const timeStr = new Intl.DateTimeFormat('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
+    
+    if (date.toDateString() === today.toDateString()) {
+        return `Сегодня, ${timeStr}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return `Вчера, ${timeStr}`;
+    }
+    
+    const dateStr = new Intl.DateTimeFormat('ru-RU', {
+        day: 'numeric',
+        month: 'short'
+    }).format(date);
+    
+    return `${dateStr}, ${timeStr}`;
+}
+
 function showLoading() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
@@ -536,7 +599,13 @@ function switchScreen(screenName) {
     loadScreenData(screenName);
 }
 
-function loadScreenData(screenName) {
+function loadScreenData(screenName, forceReload = false) {
+    // Если есть валидный кэш и не форсированная перезагрузка - пропускаем
+    if (!forceReload && screenCache.isValid(screenName)) {
+        debug.log(`📦 Using cached data for ${screenName}`);
+        return;
+    }
+    
     switch(screenName) {
         case 'home':
             loadDashboard();
@@ -561,6 +630,7 @@ function loadScreenData(screenName) {
             break;
         case 'more':
             // Статический экран, не требует загрузки данных
+            screenCache.set('more', true);
             break;
         case 'reports':
             loadReports();
@@ -573,6 +643,9 @@ function loadScreenData(screenName) {
             break;
         case 'debts':
             loadDebts();
+            break;
+        case 'goals':
+            loadGoals();
             break;
         case 'budgets':
             loadBudgetsScreen();
@@ -679,6 +752,14 @@ async function loadDashboard() {
     const cacheKey = `batch:${state.currentPeriod}:${state.currency}`;
     const cached = cache.get(cacheKey);
     
+    // Если есть валидный кэш, используем его и выходим
+    if (cached && screenCache.isValid('home')) {
+        debug.log('📦 Using cached dashboard');
+        renderDashboardFromCache(cached);
+        perf.end('loadDashboard');
+        return;
+    }
+    
     // Показываем skeleton только если нет кэша
     if (!cached && !state.preloadedData) {
         const balanceCard = document.querySelector('.balance-card');
@@ -750,6 +831,9 @@ async function loadDashboard() {
         // Загружаем геймификацию для хедера (в фоне)
         loadGamificationHeader();
         
+        // Сохраняем в screenCache
+        screenCache.set('home', true);
+        
         perf.end('loadDashboard');
         debug.log('✅ Dashboard loaded via batch API');
     } catch (error) {
@@ -762,6 +846,35 @@ async function loadDashboard() {
         // Убираем skeleton
         const skeleton = document.querySelector('.balance-card .loading-placeholder');
         if (skeleton) skeleton.remove();
+    }
+}
+
+function renderDashboardFromCache(batchData) {
+    // Обновляем курсы валют из batch данных
+    if (batchData.exchange_rates && batchData.exchange_rates.length > 0) {
+        exchangeRates = {};
+        batchData.exchange_rates.forEach(rate => {
+            const key = `${rate.from_currency}_${rate.to_currency}`;
+            exchangeRates[key] = rate.rate;
+        });
+    }
+    
+    updateDashboardUI({ balance: batchData.balance });
+    
+    if (batchData.top_categories) {
+        const cleanedTop = batchData.top_categories.slice(0, 3).map(cat => ({
+            ...cat,
+            category: (cat.category || 'Без категории').replace(/\s+/g, ' ').trim()
+        }));
+        updateHomeTopCategories(cleanedTop);
+    }
+    
+    if (batchData.budget) {
+        updateBudgetWidget(batchData.budget);
+    }
+    
+    if (batchData.recent_transactions) {
+        updateRecentTransactions(batchData.recent_transactions);
     }
 }
 
@@ -1014,6 +1127,13 @@ async function loadAnalytics() {
     perf.start('loadAnalytics');
     debug.log('📊 Loading analytics...');
     
+    // Проверяем screenCache
+    if (screenCache.isValid('analytics')) {
+        debug.log('📦 Using cached analytics view');
+        perf.end('loadAnalytics');
+        return;
+    }
+    
     // Показываем лоадер
     const chartContainer = document.querySelector('.chart-container canvas')?.parentElement;
     
@@ -1098,6 +1218,7 @@ async function loadAnalytics() {
             updatePatternsFromBatch(batchData.patterns);
         }
         
+        screenCache.set('analytics', true);
         perf.end('loadAnalytics');
         debug.log('✅ Analytics loaded via batch API');
         
@@ -1656,7 +1777,7 @@ async function loadHistory(loadMore = false) {
     const cacheKey = `history:${historyFilters.type}:${historyFilters.category}:${historyFilters.period}:${historyFilters.search || ''}:${state.currency}`;
     if (!loadMore) {
         const cached = cache.get(cacheKey);
-        if (cached) {
+        if (cached && screenCache.isValid('history')) {
             debug.log('📦 Using cached history');
             historyState.allTransactions = cached.transactions;
             historyState.hasMore = cached.hasMore;
@@ -1779,6 +1900,7 @@ async function loadHistory(loadMore = false) {
                 transactions: historyState.allTransactions,
                 hasMore: historyState.hasMore
             }, 300);
+            screenCache.set('history', true);
         }
         
         // Рендерим все транзакции
@@ -2746,6 +2868,7 @@ function updateReportsUI(reports) {
 // ===== SETTINGS HANDLERS =====
 function clearCache() {
     cache.clear();
+    screenCache.invalidate(); // Очищаем весь screenCache
     localStorage.clear();
     showSuccess('Кэш очищен');
     
@@ -3011,6 +3134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cache.clearMatching('dashboard');
             cache.clearMatching('history');
             cache.clearMatching('analytics');
+            screenCache.invalidate(); // Инвалидируем весь screenCache
             
             // Перезагружаем текущий экран
             if (state.currentScreen === 'home') {
@@ -3368,7 +3492,7 @@ async function loadRecurringPayments() {
     const cached = cache.get(cacheKey);
     
     // Если есть кэш - используем
-    if (cached) {
+    if (cached && screenCache.isValid('recurring')) {
         debug.log('📦 Using cached recurring payments');
         recurringState.items = cached.items;
         updateRecurringSummary(cached.summary, cached.items);
@@ -3401,6 +3525,7 @@ async function loadRecurringPayments() {
         
         // Кэшируем на 5 минут
         cache.set(cacheKey, { items: recurringState.items, summary }, 300);
+        screenCache.set('recurring', true);
         
         loadingEl.style.display = 'none';
         
@@ -3655,7 +3780,7 @@ async function loadDebts() {
     const cached = cache.get(cacheKey);
     
     // Если есть кэш - используем
-    if (cached) {
+    if (cached && screenCache.isValid('debts')) {
         debug.log('📦 Using cached debts');
         debtsState.items = cached.items;
         updateDebtsSummary(cached.summary);
@@ -3685,6 +3810,7 @@ async function loadDebts() {
         
         // Кэшируем на 5 минут
         cache.set(cacheKey, { items: debtsState.items, summary: summaryData }, 300);
+        screenCache.set('debts', true);
         
         renderDebts();
         
@@ -3871,6 +3997,8 @@ async function submitDebt(event) {
         }
         
         closeDebtModal();
+        screenCache.invalidate('debts');
+        cache.delete('debts:' + state.currency);
         await loadDebts();
         
     } catch (error) {
@@ -3915,6 +4043,8 @@ async function submitDebtPayment(event) {
         await api.addDebtPayment(debtId, data);
         showSuccess('Платёж добавлен');
         closeDebtPaymentModal();
+        screenCache.invalidate('debts');
+        cache.delete('debts:' + state.currency);
         await loadDebts();
     } catch (error) {
         handleError(error, 'Не удалось добавить платёж');
@@ -3930,6 +4060,8 @@ async function settleDebt(id) {
     try {
         await api.settleDebt(id);
         showSuccess('Долг погашен');
+        screenCache.invalidate('debts');
+        cache.delete('debts:' + state.currency);
         await loadDebts();
     } catch (error) {
         handleError(error, 'Не удалось погасить долг');
@@ -3946,11 +4078,577 @@ async function deleteDebt(id) {
     try {
         await api.deleteDebt(id);
         showSuccess('Долг удалён');
+        screenCache.invalidate('debts');
+        cache.delete('debts:' + state.currency);
         await loadDebts();
     } catch (error) {
         handleError(error, 'Не удалось удалить долг');
     }
 }
+
+// ===== SAVINGS GOALS =====
+
+const goalsState = {
+    goals: [],
+    currentGoal: null,
+    filter: 'active',
+    detailCache: {} // Кэш детальной информации о целях
+};
+
+async function loadGoals() {
+    debug.log('🎯 Loading goals...');
+    const container = document.getElementById('goals-list');
+    const emptyState = document.getElementById('goals-empty');
+    
+    // Проверяем кэш - если есть, рендерим сразу
+    const cached = screenCache.get('goals');
+    if (cached && goalsState.goals.length > 0) {
+        debug.log('📦 Rendering cached goals');
+        renderGoalsFromCache();
+        // Обновляем в фоне
+        refreshGoalsInBackground();
+        return;
+    }
+    
+    // Показываем скелетон загрузки только если нет данных
+    if (goalsState.goals.length === 0) {
+        emptyState.style.display = 'none';
+        container.innerHTML = `
+            <div class="goal-card skeleton">
+                <div class="skeleton-line" style="width: 60%; height: 20px; margin-bottom: 12px;"></div>
+                <div class="skeleton-line" style="width: 100%; height: 8px; margin-bottom: 8px;"></div>
+                <div class="skeleton-line" style="width: 40%; height: 14px;"></div>
+            </div>
+            <div class="goal-card skeleton">
+                <div class="skeleton-line" style="width: 50%; height: 20px; margin-bottom: 12px;"></div>
+                <div class="skeleton-line" style="width: 100%; height: 8px; margin-bottom: 8px;"></div>
+                <div class="skeleton-line" style="width: 35%; height: 14px;"></div>
+            </div>
+        `;
+    }
+    
+    try {
+        await fetchAndRenderGoals();
+        screenCache.set('goals', true);
+    } catch (error) {
+        handleError(error, t('error_loading'));
+    }
+}
+
+async function fetchAndRenderGoals() {
+    const response = await api.getGoals(goalsState.filter === 'all' ? false : true);
+    
+    goalsState.goals = response.items || [];
+    
+    // Update summary
+    document.getElementById('goals-active-count').textContent = response.active_count || 0;
+    document.getElementById('goals-total-saved').textContent = formatCurrency(response.total_saved || 0);
+    
+    const overallProgress = response.total_target > 0 
+        ? Math.round((response.total_saved / response.total_target) * 100) 
+        : 0;
+    document.getElementById('goals-overall-progress').textContent = `${overallProgress}%`;
+        
+    // Filter based on current tab
+    let filteredGoals = goalsState.goals;
+    if (goalsState.filter === 'active') {
+        filteredGoals = goalsState.goals.filter(g => !g.is_completed);
+    } else if (goalsState.filter === 'completed') {
+        filteredGoals = goalsState.goals.filter(g => g.is_completed);
+    }
+    
+    renderGoalsList(filteredGoals);
+}
+
+function renderGoalsFromCache() {
+    // Update summary from cached data
+    const activeGoals = goalsState.goals.filter(g => !g.is_completed);
+    const totalSaved = goalsState.goals.reduce((sum, g) => sum + g.current_amount, 0);
+    const totalTarget = activeGoals.reduce((sum, g) => sum + g.target_amount, 0);
+    
+    document.getElementById('goals-active-count').textContent = activeGoals.length;
+    document.getElementById('goals-total-saved').textContent = formatCurrency(totalSaved);
+    
+    const overallProgress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
+    document.getElementById('goals-overall-progress').textContent = `${overallProgress}%`;
+    
+    // Filter and render
+    let filteredGoals = goalsState.goals;
+    if (goalsState.filter === 'active') {
+        filteredGoals = goalsState.goals.filter(g => !g.is_completed);
+    } else if (goalsState.filter === 'completed') {
+        filteredGoals = goalsState.goals.filter(g => g.is_completed);
+    }
+    
+    renderGoalsList(filteredGoals);
+}
+
+function refreshGoalsInBackground() {
+    api.getGoals(goalsState.filter === 'all' ? false : true).then(response => {
+        goalsState.goals = response.items || [];
+        renderGoalsFromCache();
+        screenCache.set('goals', true);
+    }).catch(() => {});
+}
+
+function filterGoals(filter) {
+    goalsState.filter = filter;
+    
+    // Update tabs
+    document.querySelectorAll('#goals-screen .tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.filter === filter);
+    });
+    
+    // Re-filter and render
+    let filteredGoals = goalsState.goals;
+    if (filter === 'active') {
+        filteredGoals = goalsState.goals.filter(g => !g.is_completed);
+    } else if (filter === 'completed') {
+        filteredGoals = goalsState.goals.filter(g => g.is_completed);
+    }
+    
+    renderGoalsList(filteredGoals);
+    haptic.light();
+}
+
+function renderGoalsList(goals) {
+    const container = document.getElementById('goals-list');
+    const emptyState = document.getElementById('goals-empty');
+    
+    if (!goals || goals.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'flex';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    container.innerHTML = goals.map(goal => {
+        const progress = goal.target_amount > 0 
+            ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100))
+            : 0;
+        const remaining = Math.max(0, goal.target_amount - goal.current_amount);
+        
+        let deadlineHtml = '';
+        if (goal.deadline) {
+            const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+            const isUrgent = daysLeft <= 30 && daysLeft > 0;
+            deadlineHtml = `
+                <div class="goal-deadline-badge ${isUrgent ? 'urgent' : ''}">
+                    <i class="fas fa-calendar"></i>
+                    ${daysLeft > 0 ? `${daysLeft} ${t('days_left')}` : (daysLeft === 0 ? 'Сегодня' : 'Просрочено')}
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="goal-card ${goal.is_completed ? 'completed' : ''}" onclick="openGoalDetail(${goal.id})">
+                <div class="goal-card-header">
+                    <div class="goal-info">
+                        <div class="goal-icon-box" style="background: ${goal.color}20; color: ${goal.color}">
+                            ${goal.icon}
+                        </div>
+                        <div>
+                            <div class="goal-name">${escapeHtml(goal.name)}</div>
+                            ${deadlineHtml}
+                        </div>
+                    </div>
+                    <div class="goal-amounts">
+                        <div class="goal-current-amount">${formatCurrency(goal.current_amount)}</div>
+                        <div class="goal-target-amount">/ ${formatCurrency(goal.target_amount)}</div>
+                    </div>
+                </div>
+                <div class="goal-progress-bar">
+                    <div class="goal-progress-fill" style="width: ${progress}%; background: ${goal.color}"></div>
+                </div>
+                <div class="goal-progress-row">
+                    <span class="goal-progress-percent" style="color: ${goal.color}">${progress}%</span>
+                    <span class="goal-remaining">${t('remaining')}: ${formatCurrency(remaining)}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Goal Modal Functions
+function openGoalModal(goalId = null) {
+    const modal = document.getElementById('goal-modal');
+    const title = document.getElementById('goal-modal-title');
+    const submitBtn = document.getElementById('goal-submit-btn');
+    const form = document.getElementById('goal-form');
+    
+    form.reset();
+    document.getElementById('goal-edit-id').value = goalId || '';
+    
+    // Reset icon/color pickers
+    document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.icon-btn[data-icon="🎯"]').classList.add('active');
+    document.querySelector('.color-btn[data-color="#6366F1"]').classList.add('active');
+    document.getElementById('goal-icon').value = '🎯';
+    document.getElementById('goal-color').value = '#6366F1';
+    
+    if (goalId) {
+        const goal = goalsState.goals.find(g => g.id === goalId);
+        if (goal) {
+            title.textContent = t('edit_goal');
+            submitBtn.textContent = t('save');
+            
+            document.getElementById('goal-name').value = goal.name;
+            document.getElementById('goal-target').value = goal.target_amount;
+            document.getElementById('goal-initial').value = '';
+            document.getElementById('goal-currency').value = goal.currency;
+            document.getElementById('goal-deadline').value = goal.deadline || '';
+            document.getElementById('goal-description').value = goal.description || '';
+            
+            // Set icon/color
+            document.querySelectorAll('.icon-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.icon === goal.icon);
+            });
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.color === goal.color);
+            });
+            document.getElementById('goal-icon').value = goal.icon;
+            document.getElementById('goal-color').value = goal.color;
+        }
+    } else {
+        title.textContent = t('new_goal');
+        submitBtn.textContent = t('create');
+    }
+    
+    modal.classList.add('active');
+    haptic.medium();
+}
+
+function closeGoalModal() {
+    document.getElementById('goal-modal').classList.remove('active');
+}
+
+async function submitGoal(event) {
+    event.preventDefault();
+    
+    const goalId = document.getElementById('goal-edit-id').value;
+    const data = {
+        name: document.getElementById('goal-name').value.trim(),
+        target_amount: parseFloat(document.getElementById('goal-target').value),
+        currency: document.getElementById('goal-currency').value,
+        icon: document.getElementById('goal-icon').value,
+        color: document.getElementById('goal-color').value,
+        deadline: document.getElementById('goal-deadline').value || null,
+        description: document.getElementById('goal-description').value.trim() || null
+    };
+    
+    const initialAmount = parseFloat(document.getElementById('goal-initial').value) || 0;
+    if (!goalId && initialAmount > 0) {
+        data.initial_amount = initialAmount;
+    }
+    
+    const submitBtn = document.getElementById('goal-submit-btn');
+    const originalText = submitBtn.textContent;
+    submitBtn.innerHTML = '<div class="btn-spinner"></div>';
+    submitBtn.disabled = true;
+    
+    try {
+        if (goalId) {
+            await api.updateGoal(goalId, data);
+            invalidateGoalCache(goalId);
+            showSuccess(t('goal_updated'));
+        } else {
+            await api.createGoal(data);
+            invalidateGoalCache(); // Очищаем весь кэш
+            showSuccess(t('goal_created'));
+        }
+        
+        closeGoalModal();
+        await loadGoals();
+        haptic.success();
+    } catch (error) {
+        handleError(error, t('error_saving'));
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Goal Detail Modal
+async function openGoalDetail(goalId) {
+    const modal = document.getElementById('goal-detail-modal');
+    
+    // Проверяем кэш - если есть, показываем сразу
+    const cached = goalsState.detailCache[goalId];
+    if (cached) {
+        goalsState.currentGoal = cached;
+        fillGoalDetailModal(cached);
+        modal.classList.add('active');
+        haptic.medium();
+        
+        // Обновляем в фоне
+        api.getGoal(goalId).then(fresh => {
+            goalsState.detailCache[goalId] = fresh;
+            goalsState.currentGoal = fresh;
+            fillGoalDetailModal(fresh);
+        }).catch(() => {});
+        return;
+    }
+    
+    // Нет кэша - показываем из списка если есть
+    const fromList = goalsState.goals.find(g => g.id === goalId);
+    if (fromList) {
+        fillGoalDetailModal(fromList, true); // true = без contributions
+    } else {
+        document.getElementById('goal-detail-title').textContent = 'Загрузка...';
+        document.getElementById('goal-detail-icon').textContent = '⏳';
+    }
+    document.getElementById('goal-contributions-list').innerHTML = '<div class="contributions-loading">Загрузка...</div>';
+    modal.classList.add('active');
+    haptic.medium();
+    
+    try {
+        const goal = await api.getGoal(goalId);
+        goalsState.detailCache[goalId] = goal;
+        goalsState.currentGoal = goal;
+        
+        fillGoalDetailModal(goal);
+    } catch (error) {
+        handleError(error, t('error_loading'));
+        modal.classList.remove('active');
+    }
+}
+
+function fillGoalDetailModal(goal, skipContributions = false) {
+    document.getElementById('goal-detail-title').textContent = goal.name;
+    document.getElementById('goal-detail-icon').textContent = goal.icon;
+    document.getElementById('goal-detail-current').textContent = formatCurrency(goal.current_amount);
+    document.getElementById('goal-detail-target').textContent = formatCurrency(goal.target_amount);
+    
+    const progress = goal.progress_percent || (goal.target_amount > 0 ? Math.round(goal.current_amount / goal.target_amount * 100) : 0);
+    document.getElementById('goal-detail-progress').style.width = `${progress}%`;
+    document.getElementById('goal-detail-percent').textContent = `${progress}%`;
+    
+    const hero = document.getElementById('goal-detail-hero');
+    hero.style.background = `linear-gradient(135deg, ${goal.color}, ${adjustColor(goal.color, -30)})`;
+    
+    if (goal.deadline) {
+        document.getElementById('goal-detail-deadline-row').style.display = 'flex';
+        document.getElementById('goal-detail-deadline').textContent = formatDate(goal.deadline);
+    } else {
+        document.getElementById('goal-detail-deadline-row').style.display = 'none';
+    }
+    
+    if (goal.monthly_target) {
+        document.getElementById('goal-detail-monthly-row').style.display = 'flex';
+        document.getElementById('goal-detail-monthly').textContent = formatCurrency(goal.monthly_target);
+    } else {
+        document.getElementById('goal-detail-monthly-row').style.display = 'none';
+    }
+    
+    const remaining = goal.remaining_amount ?? Math.max(0, goal.target_amount - goal.current_amount);
+    document.getElementById('goal-detail-remaining').textContent = formatCurrency(remaining);
+    
+    const completeBtn = document.getElementById('goal-complete-btn');
+    completeBtn.style.display = goal.is_completed ? 'none' : 'block';
+    
+    if (!skipContributions) {
+        renderContributions(goal.contributions || []);
+    }
+}
+
+function closeGoalDetailModal() {
+    document.getElementById('goal-detail-modal').classList.remove('active');
+    goalsState.currentGoal = null;
+}
+
+function invalidateGoalCache(goalId) {
+    if (goalId) {
+        delete goalsState.detailCache[goalId];
+    } else {
+        goalsState.detailCache = {};
+    }
+    // Также инвалидируем кэш экрана
+    screenCache.invalidate('goals');
+}
+
+function renderContributions(contributions) {
+    const container = document.getElementById('goal-contributions-list');
+    
+    if (!contributions || contributions.length === 0) {
+        container.innerHTML = `<div class="empty-msg">${t('no_data')}</div>`;
+        return;
+    }
+    
+    container.innerHTML = contributions.slice(0, 10).map(c => {
+        const isDeposit = c.type === 'deposit';
+        return `
+            <div class="contribution-item">
+                <div class="contribution-info">
+                    <div class="contribution-icon ${c.type}">
+                        <i class="fas fa-${isDeposit ? 'plus' : 'minus'}"></i>
+                    </div>
+                    <div class="contribution-details">
+                        <span class="contribution-amount ${c.type}">
+                            ${isDeposit ? '+' : '-'}${formatCurrency(c.amount)}
+                        </span>
+                        <span class="contribution-date">${formatDateTime(c.created_at)}</span>
+                    </div>
+                </div>
+                ${c.note ? `<span class="contribution-note">${escapeHtml(c.note)}</span>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Quick Deposit
+function setDepositAmount(amount) {
+    document.getElementById('goal-deposit-amount').value = amount;
+    haptic.light();
+}
+
+async function quickDepositGoal() {
+    const amount = parseFloat(document.getElementById('goal-deposit-amount').value);
+    
+    if (!amount || amount <= 0) {
+        showError('Введите сумму');
+        return;
+    }
+    
+    if (!goalsState.currentGoal) return;
+    
+    const goalId = goalsState.currentGoal.id;
+    const depositBtn = document.querySelector('.quick-deposit-btn');
+    const originalText = depositBtn.innerHTML;
+    depositBtn.innerHTML = '<div class="btn-spinner"></div>';
+    depositBtn.disabled = true;
+    
+    try {
+        const response = await api.quickDeposit(goalId, amount);
+        invalidateGoalCache(goalId);
+        
+        showSuccess(response.message || t('deposit_success'));
+        
+        // Update UI сразу из response
+        document.getElementById('goal-detail-current').textContent = formatCurrency(response.new_balance);
+        document.getElementById('goal-detail-progress').style.width = `${response.progress_percent}%`;
+        document.getElementById('goal-detail-percent').textContent = `${response.progress_percent}%`;
+        document.getElementById('goal-detail-remaining').textContent = formatCurrency(response.goal.remaining_amount || 0);
+        
+        // Clear input
+        document.getElementById('goal-deposit-amount').value = '';
+        
+        // Добавляем новый вклад в список без перезагрузки
+        const newContribution = {
+            id: Date.now(),
+            type: 'deposit',
+            amount: amount,
+            created_at: new Date().toISOString(),
+            note: null
+        };
+        const currentContributions = goalsState.currentGoal.contributions || [];
+        renderContributions([newContribution, ...currentContributions]);
+        
+        // If completed, show special feedback
+        if (response.is_completed) {
+            haptic.success();
+            showSuccess(t('goal_completed'));
+            closeGoalDetailModal();
+            await loadGoals();
+        } else {
+            haptic.success();
+        }
+    } catch (error) {
+        handleError(error, t('error_saving'));
+    } finally {
+        depositBtn.innerHTML = originalText;
+        depositBtn.disabled = false;
+    }
+}
+
+function editCurrentGoal() {
+    if (!goalsState.currentGoal) return;
+    closeGoalDetailModal();
+    openGoalModal(goalsState.currentGoal.id);
+}
+
+async function deleteCurrentGoal() {
+    if (!goalsState.currentGoal) return;
+    
+    if (!confirm(t('confirm_delete_goal'))) return;
+    
+    const goalId = goalsState.currentGoal.id;
+    const deleteBtn = document.getElementById('goal-delete-btn');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<div class="btn-spinner"></div>';
+    deleteBtn.disabled = true;
+    
+    try {
+        await api.deleteGoal(goalId);
+        invalidateGoalCache(goalId);
+        showSuccess(t('goal_deleted'));
+        closeGoalDetailModal();
+        await loadGoals();
+        haptic.success();
+    } catch (error) {
+        handleError(error, t('error_saving'));
+    } finally {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+    }
+}
+
+async function completeCurrentGoal() {
+    if (!goalsState.currentGoal) return;
+    
+    const goalId = goalsState.currentGoal.id;
+    const completeBtn = document.getElementById('goal-complete-btn');
+    const originalText = completeBtn.innerHTML;
+    completeBtn.innerHTML = '<div class="btn-spinner"></div>';
+    completeBtn.disabled = true;
+    
+    try {
+        await api.completeGoal(goalId);
+        invalidateGoalCache(goalId);
+        showSuccess(t('goal_completed'));
+        closeGoalDetailModal();
+        await loadGoals();
+        haptic.success();
+    } catch (error) {
+        handleError(error, t('error_saving'));
+    } finally {
+        completeBtn.innerHTML = originalText;
+        completeBtn.disabled = false;
+    }
+}
+
+// Helper function to adjust color brightness
+function adjustColor(color, amount) {
+    const hex = color.replace('#', '');
+    const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + amount));
+    const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + amount));
+    const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + amount));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// Icon/Color Picker Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Icon picker
+    document.querySelectorAll('.icon-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('goal-icon').value = btn.dataset.icon;
+            haptic.light();
+        });
+    });
+    
+    // Color picker
+    document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('goal-color').value = btn.dataset.color;
+            haptic.light();
+        });
+    });
+});
 
 // ===== AI INSIGHTS (integrated into Analytics) =====
 
