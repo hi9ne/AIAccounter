@@ -82,7 +82,7 @@ if (tg) {
 
 // ===== CONFIG =====
 const API_BASE = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') || 
-    (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://aiaccounterbackend-production.up.railway.app');
+    (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://api-aiaccounter.up.railway.app');
 
 debug.log('📡 API Base:', API_BASE);
 
