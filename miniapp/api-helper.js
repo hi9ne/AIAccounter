@@ -138,11 +138,15 @@ class APIHelper {
     // ===== CATEGORIES =====
     
     async getExpenseCategories() {
-        return this.get('/categories/expenses');
+        // Используем публичный эндпоинт если нет токена
+        const endpoint = this.token ? '/categories/expenses' : '/categories/public/expenses';
+        return this.get(endpoint);
     }
 
     async getIncomeCategories() {
-        return this.get('/categories/income');
+        // Используем публичный эндпоинт если нет токена
+        const endpoint = this.token ? '/categories/income' : '/categories/public/income';
+        return this.get(endpoint);
     }
 
     async getCurrencies() {

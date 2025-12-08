@@ -28,6 +28,55 @@ CURRENCIES = [
 ]
 
 
+# ===== ПУБЛИЧНЫЕ ЭНДПОИНТЫ (БЕЗ АВТОРИЗАЦИИ) =====
+# Для загрузки категорий в фронте ДО авторизации
+
+@router.get("/public/expenses", response_model=List[CategoryResponse])
+async def get_expense_categories_public(db: AsyncSession = Depends(get_db)):
+    """
+    Получить все дефолтные категории расходов (PUBLIC)
+    Не требует авторизации - используется для предзаполнения перед логином
+    """
+    query = select(Category).where(
+        and_(
+            Category.type == "expense",
+            Category.is_active == True,
+            Category.user_id.is_(None)  # Только дефолтные категории
+        )
+    ).order_by(Category.sort_order, Category.name)
+    
+    result = await db.execute(query)
+    categories = result.scalars().all()
+    return categories
+
+
+@router.get("/public/income", response_model=List[CategoryResponse])
+async def get_income_categories_public(db: AsyncSession = Depends(get_db)):
+    """
+    Получить все дефолтные категории доходов (PUBLIC)
+    Не требует авторизации - используется для предзаполнения перед логином
+    """
+    query = select(Category).where(
+        and_(
+            Category.type == "income",
+            Category.is_active == True,
+            Category.user_id.is_(None)  # Только дефолтные категории
+        )
+    ).order_by(Category.sort_order, Category.name)
+    
+    result = await db.execute(query)
+    categories = result.scalars().all()
+    return categories
+
+
+@router.get("/currencies", response_model=List[dict])
+async def get_currencies():
+    """Получить список валют (PUBLIC - не требует авторизации)"""
+    return CURRENCIES
+
+
+# ===== ПРИВАТНЫЕ ЭНДПОИНТЫ (С АВТОРИЗАЦИЕЙ) =====
+
 @router.get("/expenses", response_model=List[CategoryResponse])
 async def get_expense_categories(
     current_user: User = Depends(get_current_user),

@@ -140,3 +140,30 @@ def verify_token_only(token: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token"
         )
+
+
+async def get_current_user_optional(
+    db: AsyncSession = Depends(get_db),
+    token: Optional[str] = Depends(lambda r: r.headers.get("authorization", "").replace("Bearer ", "") if r.headers.get("authorization") else None)
+) -> Optional[User]:
+    """
+    Опциональная авторизация - возвращает пользователя если токен есть, иначе None
+    Используется для эндпоинтов, которые работают как с авторизованными, так и без неё
+    """
+    if not token:
+        return None
+    
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user_id = int(user_id_str)
+    except (JWTError, ValueError, TypeError):
+        return None
+    
+    query = select(User).where(User.user_id == user_id)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+    return user
+
