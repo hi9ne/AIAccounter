@@ -1,5 +1,3 @@
-const APP_VERSION = '1.2';
-
 // ===== TELEGRAM WEB APP =====
 const tg = window.Telegram?.WebApp;
 
@@ -64,7 +62,7 @@ const haptic = {
     }
 };
 
-debug.log(`🚀 AIAccounter v${APP_VERSION} - Analytics Dashboard`);
+debug.log('🚀 AIAccounter - Analytics Dashboard');
 
 if (tg) {
     tg.ready();
@@ -156,21 +154,18 @@ const perf = {
 // ===== CACHE =====
 const cache = {
     data: new Map(),
-    version: APP_VERSION,
     
     set(key, value, ttl = 300) {
-        const versionedKey = `${this.version}_${key}`;
-        this.data.set(versionedKey, {
+        this.data.set(key, {
             value,
             expires: Date.now() + (ttl * 1000)
         });
         
         // Сохраняем в localStorage для persistent кэша
         try {
-            localStorage.setItem(`cache_${versionedKey}`, JSON.stringify({
+            localStorage.setItem(`cache_${key}`, JSON.stringify({
                 value,
-                expires: Date.now() + (ttl * 1000),
-                version: this.version
+                expires: Date.now() + (ttl * 1000)
             }));
         } catch (e) {
             debug.warn('Failed to save to localStorage:', e);
@@ -178,27 +173,21 @@ const cache = {
     },
     
     get(key) {
-        const versionedKey = `${this.version}_${key}`;
         // Сначала проверяем memory cache
-        let item = this.data.get(versionedKey);
+        let item = this.data.get(key);
         
         // Если нет в памяти, проверяем localStorage
         if (!item) {
             try {
-                const stored = localStorage.getItem(`cache_${versionedKey}`);
+                const stored = localStorage.getItem(`cache_${key}`);
                 if (stored) {
                     item = JSON.parse(stored);
-                    // Проверяем версию
-                    if (item.version !== this.version) {
-                        localStorage.removeItem(`cache_${versionedKey}`);
-                        return null;
-                    }
                     if (Date.now() <= item.expires) {
                         // Восстанавливаем в memory cache
-                        this.data.set(versionedKey, item);
+                        this.data.set(key, item);
                         debug.log('💾 Restored from localStorage:', key);
                     } else {
-                        localStorage.removeItem(`cache_${versionedKey}`);
+                        localStorage.removeItem(`cache_${key}`);
                         return null;
                     }
                 }
@@ -209,8 +198,8 @@ const cache = {
         
         if (!item) return null;
         if (Date.now() > item.expires) {
-            this.data.delete(versionedKey);
-            localStorage.removeItem(`cache_${versionedKey}`);
+            this.data.delete(key);
+            localStorage.removeItem(`cache_${key}`);
             return null;
         }
         return item.value;
@@ -228,9 +217,8 @@ const cache = {
     },
     
     clearMatching(prefix) {
-        const versionedPrefix = `${this.version}_${prefix}`;
         for (const key of this.data.keys()) {
-            if (key.startsWith(versionedPrefix) || key.startsWith(prefix)) {
+            if (key.startsWith(prefix)) {
                 this.data.delete(key);
                 localStorage.removeItem(`cache_${key}`);
             }
@@ -3022,18 +3010,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Очищаем старые версии кэша из localStorage
-    const storedVersion = localStorage.getItem('app_version');
-    if (storedVersion !== APP_VERSION) {
-        debug.log(`🔄 Version changed from ${storedVersion} to ${APP_VERSION}, clearing old cache...`);
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('cache_') && !key.includes(APP_VERSION)) {
-                localStorage.removeItem(key);
-            }
-        });
-        localStorage.setItem('app_version', APP_VERSION);
-        debug.log('✅ Old cache cleared');
-    }
-
     // Установим имя и аватарку пользователя
     ensureUserIdentity();
     
