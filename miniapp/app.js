@@ -93,7 +93,7 @@ let state = {
     userName: tg?.initDataUnsafe?.user?.first_name || tg?.initDataUnsafe?.user?.username || 'Test User',
     userPhoto: tg?.initDataUnsafe?.user?.photo_url || null,
     currency: CONFIG.defaultCurrency || 'KGS',
-    theme: 'auto',
+    theme: 'dark',
     isInitialized: false,
     preloadedData: null
 };
@@ -2245,7 +2245,7 @@ function syncProfileSettings() {
     // Синхронизируем значения настроек с профилем
     const savedCurrency = localStorage.getItem('currency') || 'KGS';
     const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
-    const savedTheme = localStorage.getItem('theme') || 'auto';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     const savedLanguage = localStorage.getItem('app_language') || 'ru';
     
     // Профиль - валюта
@@ -2282,11 +2282,7 @@ function updateTheme(value) {
     localStorage.setItem('theme', value);
     
     // Apply theme directly
-    if (value === 'auto') {
-        document.documentElement.removeAttribute('data-theme');
-    } else {
-        document.documentElement.setAttribute('data-theme', value);
-    }
+    document.documentElement.setAttribute('data-theme', value);
     
     showSuccess('Тема обновлена');
 }
@@ -2775,7 +2771,7 @@ async function loadSettings() {
     // Load saved settings
     const savedCurrency = localStorage.getItem('currency') || 'KGS';
     const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
-    const savedTheme = localStorage.getItem('theme') || 'auto';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     const savedLanguage = localStorage.getItem('app_language') || 'ru';
     
     // Apply language
@@ -2814,11 +2810,7 @@ async function loadSettings() {
         themeSelect.value = savedTheme;
     }
     
-    if (savedTheme === 'auto') {
-        document.documentElement.removeAttribute('data-theme');
-    } else {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    }
+    document.documentElement.setAttribute('data-theme', savedTheme);
     
     // Load usage type from server
     const usageTypeSelect = document.getElementById('usage-type-select');
@@ -2998,12 +2990,8 @@ document.addEventListener('DOMContentLoaded', () => {
     debug.log('🎯 DOM loaded, initializing...');
 
     // Применяем сохраненную тему НЕМЕДЛЕННО перед всем остальным
-    const savedTheme = localStorage.getItem('theme') || 'auto';
-    if (savedTheme === 'auto') {
-        document.documentElement.removeAttribute('data-theme');
-    } else {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    }
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
     debug.log('🎨 Theme applied early:', savedTheme);
 
     // Регистрируем Service Worker с автообновлением
@@ -3237,11 +3225,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const theme = e.target.value;
             localStorage.setItem('theme', theme);
             
-            if (theme === 'auto') {
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.documentElement.setAttribute('data-theme', theme);
-            }
+            document.documentElement.setAttribute('data-theme', theme);
             
             // Форсируем перерисовку текущего экрана
             debug.log('🎨 Theme changed, reloading current screen...');
@@ -3296,7 +3280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Загружаем настройки СРАЗУ (до аутентификации)
         debug.log('⚙️ Applying saved settings...');
         const savedCurrency = localStorage.getItem('currency') || 'KGS';
-        const savedTheme = localStorage.getItem('theme') || 'auto';
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         const savedPeriod = localStorage.getItem('defaultPeriod') || 'week';
         
         state.currency = savedCurrency;
@@ -3304,11 +3288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Применяем тему сразу с небольшой задержкой для загрузки CSS
         requestAnimationFrame(() => {
-            if (savedTheme === 'auto') {
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
+            document.documentElement.setAttribute('data-theme', savedTheme);
             debug.log('✅ Settings applied:', { currency: savedCurrency, theme: savedTheme, period: savedPeriod });
         });
         

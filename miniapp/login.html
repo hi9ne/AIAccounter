@@ -56,7 +56,7 @@
     <script>
         (function() {
             const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme === 'auto' ? 'dark' : savedTheme);
+            document.documentElement.setAttribute('data-theme', savedTheme === 'light' ? 'light' : 'dark');
         })();
     </script>
 

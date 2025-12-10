@@ -51,6 +51,7 @@
     --radius-full: 100px;
     
     /* Safe Areas */
+    --safe-top: max(25px, env(safe-area-inset-top));
     --safe-bottom: max(20px, env(safe-area-inset-bottom));
     --nav-height: 76px;
 

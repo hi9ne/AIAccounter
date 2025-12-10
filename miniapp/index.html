@@ -24,7 +24,7 @@
     <script>
         (function() {
             const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme === 'auto' ? 'dark' : savedTheme);
+            document.documentElement.setAttribute('data-theme', savedTheme === 'light' ? 'light' : 'dark');
         })();
     </script>
     
@@ -624,7 +624,6 @@
                             </div>
                         </div>
                         <select id="profile-theme-select" class="select-setting" onchange="updateTheme(this.value)">
-                            <option value="auto" data-i18n="auto">Авто</option>
                             <option value="dark" data-i18n="dark">Тёмная</option>
                             <option value="light" data-i18n="light">Светлая</option>
                         </select>
