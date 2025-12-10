@@ -7,11 +7,11 @@
     
     <!-- Critical CSS inline for fast first paint -->
     <style>
-        :root{--bg-main:#0a0a0f;--bg-card:#12121a;--text-primary:#fff;--text-secondary:#8b8b9e;--accent:#6366f1}
+        :root{--bg-main:#050508;--bg-card:#0f0f16;--text-primary:#fff;--text-secondary:#94a3b8;--accent:#6366f1}
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-main);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
         .app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
-        .screen{display:none;min-height:100vh;padding-bottom:80px}
+        .screen{display:none;min-height:100vh;padding-bottom:100px;padding-top:100px}
         .screen.active{display:block}
         .loading-overlay{position:fixed;inset:0;background:var(--bg-main);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;visibility:hidden;transition:opacity .3s}
         .loading-overlay.active{opacity:1;visibility:visible}
@@ -43,6 +43,7 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css?v=2.0">
+    <link rel="stylesheet" href="desktop.css?v=1.0">
     <link rel="stylesheet" href="onboarding.css?v=1.0">
     
     <!-- PWA -->
@@ -189,17 +190,24 @@
              📊 ANALYTICS
         ═══════════════════════════════════════════════════════════════ -->
         <div id="analytics-screen" class="screen">
-            <header class="screen-header">
-                <button class="btn-back" onclick="switchScreen('home')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h1 data-i18n="analytics">Аналитика</h1>
-                <select id="analytics-period" class="select-minimal">
-                    <option value="week" data-i18n="week">Неделя</option>
-                    <option value="month" selected data-i18n="month">Месяц</option>
-                    <option value="quarter" data-i18n="quarter">Квартал</option>
-                    <option value="year" data-i18n="year">Год</option>
-                </select>
+            <header class="screen-header analytics-header">
+                <div class="header-left-group">
+                    <button class="btn-back" onclick="switchScreen('home')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h1 class="header-title-static" data-i18n="analytics">Аналитика</h1>
+                </div>
+                <div class="header-right-group">
+                    <div class="select-wrapper">
+                        <select id="analytics-period" class="select-glass">
+                            <option value="week" data-i18n="week">Неделя</option>
+                            <option value="month" selected data-i18n="month">Месяц</option>
+                            <option value="quarter" data-i18n="quarter">Квартал</option>
+                            <option value="year" data-i18n="year">Год</option>
+                        </select>
+                        <i class="fas fa-chevron-down select-arrow"></i>
+                    </div>
+                </div>
             </header>
 
             <div class="screen-body">

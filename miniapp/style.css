@@ -4,16 +4,29 @@
 
 /* Глобальный отступ для Telegram header */
 .app-container {
-    padding-top: 50px;
+    padding-top: 100px;
 }
 
 /* Modern Header - Clean */
 .home-header {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 440px;
+    margin: 0 auto;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px 16px;
-    background: transparent;
+    padding: 0 16px;
+    background: rgba(15, 15, 22, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    z-index: 900;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
 }
 
 .user-block {
@@ -69,33 +82,55 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 32px 20px 40px;
+    padding: 40px 20px 48px;
     text-align: center;
+    position: relative;
+}
+
+.balance-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: var(--accent);
+    filter: blur(120px);
+    opacity: 0.15;
+    z-index: -1;
+    border-radius: 50%;
 }
 
 .balance-label {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    opacity: 0.8;
 }
 
 .balance-amount {
-    font-size: 44px;
-    font-weight: 700;
+    font-size: 52px;
+    font-weight: 800;
     line-height: 1.1;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     color: var(--text-primary);
+    background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
 }
 
 .balance-trend-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 14px;
-    background: var(--green-soft);
+    padding: 8px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
     border-radius: 100px;
     font-size: 13px;
     font-weight: 600;
@@ -108,19 +143,21 @@
     display: flex;
     gap: 12px;
     width: 100%;
-    max-width: 360px;
+    max-width: 100%; /* Allow full width */
+    padding: 0 20px;
 }
 
 .stat-pill {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px 14px;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 16px;
     transition: all 0.2s;
+    min-width: 0;
 }
 
 .stat-pill:active {
@@ -128,8 +165,9 @@
 }
 
 .pill-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -150,19 +188,26 @@
 .pill-data {
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    min-width: 0; /* Важно для flexbox */
 }
 
 .pill-label {
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
+    white-space: nowrap;
+    margin-bottom: 2px;
 }
 
 .pill-value {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-primary);
+    white-space: normal; /* Разрешаем перенос */
+    word-wrap: break-word;
+    line-height: 1.1;
 }
 
 /* Stats Cards - Modern Design */
@@ -896,58 +941,58 @@
 
 /* ═══════════ CSS VARIABLES ═══════════ */
 :root {
-    /* Core Colors */
-    --bg-base: #0a0a0f;
-    --bg-card: #12121a;
-    --bg-elevated: #1a1a24;
+    /* Core Colors - Deep Space Theme */
+    --bg-base: #050508;
+    --bg-card: #0f0f16;
+    --bg-elevated: #181820;
     --bg-hover: #22222e;
     
     /* Text */
     --text-primary: #ffffff;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
     
     /* Accent Colors */
     --accent: #6366f1;
     --accent-light: #818cf8;
-    --accent-glow: rgba(99, 102, 241, 0.25);
+    --accent-glow: rgba(99, 102, 241, 0.3);
     
     /* Semantic */
-    --green: #22c55e;
-    --green-soft: rgba(34, 197, 94, 0.15);
+    --green: #10b981;
+    --green-soft: rgba(16, 185, 129, 0.12);
     --red: #ef4444;
-    --red-soft: rgba(239, 68, 68, 0.15);
-    --yellow: #eab308;
-    --yellow-soft: rgba(234, 179, 8, 0.15);
+    --red-soft: rgba(239, 68, 68, 0.12);
+    --yellow: #f59e0b;
+    --yellow-soft: rgba(245, 158, 11, 0.12);
     --blue: #3b82f6;
-    --blue-soft: rgba(59, 130, 246, 0.15);
+    --blue-soft: rgba(59, 130, 246, 0.12);
     
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
-    --gradient-income: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    --gradient-hero: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+    --gradient-income: linear-gradient(135deg, #10b981 0%, #059669 100%);
     --gradient-expense: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 100%);
     
     /* Borders */
-    --border: rgba(255, 255, 255, 0.08);
-    --border-light: rgba(255, 255, 255, 0.12);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-light: rgba(255, 255, 255, 0.1);
     
     /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 40px var(--accent-glow);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 50px var(--accent-glow);
     
     /* Sizes */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
     --radius-full: 100px;
     
     /* Safe Areas */
     --safe-bottom: max(20px, env(safe-area-inset-bottom));
-    --nav-height: 70px;
+    --nav-height: 76px;
 }
 
 /* Light Theme */
@@ -1078,16 +1123,24 @@ input, select, textarea {
 
 /* ═══════════ SCREEN HEADER ═══════════ */
 .screen-header {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 440px;
+    margin: 0 auto;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
-    padding-top: 50px; /* Отступ для Telegram */
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    padding: 0 16px;
+    background: rgba(15, 15, 22, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    z-index: 900;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
 }
 
 .screen-header h1 {
@@ -1114,6 +1167,63 @@ input, select, textarea {
 .btn-back:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
+}
+
+/* ═══════════ ANALYTICS HEADER ═══════════ */
+.header-left-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.screen-header .header-title-static {
+    position: static;
+    transform: none;
+    text-align: left;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select-glass {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 8px 36px 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+.select-glass:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+}
+
+.select-glass:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.select-arrow {
+    position: absolute;
+    right: 14px;
+    pointer-events: none;
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
 /* ═══════════ BUTTONS ═══════════ */
@@ -5269,20 +5379,24 @@ input, select, textarea {
 /* ═══════════ BOTTOM NAV ═══════════ */
 .bottom-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    max-width: 480px;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 440px;
     margin: 0 auto;
-    height: var(--nav-height);
-    padding-bottom: var(--safe-bottom);
-    background: var(--bg-card);
-    border-top: 1px solid var(--border);
+    height: 72px;
+    padding-bottom: 0;
+    background: rgba(15, 15, 22, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
     display: flex;
     justify-content: space-around;
-    align-items: flex-start;
-    padding-top: 8px;
+    align-items: center;
+    padding-top: 0;
     z-index: 900;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
 }
 
 .nav-btn {
@@ -5290,51 +5404,58 @@ input, select, textarea {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 6px 12px;
+    padding: 8px 12px;
     color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 0.2s;
+    font-size: 10px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    border-radius: 12px;
 }
 
 .nav-btn i {
-    font-size: 22px;
+    font-size: 20px;
     width: 24px;
     height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 2px;
 }
 
 .nav-btn::before {
     content: '';
     position: absolute;
-    top: -8px;
+    bottom: -8px;
     left: 50%;
-    transform: translateX(-50%) scaleX(0);
-    width: 24px;
-    height: 3px;
+    transform: translateX(-50%) scale(0);
+    width: 4px;
+    height: 4px;
     background: var(--accent);
-    border-radius: 0 0 3px 3px;
-    transition: transform 0.2s;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
 }
 
 .nav-btn:hover {
     color: var(--text-secondary);
+    background: rgba(255,255,255,0.03);
 }
 
 .nav-btn.active {
-    color: var(--accent);
+    color: var(--accent-light);
 }
 
 .nav-btn.active i {
-    transform: scale(1.1);
+    transform: translateY(-2px);
+    text-shadow: 0 0 15px var(--accent-glow);
 }
 
 .nav-btn.active::before {
-    transform: translateX(-50%) scaleX(1);
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+    bottom: 6px;
 }
 
 /* ═══════════ SCROLLBAR ═══════════ */
@@ -5815,7 +5936,42 @@ input, select, textarea {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Extra Small Devices (320px - very small phones) */
-@media (max-width: 320px) {
+@media (max-width: 360px) {
+    .bottom-nav {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        height: 64px;
+        padding: 0 10px;
+    }
+
+    .nav-btn {
+        padding: 6px 8px;
+        font-size: 9px;
+    }
+
+    .nav-btn i {
+        font-size: 18px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .stat-pill {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .pill-icon {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        font-size: 14px;
+    }
+
+    .pill-value {
+        font-size: 14px;
+    }
+    
     .app-container {
         padding-top: 40px;
     }
@@ -5829,7 +5985,10 @@ input, select, textarea {
     }
     
     .home-header {
-        padding: 12px 12px;
+        padding: 0 12px;
+        left: 10px;
+        right: 10px;
+        top: 10px;
     }
     
     .greeting-name {
@@ -5846,24 +6005,6 @@ input, select, textarea {
         width: 34px;
         height: 34px;
         font-size: 13px;
-    }
-    
-    .income-expense-pills {
-        gap: 6px;
-    }
-    
-    .ie-pill {
-        padding: 8px 10px;
-        min-width: 0;
-        flex: 1;
-    }
-    
-    .pill-amount {
-        font-size: 14px;
-    }
-    
-    .pill-label {
-        font-size: 10px;
     }
     
     .stats-cards {

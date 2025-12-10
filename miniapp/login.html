@@ -15,24 +15,24 @@
     
     <style>
         :root {
-            --primary: #2563EB;
-            --primary-hover: #1D4ED8;
-            --primary-light: #DBEAFE;
-            --success: #059669;
-            --success-light: #D1FAE5;
-            --danger: #DC2626;
-            --danger-light: #FEE2E2;
-            --bg-primary: #FFFFFF;
-            --bg-secondary: #F8FAFC;
-            --text-primary: #0F172A;
-            --text-secondary: #64748B;
-            --border-color: #E2E8F0;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
-            --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.12);
-            --shadow-xl: 0 20px 40px -5px rgba(0, 0, 0, 0.15);
-            --gradient-primary: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --bg-primary: #0f0f16;
+            --bg-secondary: #181820;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+            --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            --gradient-primary: linear-gradient(135deg, #050508 0%, #0f0f16 100%);
             --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
 
@@ -53,18 +53,20 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             letter-spacing: -0.011em;
+            color: var(--text-primary);
         }
 
         .login-container {
-            background: var(--bg-primary);
+            background: rgba(15, 15, 22, 0.7);
             border-radius: var(--radius-xl);
             padding: 48px 32px;
             width: 100%;
             max-width: 420px;
-            box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255,255,255,0.1);
+            box-shadow: var(--shadow-xl);
             backdrop-filter: blur(20px);
-            animation: slideUp 0.4s ease-out;
-            border: 1px solid rgba(255,255,255,0.2);
+            -webkit-backdrop-filter: blur(20px);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         @keyframes slideUp {

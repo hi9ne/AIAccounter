@@ -1,0 +1,115 @@
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESKTOP / TABLET ADAPTATION (min-width: 768px)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+    /* Wider App Container */
+    .app {
+        max-width: 800px !important;
+    }
+    
+    /* Adjust Headers & Nav width and centering */
+    .home-header, 
+    .screen-header,
+    .bottom-nav {
+        max-width: 760px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        width: calc(100% - 40px) !important; /* 20px padding on each side */
+    }
+    
+    /* Bigger Income/Expense Blocks */
+    .stats-floating-row {
+        gap: 24px;
+        max-width: 100% !important;
+    }
+    
+    .stat-pill {
+        padding: 24px 32px;
+        border-radius: 24px;
+    }
+    
+    .pill-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+        border-radius: 16px;
+    }
+    
+    .pill-value {
+        font-size: 24px;
+        margin-top: 4px;
+    }
+    
+    .pill-label {
+        font-size: 13px;
+        letter-spacing: 1px;
+    }
+    
+    /* Balance Hero Bigger */
+    .balance-amount {
+        font-size: 72px !important;
+    }
+    
+    .balance-label {
+        font-size: 16px;
+    }
+    
+    /* Blocks under budget - Grid Layout & Left Aligned */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        padding: 0 20px 32px;
+    }
+    
+    .stat-card {
+        align-items: flex-start; /* Align content to left */
+        padding: 24px;
+        flex-direction: row; /* Icon left, text right */
+        gap: 20px;
+        height: auto;
+        border-radius: 24px;
+    }
+    
+    .stat-card-content {
+        align-items: flex-start;
+        justify-content: center;
+    }
+    
+    .stat-card-value {
+        font-size: 22px;
+    }
+    
+    .stat-card-label {
+        font-size: 13px;
+    }
+    
+    .stat-card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 22px;
+        border-radius: 16px;
+    }
+    
+    .stat-card-trend {
+        top: 24px;
+        right: 24px;
+        font-size: 14px;
+    }
+    
+    /* Budget Widget Bigger */
+    .budget-widget {
+        padding: 24px;
+        border-radius: 24px;
+    }
+    
+    .budget-header-left span {
+        font-size: 18px;
+    }
+    
+    .budget-progress-bar {
+        height: 12px;
+    }
+}
