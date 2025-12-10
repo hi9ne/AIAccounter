@@ -731,7 +731,7 @@
     }
     
     .balance-hero {
-        padding: 40px 32px 48px;
+        padding: calc(var(--safe-top) + 80px) 32px 48px;
         margin: 0 16px;
         border-radius: 24px;
         margin-top: 16px;
