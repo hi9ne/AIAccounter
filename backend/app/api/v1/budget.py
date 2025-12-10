@@ -157,7 +157,7 @@ def get_month_name(month_str: str) -> str:
 
 
 # ===== POST /budget — Создать бюджет =====
-@router.post("/", response_model=BudgetSchema, status_code=201)
+@router.post("", response_model=BudgetSchema, status_code=201)
 async def create_budget(
     budget: BudgetCreate,
     current_user: User = Depends(get_current_user),
