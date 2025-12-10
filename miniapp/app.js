@@ -930,6 +930,24 @@ function updateBudgetWidget(budgetData) {
     const percentage = Math.min(budgetData.percentage_used, 100);
     document.getElementById('budget-progress-fill').style.width = `${percentage}%`;
     
+    // Update Pacing Marker
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const dayOfMonth = today.getDate();
+    const pacingPercentage = (dayOfMonth / daysInMonth) * 100;
+    
+    const marker = document.getElementById('budget-pacing-marker');
+    if (marker) {
+        marker.style.left = `${pacingPercentage}%`;
+        // Optional: Color code based on pacing
+        // If spent % > pacing %, we are overspending relative to time
+        if (percentage > pacingPercentage) {
+            marker.style.background = 'rgba(239, 68, 68, 0.8)'; // Red warning
+        } else {
+            marker.style.background = 'rgba(34, 197, 94, 0.8)'; // Green good
+        }
+    }
+    
     const currency = getCurrencySymbol(budgetData.currency);
     document.getElementById('budget-spent').textContent = formatAmount(budgetData.total_spent) + ' ' + currency;
     document.getElementById('budget-total').textContent = formatAmount(budgetData.budget_amount) + ' ' + currency;
@@ -969,7 +987,12 @@ function updateDashboardUI(data) {
         const countEl = document.getElementById('transactions-count');
         if (countEl) countEl.textContent = transactionsCount;
         
-        const avgDaily = expense > 0 ? (expense / 30).toFixed(0) : 0;
+        // Calculate daily average based on current day of month
+        const today = new Date();
+        const dayOfMonth = today.getDate();
+        // Avoid division by zero if it's the very start of day 1 (though dayOfMonth is 1-based)
+        const avgDaily = expense > 0 ? (expense / Math.max(dayOfMonth, 1)).toFixed(0) : 0;
+        
         const avgEl = document.getElementById('avg-daily');
         if (avgEl) avgEl.textContent = formatCurrency(avgDaily);
         
@@ -1423,24 +1446,56 @@ function loadCharts(stats) {
                         data: [stats.total_income * 0.2, stats.total_income * 0.25, stats.total_income * 0.3, stats.total_income * 0.25],
                         borderColor: 'rgb(16, 185, 129)',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
                     },
                     {
                         label: 'Расходы',
                         data: [stats.total_expense * 0.25, stats.total_expense * 0.3, stats.total_expense * 0.25, stats.total_expense * 0.2],
                         borderColor: 'rgb(239, 68, 68)',
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(20, 20, 28, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#ccc',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: true,
+                        cornerRadius: 8
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                    x: { grid: { display: false } }
+                    y: { 
+                        beginAtZero: true, 
+                        display: false,
+                        grid: { display: false } 
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#6b7280', font: { size: 10 } }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
                 }
             }
         });
@@ -2924,7 +2979,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Регистрируем Service Worker с автообновлением
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
             .then(registration => {
                 debug.log('✅ Service Worker registered');
                 

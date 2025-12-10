@@ -1,5 +1,5 @@
-// API Helper ��� ������ � FastAPI Backend
-// ���������� ������������ �� miniapp-config.js
+// API Helper    FastAPI Backend
+//    miniapp-config.js
 
 const apiDebug = {
     log: (...args) => window.IS_LOCALHOST && console.log('[API]', ...args),
@@ -12,10 +12,10 @@ class APIHelper {
         this.config = window.MiniAppConfig || {};
         this.baseUrl = this.config.api?.baseUrl || 'http://localhost:8000/api/v1';
         this.token = localStorage.getItem('auth_token');
-        this.pendingRequests = new Map(); // ��� ��� �������������� ������������� ��������
+        this.pendingRequests = new Map(); 
     }
 
-    // ���������� ����� �����������
+    //   
     setToken(token) {
         apiDebug.log('?? Setting token:', token ? token.substring(0, 20) + '...' : 'null');
         this.token = token;
@@ -23,7 +23,7 @@ class APIHelper {
         apiDebug.log('?? Token set. Current token:', this.token ? 'exists' : 'null');
     }
 
-    // �������� ���������
+    //  
     getHeaders() {
         const headers = {
             'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ class APIHelper {
         return headers;
     }
 
-    // ������� ������
+    //  
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const config = {
@@ -47,7 +47,7 @@ class APIHelper {
             }
         };
 
-        // ������������� ������������ ������������� �������� (����� auth)
+        //     ( auth)
         const isAuthRequest = endpoint.includes('/auth/');
         const requestKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
         
@@ -87,7 +87,7 @@ class APIHelper {
                 console.error('API Request failed:', error.message || error);
                 throw error;
             } finally {
-                // ������� �� ���� ����� ����������
+                //     
                 this.pendingRequests.delete(requestKey);
             }
         })();
@@ -96,7 +96,7 @@ class APIHelper {
         return requestPromise;
     }
 
-    // GET ������
+    // GET 
     async get(endpoint, params = {}) {
         const queryString = new URLSearchParams(params).toString();
         const url = queryString ? `${endpoint}?${queryString}` : endpoint;
@@ -106,7 +106,7 @@ class APIHelper {
         });
     }
 
-    // POST ������
+    // POST 
     async post(endpoint, data = {}) {
         return this.request(endpoint, {
             method: 'POST',
@@ -114,7 +114,7 @@ class APIHelper {
         });
     }
 
-    // PUT ������
+    // PUT 
     async put(endpoint, data = {}) {
         return this.request(endpoint, {
             method: 'PUT',
@@ -122,7 +122,7 @@ class APIHelper {
         });
     }
 
-    // DELETE ������
+    // DELETE 
     async delete(endpoint) {
         return this.request(endpoint, {
             method: 'DELETE'
@@ -181,8 +181,8 @@ class APIHelper {
     // ===== TRANSACTIONS =====
     
     async getTransactions(params = {}) {
-        // Unified endpoint ��� expenses + income � ���������� ����������
-        // ���������: page, page_size, type (expense/income), category, start_date, end_date
+        // Unified endpoint  expenses + income   
+        // : page, page_size, type (expense/income), category, start_date, end_date
         return this.get('/transactions', params);
     }
 
@@ -455,11 +455,11 @@ class APIHelper {
             end_date: endDate
         });
         
-        // ��� ���������� ����� ���������� ������ URL
+        //      URL
         const url = `${this.baseUrl}/reports/export/csv?${params}`;
         const token = localStorage.getItem('auth_token');
         
-        // ��������� ���� ����� fetch � blob
+        //    fetch  blob
         const response = await fetch(url, {
             method: 'GET',
             headers: {

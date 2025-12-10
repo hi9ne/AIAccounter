@@ -1,0 +1,201 @@
+/* ═══════════ RECURRING ═══════════ */
+.summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.summary-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.summary-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.summary-icon.upcoming {
+    background: var(--yellow-soft);
+    color: var(--yellow);
+}
+
+.summary-icon.active {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.summary-data {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.summary-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.summary-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.recurring-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Recurring Item - Modern Card */
+.recurring-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.recurring-item:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.recurring-item.overdue {
+    border-left: 3px solid var(--red);
+}
+
+.recurring-item.due-soon {
+    border-left: 3px solid var(--yellow);
+}
+
+.recurring-item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.recurring-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.recurring-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.recurring-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recurring-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.recurring-category {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.recurring-category i {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.recurring-frequency {
+    opacity: 0.8;
+}
+
+.recurring-amount {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.recurring-amount .amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.recurring-amount .next-date {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.recurring-amount .next-date.overdue {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.recurring-amount .next-date.due-soon {
+    color: var(--yellow);
+    font-weight: 500;
+}
+
+.recurring-actions {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+}
+
+.recurring-actions button {
+    flex: 1;
+    padding: 10px;
+    background: var(--bg-card);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.recurring-actions button:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.recurring-actions .btn-mark-paid:hover {
+    color: var(--green);
+}
+
+.recurring-actions .btn-delete:hover {
+    color: var(--red);
+}

@@ -1,0 +1,63 @@
+/* ═══════════ APP CONTAINER ═══════════ */
+.app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+    position: relative;
+}
+
+/* ═══════════ SCREENS ═══════════ */
+.screen {
+    display: none;
+    animation: fadeSlideIn 0.3s ease;
+}
+
+.screen.active {
+    display: block;
+}
+
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.screen-body {
+    padding: 16px;
+}
+
+/* ═══════════ SECTIONS ═══════════ */
+.section-block {
+    padding: 0 16px;
+    margin-bottom: 24px;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.section-head h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.section-head h2 i {
+    color: var(--accent);
+    font-size: 16px;
+}
+
+.badge {
+    padding: 4px 12px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+}

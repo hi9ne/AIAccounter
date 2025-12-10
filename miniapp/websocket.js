@@ -1,6 +1,5 @@
 // ============================================================================
-// WebSocket Manager ��� AIAccounter Mini App
-// Real-time updates ��� ����������
+// WebSocket Manager AIAccounter Mini App
 // ============================================================================
 
 const wsDebug = {
@@ -21,7 +20,7 @@ class WebSocketManager {
     }
     
     /**
-     * ������������ � WebSocket
+     * Connect to WebSocket
      */
     async connect(token) {
         if (this.isConnecting || this.isConnected()) {
@@ -62,7 +61,7 @@ class WebSocketManager {
                 this.stopPingInterval();
                 this.emit('disconnected');
                 
-                // ������� ���������������
+                //  
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
                     wsDebug.log(`?? WebSocket: Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
@@ -82,7 +81,7 @@ class WebSocketManager {
     }
     
     /**
-     * ����������������
+     * 
      */
     async reconnect(token) {
         this.disconnect();
@@ -90,7 +89,7 @@ class WebSocketManager {
     }
     
     /**
-     * �����������
+     * 
      */
     disconnect() {
         if (this.ws) {
@@ -102,14 +101,14 @@ class WebSocketManager {
     }
     
     /**
-     * ��������� ��������� ����������
+     *   
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
     
     /**
-     * ��������� ���������
+     *  
      */
     send(data) {
         if (!this.isConnected()) {
@@ -127,7 +126,7 @@ class WebSocketManager {
     }
     
     /**
-     * Ping ��� ����������� ����������
+     * Ping   
      */
     startPingInterval() {
         this.stopPingInterval();
@@ -135,7 +134,7 @@ class WebSocketManager {
             if (this.isConnected()) {
                 this.send('ping');
             }
-        }, 30000); // ������ 30 ������
+        }, 30000); //  30 
     }
     
     stopPingInterval() {
@@ -189,15 +188,15 @@ class WebSocketManager {
     }
     
     /**
-     * �������� ������� ��� ��������� ����� ������
+     *      
      */
     refreshDashboard() {
-        // �������� ���
+        //  
         cache.clearMatching('stats');
         cache.clearMatching('top_categories');
         cache.clearMatching('overview');
         
-        // ������������� ������� �����
+        //   
         if (state.currentScreen === 'home') {
             loadDashboard();
         } else if (state.currentScreen === 'analytics') {
@@ -208,14 +207,14 @@ class WebSocketManager {
     }
     
     /**
-     * �������� ����������� � �������
+     *    
      */
     showBudgetAlert(data) {
-        showNotification(`?? ������: ${data.message}`, 'warning');
+        showNotification(`?? : ${data.message}`, 'warning');
     }
     
     /**
-     * ����������� �� �������
+     *   
      */
     on(event, callback) {
         if (!this.listeners.has(event)) {
@@ -225,7 +224,7 @@ class WebSocketManager {
     }
     
     /**
-     * ���������� �� �������
+     *   
      */
     off(event, callback) {
         if (!this.listeners.has(event)) return;
@@ -238,7 +237,7 @@ class WebSocketManager {
     }
     
     /**
-     * ������� �������
+     *  
      */
     emit(event, data) {
         if (!this.listeners.has(event)) return;
@@ -254,10 +253,10 @@ class WebSocketManager {
     }
 }
 
-// ���������� ���������
+//  
 const wsManager = new WebSocketManager();
 
-// ������� ��� �������������
+//   
 if (typeof window !== 'undefined') {
     window.wsManager = wsManager;
 }

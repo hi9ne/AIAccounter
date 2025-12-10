@@ -1,0 +1,301 @@
+/* ═══════════ CHARTS ═══════════ */
+.chart-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.chart-title i {
+    color: var(--accent);
+}
+
+.chart-wrap {
+    position: relative;
+    height: 220px;
+}
+
+.chart-wrap.donut {
+    height: 280px;
+}
+
+/* ═══════════ TRENDS & PATTERNS ═══════════ */
+
+.trends-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.trends-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.trend-card {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    border: 1px solid var(--border);
+}
+
+.trend-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.trend-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.trend-change {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.trend-change.positive {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.trend-change.neutral {
+    background: rgba(156, 163, 175, 0.15);
+    color: var(--text-muted);
+}
+
+.trend-values {
+    margin-bottom: 10px;
+}
+
+.trend-current {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: block;
+}
+
+.trend-prev {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.trend-bar-container {
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.trend-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444, #f97316);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+.trend-bar.income {
+    background: linear-gradient(90deg, #22c55e, #10b981);
+}
+
+.trend-projection {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.trend-projection i {
+    color: var(--accent);
+}
+
+.trend-projection strong {
+    color: var(--text-primary);
+}
+
+.projection-days {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Weekday Chart */
+.weekday-chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.weekday-bars {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    padding: 0 8px;
+    gap: 8px;
+}
+
+.weekday-bars:has(.empty-state-card) {
+    height: auto;
+    min-height: 140px;
+    align-items: stretch;
+    padding: 0;
+}
+
+.weekday-bar-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.weekday-bar-wrap {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.weekday-bar {
+    width: 100%;
+    max-width: 32px;
+    background: linear-gradient(180deg, var(--accent), var(--primary));
+    border-radius: 4px 4px 0 0;
+    transition: height 0.5s ease;
+    position: relative;
+}
+
+.weekday-bar.highlight {
+    background: linear-gradient(180deg, #f97316, #ef4444);
+}
+
+.weekday-bar-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.weekday-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.weekday-bar-item.highlight .weekday-label {
+    color: var(--accent);
+}
+
+.weekday-insight {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), var(--bg-elevated));
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.weekday-insight i {
+    color: var(--yellow);
+    font-size: 16px;
+}
+
+/* Category Trends */
+.category-trends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.category-trend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.category-trend-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.category-trend-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.category-trend-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.category-trend-values {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.category-trend-change {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+.category-trend-change.up {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.category-trend-change.down {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.category-trend-change.stable {
+    background: rgba(156, 163, 175, 0.15);
+    color: var(--text-muted);
+}

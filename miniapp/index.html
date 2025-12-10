@@ -28,7 +28,6 @@
     </script>
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="style.css?v=2.1" as="style">
     <link rel="preload" href="app.js?v=1.9" as="script">
     
     <!-- Scripts -->
@@ -42,9 +41,28 @@
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=2.0">
-    <link rel="stylesheet" href="desktop.css?v=1.0">
-    <link rel="stylesheet" href="onboarding.css?v=1.0">
+    <!-- Modular Styles -->
+    <link rel="stylesheet" href="styles/variables.css">
+    <link rel="stylesheet" href="styles/theme.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/utilities.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/budget.css">
+    <link rel="stylesheet" href="styles/charts.css">
+    <link rel="stylesheet" href="styles/history.css">
+    <link rel="stylesheet" href="styles/settings.css">
+    <link rel="stylesheet" href="styles/ai.css">
+    <link rel="stylesheet" href="styles/recurring.css">
+    <link rel="stylesheet" href="styles/debts.css">
+    <link rel="stylesheet" href="styles/reports.css">
+    <link rel="stylesheet" href="styles/goals.css">
+    <link rel="stylesheet" href="styles/categories.css">
+    <link rel="stylesheet" href="styles/gamification.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+    <link rel="stylesheet" href="styles/desktop.css">
+    <link rel="stylesheet" href="styles/premium.css">
+    <link rel="stylesheet" href="styles/onboarding.css">
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -76,9 +94,11 @@
             <!-- Main Balance Hero -->
             <section class="balance-hero">
                 <div class="balance-label" data-i18n="total_balance">Общий баланс</div>
-                <div class="balance-amount" id="main-balance">0 с</div>
+                <div class="balance-amount" id="main-balance">
+                    <div class="skeleton-text" style="width: 180px; height: 60px; border-radius: 12px; display: inline-block;"></div>
+                </div>
                 <div class="balance-trend-pill" id="balance-trend">
-                    <i class="fas fa-arrow-trend-up"></i> 0%
+                    <div class="skeleton-text" style="width: 60px; height: 24px; border-radius: 12px;"></div>
                 </div>
                 
                 <div class="stats-floating-row">
@@ -86,14 +106,18 @@
                         <div class="pill-icon"><i class="fas fa-arrow-down"></i></div>
                         <div class="pill-data">
                             <span class="pill-label" data-i18n="income">Доход</span>
-                            <span class="pill-value" id="total-income">0</span>
+                            <span class="pill-value" id="total-income">
+                                <div class="skeleton-text" style="width: 80px; height: 20px; border-radius: 6px;"></div>
+                            </span>
                         </div>
                     </div>
                     <div class="stat-pill expense">
                         <div class="pill-icon"><i class="fas fa-arrow-up"></i></div>
                         <div class="pill-data">
                             <span class="pill-label" data-i18n="expense">Расход</span>
-                            <span class="pill-value" id="total-expense">0</span>
+                            <span class="pill-value" id="total-expense">
+                                <div class="skeleton-text" style="width: 80px; height: 20px; border-radius: 6px;"></div>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -111,6 +135,7 @@
                 <div class="budget-progress-container">
                     <div class="budget-progress-bar">
                         <div class="budget-progress-fill" id="budget-progress-fill" style="width: 0%"></div>
+                        <div class="budget-pacing-marker" id="budget-pacing-marker" style="left: 0%"></div>
                     </div>
                     <div class="budget-progress-info">
                         <span id="budget-spent">0</span>

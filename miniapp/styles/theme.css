@@ -1,0 +1,299 @@
+/* Глобальный отступ для Telegram header */
+.app-container {
+    padding-top: 100px;
+}
+
+/* Modern Header - Clean */
+.home-header {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 440px;
+    margin: 0 auto;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: rgba(15, 15, 22, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    z-index: 900;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+}
+
+.user-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.user-avatar-glow {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+}
+
+.greeting-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon-glass {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+
+.btn-icon-glass:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Balance Hero - Clean Minimal */
+.balance-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 48px;
+    text-align: center;
+    position: relative;
+}
+
+.balance-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: var(--accent);
+    filter: blur(120px);
+    opacity: 0.15;
+    z-index: -1;
+    border-radius: 50%;
+}
+
+.balance-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+.balance-amount {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+}
+
+.balance-trend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 32px;
+}
+
+/* Stats Row - Clean Cards */
+.stats-floating-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%; /* Allow full width */
+    padding: 0 20px;
+}
+
+.stat-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.2s;
+    min-width: 0;
+}
+
+.stat-pill:active {
+    transform: scale(0.98);
+}
+
+.pill-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.stat-pill.income .pill-icon {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.stat-pill.expense .pill-icon {
+    background: var(--red-soft);
+    color: var(--red);
+}
+
+.pill-data {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0; /* Важно для flexbox */
+}
+
+.pill-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+.pill-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: normal; /* Разрешаем перенос */
+    word-wrap: break-word;
+    line-height: 1.1;
+}
+
+/* Stats Cards - Modern Design */
+.stats-cards {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 20px;
+}
+
+.stat-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.stat-card.highlight {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.05));
+    border-color: rgba(34, 197, 94, 0.3);
+    position: relative;
+}
+
+.stat-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.stat-card-icon.blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(99, 102, 241, 0.1));
+    color: #60a5fa;
+}
+
+.stat-card-icon.orange {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(249, 115, 22, 0.1));
+    color: #fb923c;
+}
+
+.stat-card-icon.green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
+    color: #22c55e;
+}
+
+.stat-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.stat-card-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-card-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+
+.stat-card-trend {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.stat-card-trend.positive {
+    color: #22c55e;
+}
+
+.stat-card-trend.negative {
+    color: #ef4444;
+}

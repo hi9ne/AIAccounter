@@ -1,0 +1,1045 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN - Mobile First Approach
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Extra Small Devices (320px - very small phones) */
+@media (max-width: 360px) {
+    .bottom-nav {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        height: 64px;
+        padding: 0 10px;
+    }
+
+    .nav-btn {
+        padding: 6px 8px;
+        font-size: 9px;
+    }
+
+    .nav-btn i {
+        font-size: 18px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .stat-pill {
+        padding: 12px;
+        gap: 8px;
+    }
+
+    .pill-icon {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        font-size: 14px;
+    }
+
+    .pill-value {
+        font-size: 14px;
+    }
+    
+    .app-container {
+        padding-top: 40px;
+    }
+    
+    .balance-amount {
+        font-size: 32px !important;
+    }
+    
+    .balance-hero {
+        padding: 20px 12px 28px;
+    }
+    
+    .home-header {
+        padding: 0 12px;
+        left: 10px;
+        right: 10px;
+        top: 10px;
+    }
+    
+    .greeting-name {
+        font-size: 15px;
+    }
+    
+    .user-avatar-glow {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    
+    .btn-icon-glass {
+        width: 34px;
+        height: 34px;
+        font-size: 13px;
+    }
+    
+    .stats-cards {
+        gap: 6px;
+    }
+    
+    .stat-card {
+        padding: 10px 6px;
+    }
+    
+    .stat-card-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+    
+    .stat-card-value {
+        font-size: 14px;
+    }
+    
+    .stat-card-label {
+        font-size: 9px;
+    }
+    
+    .section-header h2 {
+        font-size: 15px;
+    }
+    
+    .screen-header h1 {
+        font-size: 17px;
+    }
+    
+    .screen-body {
+        padding: 12px;
+    }
+    
+    /* Profile */
+    .profile-gamification-card {
+        padding: 14px;
+    }
+    
+    .profile-avatar-large {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .profile-user-info h2 {
+        font-size: 16px;
+    }
+    
+    .profile-stats-row {
+        gap: 8px;
+    }
+    
+    .profile-stat .stat-value {
+        font-size: 16px;
+    }
+    
+    .profile-stat .stat-label {
+        font-size: 10px;
+    }
+    
+    /* Achievements */
+    .achievement-card {
+        padding: 12px;
+        gap: 10px;
+    }
+    
+    .achievement-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    .achievement-name {
+        font-size: 13px;
+    }
+    
+    .achievement-desc {
+        font-size: 11px;
+    }
+    
+    .achievement-xp {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    /* Daily Quests */
+    .daily-quest-item {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .daily-quest-check {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .daily-quest-title {
+        font-size: 12px;
+    }
+    
+    /* Leaderboard */
+    .leaderboard-item {
+        padding: 10px 12px;
+    }
+    
+    .leaderboard-rank {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .leaderboard-level-name {
+        font-size: 13px;
+    }
+    
+    /* Transactions */
+    .tx-item-modern {
+        padding: 12px;
+    }
+    
+    .tx-icon-modern {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+        margin-right: 10px;
+    }
+    
+    .tx-title-modern {
+        font-size: 13px;
+    }
+    
+    .tx-amount-modern {
+        font-size: 14px;
+    }
+    
+    /* Bottom Nav */
+    .bottom-nav {
+        height: 56px;
+    }
+    
+    .nav-item i {
+        font-size: 18px;
+    }
+    
+    .nav-item span {
+        font-size: 9px;
+    }
+    
+    /* Budget */
+    .budget-card-header h4 {
+        font-size: 14px;
+    }
+    
+    /* Forms */
+    .form-input, .form-select {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    /* Settings */
+    .setting-row {
+        padding: 12px;
+    }
+    
+    .setting-title {
+        font-size: 13px;
+    }
+    
+    .setting-desc {
+        font-size: 11px;
+    }
+    
+    /* Modals */
+    .modal-content {
+        padding: 16px;
+        margin: 10px;
+        max-height: 90vh;
+    }
+    
+    .modal-header h3 {
+        font-size: 16px;
+    }
+    
+    /* Emoji Grid */
+    .emoji-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+    
+    .emoji {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+    
+    /* Summary boxes */
+    .summary-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .summary-box {
+        padding: 12px;
+    }
+    
+    .summary-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+
+/* Small Devices (321px - 375px - iPhone SE, small Android) */
+@media (min-width: 321px) and (max-width: 375px) {
+    .balance-amount {
+        font-size: 36px;
+    }
+    
+    .balance-hero {
+        padding: 24px 16px 32px;
+    }
+    
+    .ie-pill {
+        padding: 10px 12px;
+    }
+    
+    .pill-amount {
+        font-size: 15px;
+    }
+    
+    .stat-card {
+        padding: 12px 8px;
+    }
+    
+    .stat-card-value {
+        font-size: 15px;
+    }
+    
+    .screen-body {
+        padding: 14px;
+    }
+    
+    .achievement-icon {
+        width: 42px;
+        height: 42px;
+    }
+    
+    .profile-stats-row {
+        gap: 12px;
+    }
+    
+    /* Filters on small devices */
+    .filter-row {
+        flex-wrap: wrap;
+    }
+    
+    .filter-amount-group {
+        flex: 100%;
+    }
+    
+    .achievements-filter .filter-btn,
+    .leaderboard-period-filter .period-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .emoji-grid {
+        grid-template-columns: repeat(7, 1fr);
+    }
+}
+
+/* Medium Devices (376px - 414px - iPhone 6/7/8, most Android) */
+@media (min-width: 376px) and (max-width: 414px) {
+    .balance-amount {
+        font-size: 40px;
+    }
+    
+    .stat-card {
+        padding: 14px 10px;
+    }
+    
+    .stat-card-value {
+        font-size: 16px;
+    }
+}
+
+/* Large Devices (415px - 480px - iPhone Plus/Max, large Android) */
+@media (min-width: 415px) and (max-width: 480px) {
+    .balance-amount {
+        font-size: 44px;
+    }
+    
+    .ie-pill {
+        padding: 12px 20px;
+    }
+    
+    .pill-amount {
+        font-size: 18px;
+    }
+    
+    .stat-card {
+        padding: 16px 12px;
+    }
+    
+    .screen-body {
+        padding: 20px;
+    }
+}
+
+/* Safe Area Support for notched devices */
+@supports (padding: max(0px)) {
+    .app-container {
+        padding-top: max(50px, env(safe-area-inset-top));
+    }
+    
+    .bottom-nav {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+    
+    .screen-body {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+    .balance-hero {
+        padding: 16px 20px 24px;
+    }
+    
+    .balance-amount {
+        font-size: 32px;
+    }
+    
+    .stats-floating-row {
+        margin-top: -20px;
+    }
+    
+    .screen-body {
+        padding-bottom: 70px;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    /* Hide some elements in landscape to save space */
+    .balance-trend-pill {
+        display: none;
+    }
+}
+
+/* High DPI / Retina display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .user-avatar-glow,
+    .stat-card-icon,
+    .achievement-icon,
+    .tx-icon-modern {
+        image-rendering: -webkit-optimize-contrast;
+    }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .xp-popup,
+    .level-up-popup,
+    .toast {
+        animation: none !important;
+    }
+}
+
+/* Dark mode specific optimizations */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+    }
+}
+
+/* Light mode specific optimizations */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+        color-scheme: light;
+    }
+}
+
+/* Touch-friendly hit areas */
+@media (hover: none) and (pointer: coarse) {
+    .btn-icon-glass,
+    .nav-item,
+    .setting-row.clickable,
+    .filter-btn,
+    .period-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .btn-achievements {
+        min-height: 48px;
+    }
+    
+    .achievement-card,
+    .daily-quest-item,
+    .leaderboard-item,
+    .tx-item-modern {
+        min-height: 52px;
+    }
+}
+
+/* Fix for iOS input zoom */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
+/* Improved focus states for accessibility */
+@media (hover: hover) {
+    .btn-achievements:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+    
+    .achievement-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    .leaderboard-item:hover {
+        background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .daily-quest-item:hover {
+        background: rgba(99, 102, 241, 0.08);
+    }
+    
+    .tx-item-modern:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Print styles (for export) */
+@media print {
+    .bottom-nav,
+    .home-header,
+    .screen-header,
+    .btn-back {
+        display: none !important;
+    }
+    
+    .screen {
+        padding: 0 !important;
+    }
+    
+    .screen-body {
+        padding: 10px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLET & DESKTOP RESPONSIVE (iPad, Tablets, Laptops)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Small Tablets (481px - 768px - iPad Mini, small tablets) */
+@media (min-width: 481px) {
+    /* Remove max-width constraint for tablets */
+    .app {
+        max-width: 600px;
+    }
+    
+    .bottom-nav {
+        max-width: 600px;
+    }
+    
+    /* Larger balance display */
+    .balance-amount {
+        font-size: 52px;
+    }
+    
+    .balance-hero {
+        padding: 32px 24px 40px;
+        border-radius: 0 0 32px 32px;
+    }
+    
+    /* Better stats cards layout */
+    .stats-cards {
+        gap: 16px;
+        padding: 0 24px 24px;
+    }
+    
+    .stat-card {
+        padding: 20px 16px;
+    }
+    
+    .stat-card-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+    
+    .stat-card-value {
+        font-size: 20px;
+    }
+    
+    .stat-card-label {
+        font-size: 12px;
+    }
+    
+    /* Income/Expense pills */
+    .ie-pill {
+        padding: 14px 24px;
+    }
+    
+    .pill-amount {
+        font-size: 20px;
+    }
+    
+    /* Screen body padding */
+    .screen-body {
+        padding: 24px;
+    }
+    
+    /* Larger section headers */
+    .section-header h2 {
+        font-size: 18px;
+    }
+    
+    /* Transactions */
+    .tx-item-modern {
+        padding: 18px;
+    }
+    
+    .tx-icon-modern {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+    
+    .tx-title-modern {
+        font-size: 16px;
+    }
+    
+    .tx-amount-modern {
+        font-size: 18px;
+    }
+    
+    /* Profile */
+    .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .profile-user-info h2 {
+        font-size: 22px;
+    }
+    
+    /* Achievements grid for tablets */
+    .achievements-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .achievement-card {
+        padding: 18px;
+    }
+    
+    .achievement-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 28px;
+    }
+    
+    /* Leaderboard */
+    .leaderboard-list {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    /* Daily quests */
+    .daily-quests-section {
+        max-width: 500px;
+    }
+    
+    /* Modal improvements */
+    .modal-box {
+        max-width: 500px;
+        border-radius: var(--radius-xl);
+        margin: auto;
+    }
+    
+    /* Forms */
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        padding: 16px 18px;
+        font-size: 16px;
+    }
+    
+    /* Emoji grid */
+    .emoji-grid {
+        grid-template-columns: repeat(10, 1fr);
+    }
+    
+    .emoji {
+        width: 44px;
+        height: 44px;
+        font-size: 24px;
+    }
+}
+
+/* Medium Tablets (769px - 1024px - iPad, iPad Air) */
+@media (min-width: 769px) {
+    .app {
+        max-width: 720px;
+    }
+    
+    .bottom-nav {
+        max-width: 720px;
+    }
+    
+    .balance-amount {
+        font-size: 60px;
+    }
+    
+    .balance-hero {
+        padding: 40px 32px 48px;
+        margin: 0 16px;
+        border-radius: 24px;
+        margin-top: 16px;
+    }
+    
+    /* Stats as 4 columns */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        padding: 0 32px 32px;
+    }
+    
+    .stat-card {
+        padding: 24px 16px;
+    }
+    
+    /* Two-column layout for income/expense */
+    .income-expense-pills {
+        gap: 20px;
+    }
+    
+    .ie-pill {
+        padding: 16px 32px;
+    }
+    
+    /* Screen body */
+    .screen-body {
+        padding: 32px;
+    }
+    
+    /* Transactions in grid */
+    .transactions-list-modern {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    .tx-item-modern {
+        margin-bottom: 0;
+    }
+    
+    /* Profile stats */
+    .profile-stats-row {
+        gap: 32px;
+    }
+    
+    .profile-stat .stat-value {
+        font-size: 24px;
+    }
+    
+    /* Achievements 3 columns */
+    .achievements-list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Settings two columns */
+    .settings-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    /* Budget cards grid */
+    .budget-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    /* Recurring payments grid */
+    .recurring-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+}
+
+/* Large Tablets & Small Laptops (1025px - 1280px - iPad Pro, small laptops) */
+@media (min-width: 1025px) {
+    .app {
+        max-width: 900px;
+    }
+    
+    .bottom-nav {
+        max-width: 900px;
+        /* Optional: convert to sidebar on large screens */
+    }
+    
+    .balance-amount {
+        font-size: 68px;
+    }
+    
+    .balance-hero {
+        padding: 48px 40px 56px;
+    }
+    
+    /* Stats */
+    .stat-card {
+        padding: 28px 20px;
+    }
+    
+    .stat-card-value {
+        font-size: 24px;
+    }
+    
+    /* Screen body */
+    .screen-body {
+        padding: 40px;
+    }
+    
+    /* Achievements 4 columns */
+    .achievements-list {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    /* Analytics charts side by side */
+    .analytics-charts {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+    
+    /* Categories grid */
+    .categories-breakdown {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+    
+    /* Larger modals */
+    .modal-box {
+        max-width: 600px;
+        padding: 32px;
+    }
+}
+
+/* Desktop & Large Laptops (1281px+) */
+@media (min-width: 1281px) {
+    .app {
+        max-width: 1080px;
+    }
+    
+    .bottom-nav {
+        max-width: 1080px;
+    }
+    
+    .balance-amount {
+        font-size: 76px;
+    }
+    
+    /* Home screen layout */
+    .home-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+    
+    /* Main content area */
+    .home-main {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+    
+    /* Sidebar area */
+    .home-sidebar {
+        position: sticky;
+        top: 80px;
+    }
+    
+    /* Transactions 3 columns */
+    .transactions-list-modern {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Screen body */
+    .screen-body {
+        padding: 48px;
+    }
+    
+    /* Better spacing */
+    .section-header {
+        margin-bottom: 24px;
+    }
+    
+    .section-header h2 {
+        font-size: 20px;
+    }
+}
+
+/* Ultra Wide / 4K Displays (1600px+) */
+@media (min-width: 1600px) {
+    .app {
+        max-width: 1280px;
+    }
+    
+    .bottom-nav {
+        max-width: 1280px;
+    }
+    
+    .balance-hero {
+        padding: 56px 48px 64px;
+    }
+    
+    .balance-amount {
+        font-size: 84px;
+    }
+    
+    /* Even larger stats */
+    .stat-card {
+        padding: 32px 24px;
+    }
+    
+    .stat-card-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+    
+    .stat-card-value {
+        font-size: 28px;
+    }
+    
+    /* Screen body */
+    .screen-body {
+        padding: 56px;
+    }
+}
+
+/* iPad specific orientation handling */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+    /* iPad Portrait */
+    .balance-hero {
+        margin: 16px;
+        border-radius: 24px;
+    }
+    
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .achievements-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    /* iPad Landscape */
+    .stats-cards {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .achievements-list {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .transactions-list-modern {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Hover states for devices with mouse/trackpad */
+@media (hover: hover) and (pointer: fine) {
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    
+    .tx-item-modern:hover {
+        transform: translateX(4px);
+        background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .setting-row.clickable:hover {
+        background: var(--bg-hover);
+    }
+    
+    .nav-btn:hover {
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 12px;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Cursor pointer for interactive elements */
+    .stat-card,
+    .tx-item-modern,
+    .achievement-card,
+    .leaderboard-item,
+    .daily-quest-item {
+        cursor: pointer;
+    }
+}
+
+/* Desktop-specific bottom nav style (optional sidebar conversion) */
+@media (min-width: 1025px) and (hover: hover) {
+    /* Keep bottom nav but make it more prominent */
+    .bottom-nav {
+        background: rgba(18, 18, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-btn {
+        padding: 12px 20px;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-btn:hover {
+        background: rgba(99, 102, 241, 0.15);
+    }
+    
+    .nav-btn i {
+        font-size: 24px;
+    }
+    
+    .nav-btn span {
+        font-size: 12px;
+    }
+}

@@ -1,0 +1,327 @@
+/* =========== CATEGORIES SCREEN =========== */
+
+/* Type Toggle */
+.category-type-toggle {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+}
+
+.type-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.type-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.type-btn.active[data-type='expense'] {
+    background: var(--red);
+    color: white;
+}
+
+.type-btn.active[data-type='income'] {
+    background: var(--green);
+    color: white;
+}
+
+.type-btn i {
+    font-size: 12px;
+}
+
+/* Category Section */
+.cat-section {
+    margin-bottom: 24px;
+}
+
+.cat-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-title i {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: var(--accent);
+    color: white;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Categories Grid */
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.category-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    cursor: default;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.category-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.category-card .category-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.category-card .category-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.category-card.user-category {
+    cursor: pointer;
+}
+
+.category-card .delete-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.category-card:hover .delete-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.empty-user-cats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.empty-user-cats i {
+    font-size: 32px;
+    opacity: 0.5;
+}
+
+/* Type Selector in Modal */
+.type-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.type-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.type-option input {
+    display: none;
+}
+
+.type-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.type-option input:checked + .type-label.expense {
+    border-color: var(--red);
+    background: var(--red-soft);
+    color: var(--red);
+}
+
+.type-option input:checked + .type-label.income {
+    border-color: var(--green);
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+/* Emoji Picker */
+.emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+}
+
+.emoji-picker-grid .emoji {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-elevated);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.emoji-picker-grid .emoji:hover {
+    background: var(--bg-hover);
+    transform: scale(1.1);
+}
+
+.emoji-picker-grid .emoji.selected {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+/* Export Modal */
+.export-options {
+    padding: 0;
+}
+
+.export-format-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.format-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.format-option input {
+    display: none;
+}
+
+.format-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.format-label i {
+    font-size: 24px;
+}
+
+.format-option input:checked + .format-label {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    color: var(--accent);
+}
+
+.format-option:hover .format-label {
+    background: var(--bg-hover);
+}
+
+.date-range-row {
+    display: flex;
+    gap: 12px;
+}
+
+.date-input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.date-input-group label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.date-input-group input[type='date'] {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.date-input-group input[type='date']:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+

@@ -1,26 +1,20 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy.pool import AsyncAdaptedQueuePool
+from sqlalchemy.pool import NullPool
 from .config import settings
 
-# Используем connection pool для лучшей производительности
-# Pool size = 5 соединений, max overflow = 10 дополнительных
+# Используем NullPool и отключаем prepared statements для Supabase Transaction Mode (port 5432)
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    poolclass=AsyncAdaptedQueuePool,
-    pool_size=5,
-    max_overflow=10,
-    pool_timeout=30,
-    pool_recycle=1800,  # Переподключаться каждые 30 минут
-    pool_pre_ping=True,  # Проверять соединение перед использованием
+    poolclass=NullPool,
     connect_args={
         "server_settings": {
             "jit": "off"
         },
         "statement_cache_size": 0,
         "prepared_statement_cache_size": 0,
-        "command_timeout": "60"  # Таймаут запроса 60 сек
+        "command_timeout": "60"
     }
 )
 
