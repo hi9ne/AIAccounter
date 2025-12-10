@@ -1,8 +1,3 @@
-// ============================================================================
-// AIAccounter Mini App v1.2 - Read-Only Analytics Dashboard + Onboarding
-// Clean, Fast, Optimized
-// ============================================================================
-
 const APP_VERSION = '1.2';
 
 // ===== TELEGRAM WEB APP =====
@@ -81,7 +76,8 @@ if (tg) {
 }
 
 // ===== CONFIG =====
-const API_BASE = window.MiniAppConfig?.api?.baseUrl?.replace('/api/v1', '') || 
+const CONFIG = window.MiniAppConfig || {};
+const API_BASE = CONFIG.api?.baseUrl?.replace('/api/v1', '') || 
     (window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'https://api-aiaccounter.up.railway.app');
 
 debug.log('📡 API Base:', API_BASE);
@@ -96,7 +92,7 @@ let state = {
     userId: tg?.initDataUnsafe?.user?.id || (IS_LOCALHOST ? TEST_USER_ID : null),
     userName: tg?.initDataUnsafe?.user?.first_name || tg?.initDataUnsafe?.user?.username || 'Test User',
     userPhoto: tg?.initDataUnsafe?.user?.photo_url || null,
-    currency: 'KGS',
+    currency: CONFIG.defaultCurrency || 'KGS',
     theme: 'auto',
     isInitialized: false,
     preloadedData: null
@@ -259,10 +255,18 @@ async function loadExchangeRates() {
     try {
         const rates = await api.get('/rates/latest');
         exchangeRates = {};
-        rates.forEach(rate => {
-            const key = `${rate.from_currency}_${rate.to_currency}`;
-            exchangeRates[key] = rate.rate;
-        });
+        
+        if (rates && Array.isArray(rates)) {
+            rates.forEach(rate => {
+                const key = `${rate.from_currency}_${rate.to_currency}`;
+                exchangeRates[key] = rate.rate;
+            });
+        }
+        
+        // Если курсов нет (пустая БД) или произошла ошибка
+        if (Object.keys(exchangeRates).length === 0) {
+            debug.warn('⚠️ No rates from API');
+        }
         
         // Кэшируем на 1 час (курсы обновляются редко)
         cache.set('exchange_rates', exchangeRates, 3600);
@@ -270,16 +274,7 @@ async function loadExchangeRates() {
         return exchangeRates;
     } catch (error) {
         console.error('❌ Failed to load exchange rates:', error);
-        // Устанавливаем базовые курсы по умолчанию
-        exchangeRates = {
-            'USD_KGS': 87.5,
-            'EUR_KGS': 95.0,
-            'RUB_KGS': 0.95,
-            'KGS_USD': 0.0114,
-            'KGS_EUR': 0.0105,
-            'KGS_RUB': 1.05
-        };
-        return exchangeRates;
+        return {};
     }
 }
 
@@ -369,7 +364,16 @@ const memoize = (fn) => {
 
 // Cached formatters
 const currencyFormatter = memoize((amount, currency) => {
-    const symbols = { KGS: 'с', USD: '$', EUR: '€', RUB: '₽' };
+    const symbols = {};
+    if (CONFIG.supportedCurrencies) {
+        Object.entries(CONFIG.supportedCurrencies).forEach(([code, data]) => {
+            symbols[code] = data.symbol;
+        });
+    } else {
+        // Fallback
+        Object.assign(symbols, { KGS: 'с', USD: '$', EUR: '€', RUB: '₽' });
+    }
+    
     const formatted = new Intl.NumberFormat('ru-RU', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
@@ -963,7 +967,7 @@ function updateDashboardUI(data) {
     }
     
     // Balance - данные приходят в KGS, конвертируем в выбранную валюту
-    const origCurrency = data.balance.currency || 'KGS';
+    const origCurrency = data.balance.currency || CONFIG.defaultCurrency || 'KGS';
     const balance = convertAmount(data.balance.balance || 0, origCurrency, state.currency);
     const income = convertAmount(data.balance.total_income || 0, origCurrency, state.currency);
     const expense = convertAmount(data.balance.total_expense || 0, origCurrency, state.currency);
@@ -1090,9 +1094,34 @@ function updateRecentTransactions(transactions) {
         ...(transactions.income || []).map(t => ({ ...t, type: 'income' }))
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
     
+    // 💡 Пытаемся восстановить курсы из истории транзакций (если API не вернул курсы)
+    allTransactions.forEach(t => {
+        if (t.original_currency && t.currency && t.original_amount && t.amount && t.original_currency !== t.currency) {
+            const key = `${t.original_currency}_${t.currency}`;
+            if (!exchangeRates[key]) {
+                const impliedRate = Math.abs(t.amount) / Math.abs(t.original_amount);
+                if (isFinite(impliedRate) && impliedRate > 0) {
+                    exchangeRates[key] = impliedRate;
+                    // Обратный курс
+                    exchangeRates[`${t.currency}_${t.original_currency}`] = 1 / impliedRate;
+                    debug.log(`💡 Inferred rate from history: ${key} = ${impliedRate.toFixed(4)}`);
+                }
+            }
+        }
+    });
+
     // Конвертируем из оригинальной валюты в выбранную валюту пользователя
     allTransactions = allTransactions.map(t => {
-        const origCurrency = t.original_currency || t.currency || 'KGS';
+        // Если валюта транзакции совпадает с выбранной - берем готовую сумму из БД (историческая конвертация)
+        if (t.currency === state.currency) {
+             return {
+                ...t,
+                amount: t.amount,
+                currency: state.currency
+            };
+        }
+
+        const origCurrency = t.original_currency || t.currency || CONFIG.defaultCurrency || 'KGS';
         const origAmount = t.original_amount || t.amount;
         return {
             ...t,

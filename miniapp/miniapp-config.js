@@ -20,6 +20,12 @@ const MINIAPP_CONFIG = {
     
     // Настройки валют
     defaultCurrency: 'KGS',
+    supportedCurrencies: {
+        'KGS': { symbol: 'с', name: 'Сом' },
+        'USD': { symbol: '$', name: 'Dollar' },
+        'EUR': { symbol: '€', name: 'Euro' },
+        'RUB': { symbol: '₽', name: 'Рубль' }
+    },
     
     // Telegram Bot (для fallback режима)
     botUsername: '@aiaccounter_bot',
