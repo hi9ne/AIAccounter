@@ -67,7 +67,7 @@ def payment_to_response(p: RecurringPayment, today: date) -> RecurringPaymentRes
     )
 
 
-@router.get("/", response_model=RecurringPaymentListResponse)
+@router.get("", response_model=RecurringPaymentListResponse)
 async def get_recurring_payments(
     db: AsyncSession = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
@@ -167,7 +167,7 @@ async def get_recurring_payment(
     return payment_to_response(payment, date.today())
 
 
-@router.post("/", response_model=RecurringPaymentResponse)
+@router.post("", response_model=RecurringPaymentResponse)
 async def create_recurring_payment(
     data: RecurringPaymentCreate,
     db: AsyncSession = Depends(get_db),

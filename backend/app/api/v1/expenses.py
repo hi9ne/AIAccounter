@@ -16,7 +16,7 @@ from ...services.gamification import GamificationService
 router = APIRouter()
 
 
-@router.post("/", response_model=ExpenseSchema, status_code=201)
+@router.post("", response_model=ExpenseSchema, status_code=201)
 async def create_expense(
     expense: ExpenseCreate,
     current_user: User = Depends(get_current_user),
@@ -67,7 +67,7 @@ async def create_expense(
     return db_expense
 
 
-@router.get("/", response_model=PaginatedResponse[ExpenseSchema])
+@router.get("", response_model=PaginatedResponse[ExpenseSchema])
 async def get_expenses(
     current_user: User = Depends(get_current_user),
     category: Optional[str] = None,

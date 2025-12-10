@@ -16,7 +16,7 @@ from ...services.gamification import GamificationService
 router = APIRouter()
 
 
-@router.post("/", response_model=IncomeSchema, status_code=201)
+@router.post("", response_model=IncomeSchema, status_code=201)
 async def create_income(
     income: IncomeCreate,
     current_user: User = Depends(get_current_user),
@@ -66,7 +66,7 @@ async def create_income(
     return db_income
 
 
-@router.get("/", response_model=PaginatedResponse[IncomeSchema])
+@router.get("", response_model=PaginatedResponse[IncomeSchema])
 async def get_income_list(
     category: Optional[str] = None,
     start_date: Optional[date] = None,

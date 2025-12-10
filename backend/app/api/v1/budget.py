@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 # ===== GET /budget — Список всех бюджетов =====
-@router.get("/", response_model=List[BudgetSchema])
+@router.get("", response_model=List[BudgetSchema])
 async def get_budgets(
     current_user: User = Depends(get_current_user),
     limit: int = Query(12, ge=1, le=36, description="Количество месяцев"),
