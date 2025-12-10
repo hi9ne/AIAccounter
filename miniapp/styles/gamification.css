@@ -97,6 +97,9 @@
     font-size: 32px;
     color: var(--text-primary);
     box-shadow: var(--shadow-md);
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
 }
 
 .profile-user-info h2 {

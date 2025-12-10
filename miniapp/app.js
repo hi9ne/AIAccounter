@@ -1174,11 +1174,24 @@ async function loadAnalytics() {
         return;
     }
     
-    // Показываем лоадер
+    // Показываем skeleton для графика
     const chartContainer = document.querySelector('.chart-container canvas')?.parentElement;
     
     if (chartContainer) {
-        chartContainer.innerHTML = '<div class="loading-placeholder" style="height: 200px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-spinner fa-spin" style="font-size: 24px; color: var(--text-secondary);"></i></div>';
+        chartContainer.innerHTML = '<div class="skeleton-chart"></div>';
+    }
+    
+    // Показываем skeleton для KPI
+    const kpiContainer = document.querySelector('.kpi-cards');
+    if (kpiContainer) {
+        kpiContainer.innerHTML = `
+            <div class="skeleton-kpi">
+                <div class="skeleton-kpi-item skeleton-rect"></div>
+                <div class="skeleton-kpi-item skeleton-rect"></div>
+                <div class="skeleton-kpi-item skeleton-rect"></div>
+                <div class="skeleton-kpi-item skeleton-rect"></div>
+            </div>
+        `;
     }
     
     try {
@@ -1399,6 +1412,43 @@ function updateTopCategories(categories) {
     if (!container) return;
     
     debug.log('📊 updateTopCategories called with:', categories);
+    
+    // Показываем скелетон если категории еще загружаются
+    if (categories === null || categories === undefined) {
+        container.innerHTML = `
+            <div class="skeleton-category">
+                <div class="skeleton-category-left">
+                    <div class="skeleton-category-icon skeleton-rect"></div>
+                    <div class="skeleton-category-info">
+                        <div class="skeleton-category-name skeleton-rect"></div>
+                        <div class="skeleton-category-bar skeleton-rect"></div>
+                    </div>
+                </div>
+                <div class="skeleton-category-amount skeleton-rect"></div>
+            </div>
+            <div class="skeleton-category">
+                <div class="skeleton-category-left">
+                    <div class="skeleton-category-icon skeleton-rect"></div>
+                    <div class="skeleton-category-info">
+                        <div class="skeleton-category-name skeleton-rect"></div>
+                        <div class="skeleton-category-bar skeleton-rect"></div>
+                    </div>
+                </div>
+                <div class="skeleton-category-amount skeleton-rect"></div>
+            </div>
+            <div class="skeleton-category">
+                <div class="skeleton-category-left">
+                    <div class="skeleton-category-icon skeleton-rect"></div>
+                    <div class="skeleton-category-info">
+                        <div class="skeleton-category-name skeleton-rect"></div>
+                        <div class="skeleton-category-bar skeleton-rect"></div>
+                    </div>
+                </div>
+                <div class="skeleton-category-amount skeleton-rect"></div>
+            </div>
+        `;
+        return;
+    }
     
     if (!categories || categories.length === 0) {
         debug.warn('⚠️ No categories provided');
@@ -1867,7 +1917,32 @@ async function loadHistory(loadMore = false) {
             historyState.currentPage = 1;
             historyState.hasMore = true;
             if (container) {
-                container.innerHTML = '<div class="loading-placeholder"><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div></div>';
+                container.innerHTML = `
+                    <div class="skeleton-transaction">
+                        <div class="skeleton-tx-icon skeleton-rect"></div>
+                        <div class="skeleton-tx-content">
+                            <div class="skeleton-line" style="width: 60%; height: 16px; margin-bottom: 4px;"></div>
+                            <div class="skeleton-line" style="width: 40%; height: 12px;"></div>
+                        </div>
+                        <div class="skeleton-tx-amount skeleton-rect"></div>
+                    </div>
+                    <div class="skeleton-transaction">
+                        <div class="skeleton-tx-icon skeleton-rect"></div>
+                        <div class="skeleton-tx-content">
+                            <div class="skeleton-line" style="width: 60%; height: 16px; margin-bottom: 4px;"></div>
+                            <div class="skeleton-line" style="width: 40%; height: 12px;"></div>
+                        </div>
+                        <div class="skeleton-tx-amount skeleton-rect"></div>
+                    </div>
+                    <div class="skeleton-transaction">
+                        <div class="skeleton-tx-icon skeleton-rect"></div>
+                        <div class="skeleton-tx-content">
+                            <div class="skeleton-line" style="width: 60%; height: 16px; margin-bottom: 4px;"></div>
+                            <div class="skeleton-line" style="width: 40%; height: 12px;"></div>
+                        </div>
+                        <div class="skeleton-tx-amount skeleton-rect"></div>
+                    </div>
+                `;
             }
         } else {
             // Show loading state in existing button if present
@@ -2152,6 +2227,39 @@ async function loadProfile() {
         return;
     }
     
+    // Показываем скелетон
+    const profileCard = document.querySelector('.profile-gamification-card');
+    if (profileCard) {
+        const skeletonHTML = `
+            <div class="skeleton-profile-card">
+                <div class="skeleton-profile-header">
+                    <div class="skeleton-avatar-large skeleton-circle"></div>
+                    <div class="skeleton-profile-info">
+                        <div class="skeleton-profile-name skeleton-rect"></div>
+                        <div class="skeleton-profile-level skeleton-rect"></div>
+                    </div>
+                </div>
+                <div class="skeleton-xp-bar skeleton-rect"></div>
+                <div class="skeleton-stats">
+                    <div class="skeleton-stat-item">
+                        <div class="skeleton-line" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                        <div class="skeleton-line" style="width: 60px; height: 16px; margin: 0 auto;"></div>
+                    </div>
+                    <div class="skeleton-stat-item">
+                        <div class="skeleton-line" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                        <div class="skeleton-line" style="width: 60px; height: 16px; margin: 0 auto;"></div>
+                    </div>
+                    <div class="skeleton-stat-item">
+                        <div class="skeleton-line" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                        <div class="skeleton-line" style="width: 60px; height: 16px; margin: 0 auto;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        profileCard.insertAdjacentHTML('beforebegin', skeletonHTML);
+        profileCard.style.display = 'none';
+    }
+    
     try {
         // Загружаем данные геймификации
         const response = await api.getGamificationProfile(lang);
@@ -2178,6 +2286,29 @@ async function loadProfile() {
 function updateProfileUI(data) {
     if (!data) return;
     
+    // Убираем скелетон и показываем карточку
+    const skeleton = document.querySelector('.skeleton-profile-card');
+    if (skeleton) skeleton.remove();
+    
+    const profileCard = document.querySelector('.profile-gamification-card');
+    if (profileCard) profileCard.style.display = '';
+    
+    // Устанавливаем аватар и имя пользователя из Telegram
+    const profileAvatar = document.getElementById('profile-avatar');
+    if (profileAvatar) {
+        if (state.userPhoto) {
+            profileAvatar.style.backgroundImage = `url(${state.userPhoto})`;
+            profileAvatar.style.backgroundSize = 'cover';
+            profileAvatar.style.backgroundPosition = 'center';
+            profileAvatar.innerHTML = '';
+        } else {
+            if (!profileAvatar.querySelector('i')) {
+                profileAvatar.innerHTML = '<i class="fas fa-user"></i>';
+            }
+            profileAvatar.style.removeProperty('background-image');
+        }
+    }
+    
     // Обновляем бейдж на главной
     const levelBadge = document.getElementById('user-level-badge');
     const levelText = document.getElementById('user-level-text');
@@ -2185,10 +2316,10 @@ function updateProfileUI(data) {
         levelText.textContent = `Ур. ${data.level}`;
     }
     
-    // Обновляем профиль
+    // Обновляем профиль - используем имя из Telegram
     const profileUsername = document.getElementById('profile-username');
     if (profileUsername) {
-        profileUsername.textContent = localStorage.getItem('user_name') || 'Пользователь';
+        profileUsername.textContent = state.userName || 'Пользователь';
     }
     
     const profileLevelName = document.getElementById('profile-level-name');
