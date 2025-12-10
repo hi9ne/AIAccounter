@@ -74,6 +74,8 @@
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    width: 100%;
+    pointer-events: none;
 }
 
 .btn-back {
@@ -1029,7 +1031,7 @@
 /* =========== TOAST =========== */
 #toast-container {
     position: fixed;
-    top: 20px;
+    top: var(--safe-top);
     left: 50%;
     transform: translateX(-50%);
     z-index: 10000;
@@ -1131,6 +1133,7 @@
     justify-content: space-around;
     align-items: center;
     padding-top: 0;
+    padding-bottom: 20px;
     z-index: 900;
     box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
 }
@@ -1293,7 +1296,7 @@
 /* =========== ERROR/SUCCESS TOAST =========== */
 .error-toast {
     position: fixed;
-    top: 20px;
+    top: var(--safe-top);
     left: 50%;
     transform: translateX(-50%) translateY(-100px);
     padding: 14px 24px;
@@ -1395,7 +1398,7 @@
 
 .success-toast {
     position: fixed;
-    top: 20px;
+    top: var(--safe-top);
     left: 50%;
     transform: translateX(-50%) translateY(-100px);
     padding: 14px 24px;
@@ -1541,6 +1544,7 @@
     justify-content: space-around;
     align-items: center;
     padding-top: 0;
+    padding-bottom: 20px;
     z-index: 900;
     box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
 }
@@ -1704,7 +1708,7 @@
 /* =========== ERROR/SUCCESS TOAST =========== */
 .error-toast {
     position: fixed;
-    top: 20px;
+    top: var(--safe-top);
     left: 50%;
     transform: translateX(-50%) translateY(-100px);
     padding: 14px 24px;
@@ -1807,7 +1811,7 @@
 
 .success-toast {
     position: fixed;
-    top: 20px;
+    top: var(--safe-top);
     left: 50%;
     transform: translateX(-50%) translateY(-100px);
     padding: 14px 24px;

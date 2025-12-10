@@ -27,7 +27,7 @@
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    padding: var(--safe-top) 16px var(--safe-bottom);
+    padding: calc(var(--safe-top) + 20px) 16px var(--safe-bottom);
     box-sizing: border-box;
 }
 
