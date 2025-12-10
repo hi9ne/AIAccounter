@@ -72,7 +72,7 @@
     overflow: hidden;
     transition: max-height 0.3s ease, padding 0.3s ease;
     background: var(--bg-card);
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
 }
 
 .filters-panel.collapsed {

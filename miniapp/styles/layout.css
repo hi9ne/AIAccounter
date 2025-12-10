@@ -24,14 +24,14 @@
 
 .screen-body {
     padding: 16px;
-    padding-top: calc(var(--safe-top) + 60px);
+    padding-top: calc(var(--safe-top) + 80px);
 }
 
 /* ═══════════ SECTIONS ═══════════ */
 .section-block {
     padding: 0 16px;
     margin-bottom: 24px;
-}
+}   
 
 .section-head {
     display: flex;
