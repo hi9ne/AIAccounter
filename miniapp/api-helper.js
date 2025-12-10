@@ -1,6 +1,3 @@
-// API Helper    FastAPI Backend
-//    miniapp-config.js
-
 const apiDebug = {
     log: (...args) => window.IS_LOCALHOST && console.log('[API]', ...args),
     warn: (...args) => window.IS_LOCALHOST && console.warn('[API]', ...args),

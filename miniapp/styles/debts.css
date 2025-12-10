@@ -93,7 +93,7 @@
 
 .debt-item:hover {
     border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
 }
 
 .debt-item.overdue {
@@ -131,11 +131,11 @@
 }
 
 .debt-avatar.given {
-    background: linear-gradient(135deg, var(--green), #059669);
+    background: var(--gradient-income);
 }
 
 .debt-avatar.received {
-    background: linear-gradient(135deg, var(--red), #dc2626);
+    background: var(--gradient-expense);
 }
 
 .debt-name {

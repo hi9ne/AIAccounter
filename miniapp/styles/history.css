@@ -35,7 +35,7 @@
 .search-input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+    box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .search-input::placeholder {
@@ -60,7 +60,7 @@
 }
 
 .search-clear-btn:hover {
-    background: var(--danger);
+    background: var(--red);
     color: white;
 }
 
@@ -148,8 +148,8 @@
 }
 
 .btn-reset-filters:hover {
-    background: var(--danger);
-    border-color: var(--danger);
+    background: var(--red);
+    border-color: var(--red);
     color: white;
 }
 
@@ -200,7 +200,7 @@
 }
 
 .filter-chip-remove:hover {
-    background: var(--danger);
+    background: var(--red);
     color: white;
 }
 

@@ -70,7 +70,7 @@
 
 .recurring-item:hover {
     border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .recurring-item.overdue {
@@ -92,7 +92,7 @@
     width: 42px;
     height: 42px;
     border-radius: 10px;
-    background: linear-gradient(135deg, var(--accent), var(--purple));
+    background: var(--gradient-hero);
     display: flex;
     align-items: center;
     justify-content: center;

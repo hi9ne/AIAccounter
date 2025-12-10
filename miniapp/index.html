@@ -7,13 +7,14 @@
     
     <!-- Critical CSS inline for fast first paint -->
     <style>
-        :root{--bg-main:#050508;--bg-card:#0f0f16;--text-primary:#fff;--text-secondary:#94a3b8;--accent:#6366f1}
+        :root{--bg-base:#050508;--bg-card:#0f0f16;--text-primary:#fff;--text-secondary:#94a3b8;--accent:#6366f1}
+        [data-theme="light"]{--bg-base:#f8fafc;--bg-card:#ffffff;--text-primary:#0f172a;--text-secondary:#475569}
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-main);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+        body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-base);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
         .app{max-width:480px;margin:0 auto;min-height:100vh;position:relative}
         .screen{display:none;min-height:100vh;padding-bottom:100px;padding-top:100px}
         .screen.active{display:block}
-        .loading-overlay{position:fixed;inset:0;background:var(--bg-main);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;visibility:hidden;transition:opacity .3s}
+        .loading-overlay{position:fixed;inset:0;background:var(--bg-base);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;visibility:hidden;transition:opacity .3s}
         .loading-overlay.active{opacity:1;visibility:visible}
         .spinner-large{width:40px;height:40px;border:3px solid var(--bg-card);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
         @keyframes spin{to{transform:rotate(360deg)}}

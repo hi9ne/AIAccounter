@@ -19,33 +19,33 @@
     padding: 16px;
     background: var(--bg-elevated);
     border-radius: var(--radius-lg);
-    border-left: 4px solid var(--primary);
+    border-left: 4px solid var(--accent);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ai-insight-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-md);
 }
 
 .ai-insight-card.high {
     border-left-color: var(--red);
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--bg-elevated));
+    background: linear-gradient(135deg, var(--red-soft), var(--bg-elevated));
 }
 
 .ai-insight-card.medium {
     border-left-color: var(--yellow);
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), var(--bg-elevated));
+    background: linear-gradient(135deg, var(--yellow-soft), var(--bg-elevated));
 }
 
 .ai-insight-card.low, .ai-insight-card.normal {
     border-left-color: var(--green);
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), var(--bg-elevated));
+    background: linear-gradient(135deg, var(--green-soft), var(--bg-elevated));
 }
 
 .ai-insight-card.empty {
     border-left-color: var(--green);
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), var(--bg-elevated));
+    background: linear-gradient(135deg, var(--green-soft), var(--bg-elevated));
     align-items: center;
     justify-content: center;
     padding: 24px;
@@ -70,7 +70,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-glass);
     border-radius: var(--radius-md);
 }
 
@@ -95,7 +95,7 @@
 .insight-saving {
     margin-top: 8px;
     padding: 6px 10px;
-    background: rgba(34, 197, 94, 0.15);
+    background: var(--green-soft);
     border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 600;
@@ -147,8 +147,8 @@
 .ai-loading .spinner-small {
     width: 20px;
     height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-top-color: var(--primary);
+    border: 2px solid var(--border-light);
+    border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }

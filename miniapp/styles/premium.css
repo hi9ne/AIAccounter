@@ -25,10 +25,10 @@ body::before {
 
 /* 2. PREMIUM TEXT GRADIENTS */
 .balance-amount {
-    background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+    background: linear-gradient(135deg, var(--text-gradient-start) 0%, var(--text-gradient-end) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+    text-shadow: 0 10px 30px var(--accent-glow);
     font-weight: 800 !important;
     letter-spacing: -1px;
 }
@@ -36,9 +36,9 @@ body::before {
 /* 3. GLASSMORPHISM 2.0 - GRADIENT BORDERS */
 .stat-card, .budget-widget, .stat-pill {
     position: relative;
-    background: rgba(20, 20, 28, 0.6) !important; /* Slightly more transparent */
-    border: 1px solid rgba(255, 255, 255, 0.05) !important; /* Fallback */
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    background: var(--bg-glass-card) !important;
+    border: 1px solid var(--border-glass) !important;
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
 }
 
@@ -52,9 +52,9 @@ body::before {
     height: 1px;
     background: linear-gradient(90deg, 
         transparent 0%, 
-        rgba(255, 255, 255, 0.1) 20%, 
-        rgba(255, 255, 255, 0.2) 50%, 
-        rgba(255, 255, 255, 0.1) 80%, 
+        var(--border-light) 20%, 
+        var(--border) 50%, 
+        var(--border-light) 80%, 
         transparent 100%
     );
 }
@@ -68,8 +68,8 @@ body::before {
 @media (hover: hover) {
     .stat-card:hover, .budget-widget:hover, .stat-pill:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15);
-        border-color: rgba(99, 102, 241, 0.3) !important;
+        box-shadow: 0 12px 40px var(--accent-glow);
+        border-color: var(--accent-glow) !important;
     }
 }
 

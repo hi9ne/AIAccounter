@@ -45,7 +45,7 @@
     border-radius: 24px;
     padding: 24px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
 }
@@ -96,7 +96,7 @@
     justify-content: center;
     font-size: 32px;
     color: var(--text-primary);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .profile-user-info h2 {
@@ -120,7 +120,7 @@
 
 .profile-level-badge .level-icon {
     font-size: 14px;
-    color: #fbbf24;
+    color: var(--yellow);
 }
 
 .profile-level-badge .level-number {
@@ -146,7 +146,7 @@
 
 .xp-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent), #8b5cf6);
+    background: var(--gradient-hero);
     border-radius: 5px;
     transition: width 0.5s ease;
     box-shadow: 0 0 10px var(--accent-glow);
@@ -224,7 +224,7 @@
 }
 
 .btn-achievements i:first-child {
-    color: #fbbf24;
+    color: var(--yellow);
     font-size: 20px;
 }
 
@@ -256,13 +256,13 @@
 
 .achievements-progress-ring .ring-bg {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.1);
+    stroke: var(--border-light);
     stroke-width: 8;
 }
 
 .achievements-progress-ring .ring-fill {
     fill: none;
-    stroke: url(#gradient) #6366f1;
+    stroke: url(#gradient) var(--accent);
     stroke-width: 8;
     stroke-linecap: round;
     transition: stroke-dashoffset 0.5s ease;
@@ -293,7 +293,7 @@
     padding: 8px 16px;
     border-radius: 20px;
     border: 1px solid var(--border-color);
-    background: var(--bg-secondary, rgba(128, 128, 128, 0.1));
+    background: var(--bg-secondary);
     color: var(--text-secondary);
     font-size: 13px;
     white-space: nowrap;
@@ -302,8 +302,8 @@
 }
 
 .achievements-filter .filter-btn.active {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
 }
 
@@ -318,8 +318,8 @@
     align-items: center;
     gap: 14px;
     padding: 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 16px;
     transition: all 0.2s ease;
 }
@@ -329,15 +329,15 @@
 }
 
 .achievement-card.unlocked {
-    border-color: rgba(99, 102, 241, 0.3);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent);
+    border-color: var(--accent-glow);
+    background: linear-gradient(135deg, var(--accent-soft), transparent);
 }
 
 .achievement-icon {
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: var(--bg-secondary, rgba(128, 128, 128, 0.1));
+    background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -372,14 +372,14 @@
 .achievement-progress-bar {
     flex: 1;
     height: 4px;
-    background: var(--bg-tertiary, rgba(128, 128, 128, 0.15));
+    background: var(--bg-tertiary);
     border-radius: 2px;
     overflow: hidden;
 }
 
 .achievement-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: var(--gradient-hero);
     border-radius: 2px;
     transition: width 0.3s ease;
 }
@@ -395,11 +395,11 @@
     align-items: center;
     gap: 4px;
     padding: 4px 10px;
-    background: rgba(251, 191, 36, 0.15);
+    background: var(--yellow-soft);
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
-    color: #fbbf24;
+    color: var(--yellow);
     flex-shrink: 0;
 }
 
@@ -414,72 +414,14 @@
     font-weight: 600;
 }
 
-.achievement-rarity.common { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
-.achievement-rarity.rare { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.achievement-rarity.epic { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
-.achievement-rarity.legendary { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+.achievement-rarity.common { background: var(--bg-hover); color: var(--text-muted); }
+.achievement-rarity.rare { background: var(--blue-soft); color: var(--blue); }
+.achievement-rarity.epic { background: var(--accent-soft); color: var(--accent-light); }
+.achievement-rarity.legendary { background: var(--yellow-soft); color: var(--yellow); }
 
 /* Light theme fixes for achievements */
-[data-theme="light"] .achievement-card {
-    background: #ffffff;
-    border-color: #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
+/* Removed redundant light theme overrides as variables handle them */
 
-[data-theme="light"] .achievement-card.unlocked {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(255, 255, 255, 1));
-    border-color: rgba(99, 102, 241, 0.3);
-}
-
-[data-theme="light"] .achievement-card.locked {
-    opacity: 0.6;
-}
-
-[data-theme="light"] .achievement-icon {
-    background: #f3f4f6;
-}
-
-[data-theme="light"] .achievement-progress-bar {
-    background: #e5e7eb;
-}
-
-[data-theme="light"] .achievements-stats {
-    background: #f9fafb;
-}
-
-[data-theme="light"] .achievements-filter .filter-btn {
-    background: #f3f4f6;
-    border-color: #d1d5db;
-    color: #374151;
-}
-
-[data-theme="light"] .achievements-filter .filter-btn.active {
-    background: #6366f1 !important;
-    border-color: #6366f1 !important;
-    color: #ffffff !important;
-}
-
-[data-theme="light"] .profile-gamification-card {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
-    border-color: rgba(99, 102, 241, 0.15);
-}
-
-[data-theme="light"] .xp-bar-container {
-    background: #e5e7eb;
-}
-
-[data-theme="light"] .profile-stats-row {
-    border-color: #e5e7eb;
-}
-
-[data-theme="light"] .btn-achievements {
-    background: #f3f4f6;
-    border-color: #e5e7eb;
-}
-
-[data-theme="light"] .btn-achievements:hover {
-    background: #e5e7eb;
-}
 
 /* ═══════════ DAILY QUESTS ═══════════ */
 .daily-quests-card {
@@ -573,43 +515,43 @@
 
 .daily-quest-progress-bar {
     height: 4px;
-    background: var(--bg-tertiary, rgba(128, 128, 128, 0.15));
+    background: var(--bg-tertiary);
     border-radius: 2px;
     overflow: hidden;
 }
 
 .daily-quest-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    background: var(--gradient-hero);
     border-radius: 2px;
     transition: width 0.3s ease;
 }
 
 .daily-quest-item.completed .daily-quest-progress-fill {
-    background: #22c55e;
+    background: var(--green);
 }
 
 .daily-quest-xp {
     padding: 4px 8px;
-    background: rgba(251, 191, 36, 0.15);
+    background: var(--yellow-soft);
     border-radius: 8px;
     font-size: 11px;
     font-weight: 600;
-    color: #fbbf24;
+    color: var(--yellow);
     flex-shrink: 0;
 }
 
 .daily-quests-footer {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
     text-align: center;
 }
 
 .all-completed-text {
     font-size: 14px;
     font-weight: 500;
-    color: #22c55e;
+    color: var(--green);
 }
 
 /* Profile action buttons */
@@ -625,8 +567,8 @@
     align-items: center;
     gap: 14px;
     padding: 16px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: linear-gradient(135deg, var(--accent-soft), var(--bg-elevated));
+    border: 1px solid var(--accent-soft);
     border-radius: 16px;
     margin-bottom: 16px;
 }
@@ -635,7 +577,7 @@
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: var(--accent-primary);
+    background: var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -665,7 +607,7 @@
 .position-xp {
     font-size: 14px;
     font-weight: 600;
-    color: var(--accent-primary);
+    color: var(--accent);
 }
 
 .leaderboard-period-filter {
@@ -678,8 +620,8 @@
     flex: 1;
     padding: 10px 16px;
     border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary, rgba(128, 128, 128, 0.1));
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
@@ -688,8 +630,8 @@
 }
 
 .leaderboard-period-filter .period-btn.active {
-    background: var(--accent-primary);
-    border-color: var(--accent-primary);
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
 }
 
@@ -704,26 +646,26 @@
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 14px;
     transition: all 0.2s ease;
 }
 
 .leaderboard-item.current-user {
-    border-color: var(--accent-primary);
-    background: rgba(99, 102, 241, 0.05);
+    border-color: var(--accent);
+    background: var(--accent-soft);
 }
 
 .leaderboard-item.top-3 {
-    border-color: rgba(251, 191, 36, 0.3);
+    border-color: var(--yellow-soft);
 }
 
 .leaderboard-rank {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--bg-secondary, rgba(128, 128, 128, 0.1));
+    background: var(--bg-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -734,7 +676,7 @@
 }
 
 .leaderboard-item.top-3:nth-child(1) .leaderboard-rank {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    background: linear-gradient(135deg, var(--yellow), #f59e0b);
     color: white;
 }
 
@@ -756,21 +698,10 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 2px;
-}
-
-.leaderboard-streak {
-    font-size: 12px;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
 .leaderboard-xp {
     font-size: 14px;
     font-weight: 600;
-    color: var(--accent-primary);
+    color: var(--accent);
 }
 
 /* XP Popup Animation */
@@ -780,12 +711,13 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10001;
-    background: rgba(0, 0, 0, 0.9);
-    border: 2px solid var(--accent-primary);
+    background: var(--bg-card);
+    border: 2px solid var(--accent);
     border-radius: 20px;
     padding: 30px 50px;
     text-align: center;
     animation: xpPopupIn 0.4s ease, xpPopupOut 0.4s ease 2s forwards;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
 }
 
 .xp-popup-icon {
@@ -796,8 +728,8 @@
 .xp-popup-amount {
     font-size: 36px;
     font-weight: 700;
-    color: #fbbf24;
-    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    color: var(--yellow);
+    text-shadow: 0 0 20px var(--yellow-soft);
 }
 
 .xp-popup-text {
@@ -854,7 +786,7 @@
 .level-up-level {
     font-size: 48px;
     font-weight: 800;
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    background: linear-gradient(135deg, var(--yellow), #f59e0b);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -882,47 +814,18 @@
 }
 
 /* Light theme fixes */
-[data-theme='light'] .daily-quests-card {
-    background: #ffffff;
-    border-color: #e5e7eb;
-}
-
-[data-theme='light'] .daily-quest-item {
-    background: #f3f4f6;
-}
-
-[data-theme='light'] .daily-quest-item.completed {
-    background: rgba(34, 197, 94, 0.1);
-}
-
-[data-theme='light'] .leaderboard-user-position {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
-}
-
-[data-theme='light'] .leaderboard-item {
-    background: #ffffff;
-    border-color: #e5e7eb;
-}
-
-[data-theme='light'] .leaderboard-item.current-user {
-    background: rgba(99, 102, 241, 0.05);
-}
-
-[data-theme='light'] .leaderboard-period-filter .period-btn {
-    background: #f3f4f6;
-    border-color: #d1d5db;
-}
+/* Removed redundant light theme overrides */
 
 
 .daily-quest-item.completed {
-    background: rgba(34, 197, 94, 0.1);
+    background: var(--green-soft);
 }
 
 .daily-quest-check {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    border: 2px solid var(--border-color);
+    border: 2px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -932,8 +835,8 @@
 }
 
 .daily-quest-item.completed .daily-quest-check {
-    background: #22c55e;
-    border-color: #22c55e;
+    background: var(--green);
+    border-color: var(--green);
     color: white;
 }
 
@@ -951,7 +854,7 @@
 
 .daily-quest-progress-bar {
     height: 4px;
-    background: var(--bg-tertiary, rgba(128, 128, 128, 0.15));
+    background: var(--bg-tertiary);
     border-radius: 2px;
     overflow: hidden;
 }
