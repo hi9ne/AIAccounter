@@ -60,12 +60,17 @@ async def extend_subscription(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    now = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    
+    # Ensure subscription_expires_at is also naive for comparison
+    expires_at = user.subscription_expires_at
+    if expires_at and expires_at.tzinfo is not None:
+        expires_at = expires_at.replace(tzinfo=None)
     
     # Если подписка уже есть и активна, продлеваем от текущей даты окончания
     # Если нет или истекла - от текущего момента
-    if user.subscription_expires_at and user.subscription_expires_at > now:
-        start_date = user.subscription_expires_at
+    if expires_at and expires_at > now:
+        start_date = expires_at
     else:
         start_date = now
         
@@ -84,17 +89,62 @@ async def get_admin_stats(
     admin: User = Depends(get_current_admin)
 ):
     """
-    Статистика для админки
+    Расширенная статистика для админки
     """
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+    
+    # Общее количество пользователей
     total_users = await db.scalar(select(func.count(User.user_id)))
     
-    now = datetime.now(timezone.utc)
+    # Активные подписки (без админов)
     active_subs = await db.scalar(
         select(func.count(User.user_id))
-        .where(User.subscription_expires_at > now)
+        .where(
+            (User.subscription_expires_at > now) &
+            (User.is_admin == False)
+        )
     )
+    
+    # Новые пользователи за неделю
+    new_users_week = await db.scalar(
+        select(func.count(User.user_id))
+        .where(User.last_activity >= week_ago)
+    )
+    
+    # Новые пользователи за месяц
+    new_users_month = await db.scalar(
+        select(func.count(User.user_id))
+        .where(User.last_activity >= month_ago)
+    )
+    
+    # Истекшие подписки
+    expired_subs = await db.scalar(
+        select(func.count(User.user_id))
+        .where(
+            (User.subscription_expires_at.isnot(None)) &
+            (User.subscription_expires_at <= now)
+        )
+    )
+    
+    # Админы
+    admin_count = await db.scalar(
+        select(func.count(User.user_id))
+        .where(User.is_admin == True)
+    )
+    
+    # Доход (активные подписки * 300 сом)
+    SUBSCRIPTION_PRICE = 300
+    monthly_revenue = (active_subs or 0) * SUBSCRIPTION_PRICE
     
     return {
         "total_users": total_users,
-        "active_subscriptions": active_subs
+        "active_subscriptions": active_subs,
+        "expired_subscriptions": expired_subs,
+        "new_users_week": new_users_week,
+        "new_users_month": new_users_month,
+        "admin_count": admin_count,
+        "monthly_revenue": monthly_revenue,
+        "conversion_rate": round((active_subs / total_users * 100) if total_users > 0 else 0, 1)
     }

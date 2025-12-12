@@ -66,6 +66,7 @@
     <link rel="stylesheet" href="styles/premium.css">
     <link rel="stylesheet" href="styles/onboarding.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/modal.css">
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -121,32 +122,127 @@
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <h1>Админ панель</h1>
-                <div class="header-actions"></div>
+                <div class="header-actions">
+                    <button class="btn-icon" onclick="loadAdminStats(); loadAdminUsers();">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
             </header>
             
             <div class="admin-panel">
-                <div class="admin-stats">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="admin-total-users">-</div>
-                        <div class="admin-stat-label">Всего пользователей</div>
+                <!-- Header Section -->
+                <div class="admin-header-section">
+                    <div class="admin-title-block">
+                        <div class="admin-title-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="admin-title-text">
+                            <h1>Админ панель</h1>
+                            <p>Управление пользователями и подписками</p>
+                        </div>
                     </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="admin-active-subs">-</div>
-                        <div class="admin-stat-label">Активные подписки</div>
+                    
+                    <div class="admin-stats">
+                        <div class="admin-stat-card">
+                            <div class="admin-stat-header">
+                                <div class="admin-stat-icon users">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <span class="admin-stat-label">Пользователи</span>
+                            </div>
+                            <div class="admin-stat-value" id="admin-total-users">-</div>
+                            <div class="admin-stat-trend positive" id="admin-users-trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+12%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="admin-stat-header">
+                                <div class="admin-stat-icon subs">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <span class="admin-stat-label">Подписки</span>
+                            </div>
+                            <div class="admin-stat-value" id="admin-active-subs">-</div>
+                            <div class="admin-stat-trend positive" id="admin-subs-trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+8%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="admin-stat-header">
+                                <div class="admin-stat-icon revenue">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <span class="admin-stat-label">Доход/мес</span>
+                            </div>
+                            <div class="admin-stat-value" id="admin-revenue">0с</div>
+                            <div class="admin-stat-trend positive" id="admin-revenue-trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+15%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-stat-card">
+                            <div class="admin-stat-header">
+                                <div class="admin-stat-icon growth">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <span class="admin-stat-label">Рост</span>
+                            </div>
+                            <div class="admin-stat-value" id="admin-growth">+18</div>
+                            <div class="admin-stat-trend positive" id="admin-growth-trend">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>за неделю</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="search-bar" style="margin-bottom: 16px;">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="admin-user-search" placeholder="Поиск пользователя..." oninput="debounce(loadAdminUsers, 500)()">
+                <!-- Search and Filters -->
+                <div class="admin-controls">
+                    <div class="admin-search-wrapper">
+                        <i class="fas fa-search admin-search-icon"></i>
+                        <input 
+                            type="text" 
+                            id="admin-user-search" 
+                            class="admin-search-input"
+                            placeholder="Поиск по имени, username или ID..." 
+                            oninput="debounce(loadAdminUsers, 300)()">
+                    </div>
+                    
+                    <div class="admin-filters">
+                        <button class="admin-filter-btn active" data-filter="all" onclick="filterAdminUsers('all')">
+                            <i class="fas fa-users"></i> Все
+                        </button>
+                        <button class="admin-filter-btn" data-filter="active" onclick="filterAdminUsers('active')">
+                            <i class="fas fa-crown"></i> Активные
+                        </button>
+                        <button class="admin-filter-btn" data-filter="expired" onclick="filterAdminUsers('expired')">
+                            <i class="fas fa-clock"></i> Истекшие
+                        </button>
+                        <button class="admin-filter-btn" data-filter="admins" onclick="filterAdminUsers('admins')">
+                            <i class="fas fa-shield-alt"></i> Админы
+                        </button>
+                    </div>
                 </div>
                 
-                <div id="admin-users-list" class="admin-users-list">
-                    <!-- Users will be loaded here -->
-                    <div class="loading-placeholder">
-                        <div class="skeleton-item"></div>
-                        <div class="skeleton-item"></div>
-                        <div class="skeleton-item"></div>
+                <!-- Users List -->
+                <div class="admin-users-section">
+                    <div class="admin-section-header">
+                        <span class="admin-section-title">Список пользователей</span>
+                        <span class="admin-user-count" id="admin-user-count">0 пользователей</span>
+                    </div>
+                    
+                    <div id="admin-users-list" class="admin-users-list">
+                        <!-- Users will be loaded here -->
+                        <div class="admin-loading">
+                            <div class="admin-skeleton"></div>
+                            <div class="admin-skeleton"></div>
+                            <div class="admin-skeleton"></div>
+                        </div>
                     </div>
                 </div>
             </div>

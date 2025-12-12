@@ -24,7 +24,19 @@
 
 .screen-body {
     padding: 16px;
-    padding-top: calc(var(--safe-top) + 80px);
+    padding-top: calc(var(--safe-top) + 76px);
+}
+
+@media (max-height: 700px) {
+    .screen-body {
+        padding-top: calc(var(--safe-top) + 72px);
+    }
+}
+
+@media (max-height: 600px) {
+    .screen-body {
+        padding-top: calc(var(--safe-top) + 68px);
+    }
 }
 
 /* ═══════════ SECTIONS ═══════════ */
