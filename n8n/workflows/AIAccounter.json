@@ -131,7 +131,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO users (user_id, telegram_chat_id, first_name, registered_date, last_activity, is_active, registration_source)\nVALUES (\n  {{ $json.message.from.id }},\n  {{ $json.message.chat.id }},\n  '{{ $json.message.from.first_name || \"User\" }}',\n  NOW(),\n  NOW(),\n  true,\n  'telegram'\n)\nON CONFLICT (user_id) DO UPDATE SET\n  first_name = EXCLUDED.first_name,\n  last_activity = NOW()\nRETURNING user_id, onboarding_completed, onboarding_step, preferred_currency, usage_type",
+        "query": "=INSERT INTO users (user_id, telegram_chat_id, first_name, registered_date, last_activity, is_active, registration_source)\nVALUES (\n  {{ $json.message.from.id }},\n  {{ $json.message.chat.id }},\n  '{{ $json.message.from.first_name || \"User\" }}',\n  NOW(),\n  NOW(),\n  true,\n  'telegram'\n)\nON CONFLICT (user_id) DO UPDATE SET\n  first_name = EXCLUDED.first_name,\n  last_activity = NOW()\nRETURNING user_id, onboarding_completed, onboarding_step, preferred_currency, usage_type, subscription_expires_at, is_admin",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -146,6 +146,70 @@
         "postgres": {
           "id": "5T19Mbva6dh2EvkZ",
           "name": "Chyngyz account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-admin",
+              "leftValue": "={{ $json.is_admin }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "has-subscription",
+              "leftValue": "={{ $json.subscription_expires_at ? new Date($json.subscription_expires_at) > new Date() : false }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        350,
+        -2768
+      ],
+      "id": "check-subscription-node",
+      "name": "Check Subscription"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "🔒 *Доступ ограничен*\n\nВаша подписка истекла. Для продолжения использования бота необходимо продлить доступ.\n\n💳 *Стоимость:* 300 сом/мес\n\nДля оплаты переведите средства на MBank: `0555 123 456` (Иван И.) и отправьте скриншот чека сюда.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        350,
+        -2600
+      ],
+      "id": "subscription-expired-msg",
+      "name": "Send Subscription Expired",
+      "credentials": {
+        "telegramApi": {
+          "id": "VsCo0z8ZzisDZOpw",
+          "name": "AIAccounter"
         }
       }
     },

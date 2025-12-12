@@ -46,6 +46,8 @@ async def get_current_user_profile(
         "usage_type": current_user.usage_type,
         "last_activity": current_user.last_activity,
         "created_at": current_user.last_activity,  # Используем last_activity как created_at
+        "subscription_expires_at": current_user.subscription_expires_at,
+        "is_admin": current_user.is_admin
     }
 
 @router.put("/me", response_model=UserSchema)

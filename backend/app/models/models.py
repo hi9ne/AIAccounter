@@ -28,6 +28,10 @@ class User(Base):
     onboarding_completed_at = Column(DateTime(timezone=True), nullable=True)
     registration_source = Column(String, default="telegram")
     
+    # Subscription & Admin
+    subscription_expires_at = Column(DateTime(timezone=True), nullable=True)
+    is_admin = Column(Boolean, default=False)
+    
     # Relationships
     expenses = relationship("Expense", back_populates="user")
     income = relationship("Income", back_populates="user")

@@ -614,6 +614,15 @@ function loadScreenData(screenName, forceReload = false) {
             loadProfile();
             loadDailyQuests();
             break;
+        case 'admin':
+            // Загрузка данных происходит при клике, но на всякий случай
+            if (state.isAdmin) {
+                loadAdminStats();
+                loadAdminUsers();
+            } else {
+                switchScreen('home');
+            }
+            break;
         case 'achievements':
             loadAchievements();
             break;
@@ -621,8 +630,13 @@ function loadScreenData(screenName, forceReload = false) {
             loadLeaderboard();
             break;
         case 'more':
+        case 'settings':
             // Статический экран, не требует загрузки данных
             screenCache.set('more', true);
+            // Показываем/скрываем админку
+            if (typeof showAdminMenuIfNeeded === 'function') {
+                showAdminMenuIfNeeded();
+            }
             break;
         case 'reports':
             loadReports();
@@ -646,6 +660,58 @@ function loadScreenData(screenName, forceReload = false) {
 }
 
 // ===== AUTHENTICATION =====
+// Проверка подписки (нужна в init, поэтому здесь)
+function checkSubscription(user) {
+    console.log('🔍 checkSubscription called with user:', user);
+    
+    // Если админ - всегда доступ
+    if (user.is_admin) {
+        console.log('✅ User is admin, access granted');
+        return true;
+    }
+    
+    // Если нет даты окончания - считаем что подписки нет
+    if (!user.subscription_expires_at) {
+        console.log('❌ No subscription_expires_at, access denied');
+        return false;
+    }
+    
+    const expiry = new Date(user.subscription_expires_at);
+    const now = new Date();
+    console.log('📅 Subscription expires:', expiry, 'Now:', now, 'Valid:', expiry > now);
+    
+    return expiry > now;
+}
+
+// Повторная проверка подписки (для Paywall)
+async function recheckSubscription() {
+    const btn = document.querySelector('.paywall-btn.secondary');
+    if (!btn) return;
+    
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Проверяем...';
+    btn.disabled = true;
+    
+    try {
+        const user = await api.get('/users/me');
+        if (checkSubscription(user)) {
+            showSuccess('Подписка активна!');
+            haptic.success();
+            // Перезагружаем страницу для обновления
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showError('Подписка все еще не активна. Пожалуйста, свяжитесь с администратором.');
+            haptic.error();
+        }
+    } catch (e) {
+        showError('Ошибка проверки');
+        haptic.error();
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
 async function authenticate() {
     debug.log('🔐 Authenticating...');
     
@@ -948,6 +1014,11 @@ function updateBudgetWidget(budgetData) {
 
 function updateDashboardUI(data) {
     debug.log('🎨 Updating dashboard UI', data);
+    
+    // Удаляем все скелетоны с главной страницы
+    document.querySelectorAll('.skeleton-text, .skeleton-item, .tx-skeleton, .skeleton-chart, .skeleton-kpi').forEach(el => {
+        el.remove();
+    });
     
     if (!data || !data.balance) {
         debug.warn('⚠️ No balance data');
@@ -3409,6 +3480,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         debug.log('✅ Authentication successful, token set');
+
+        // 2.1 Проверка подписки
+        const userProfile = await api.get('/users/me');
+        if (userProfile) {
+            // Сохраняем статус админа
+            state.isAdmin = userProfile.is_admin;
+            debug.log('👑 Admin status set:', state.isAdmin);
+            
+            // Показываем админ панель если юзер админ
+            debug.log('🔍 Checking for showAdminMenuIfNeeded function:', typeof showAdminMenuIfNeeded);
+            if (typeof showAdminMenuIfNeeded === 'function') {
+                debug.log('✅ Calling showAdminMenuIfNeeded()');
+                showAdminMenuIfNeeded();
+            } else {
+                debug.warn('❌ showAdminMenuIfNeeded is not a function');
+            }
+            
+            // Проверяем подписку
+            debug.log('🔍 Starting subscription check...');
+            const subscriptionValid = checkSubscription(userProfile);
+            debug.log('📋 Subscription check result:', subscriptionValid);
+            
+            if (!subscriptionValid) {
+                debug.log('🔒 Subscription expired - showing paywall');
+                document.getElementById('loading-overlay').classList.remove('active');
+                switchScreen('paywall');
+                return;
+            }
+            
+            debug.log('✅ Subscription valid - proceeding with initialization');
+        }
         
         // 2.5 Проверка онбординга (ОБЯЗАТЕЛЬНЫЙ)
         debug.log('🎯 Checking onboarding status...');

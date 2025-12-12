@@ -98,6 +98,8 @@ async def get_current_user_info(
         "last_name": current_user.last_name,
         "language_code": current_user.language_code,
         "is_active": current_user.is_active,
+        "subscription_expires_at": current_user.subscription_expires_at,
+        "is_admin": current_user.is_admin
     }
 
 

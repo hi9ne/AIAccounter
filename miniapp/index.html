@@ -65,6 +65,7 @@
     <link rel="stylesheet" href="styles/desktop.css">
     <link rel="stylesheet" href="styles/premium.css">
     <link rel="stylesheet" href="styles/onboarding.css">
+    <link rel="stylesheet" href="styles/admin.css">
     
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -72,6 +73,85 @@
 </head>
 <body>
     <div class="app">
+        <!-- ═══════════════════════════════════════════════════════════════
+             🔒 PAYWALL SCREEN
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="paywall-screen" class="screen paywall-screen">
+            <div class="paywall-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h1 class="paywall-title">Доступ ограничен</h1>
+            <p class="paywall-text">
+                Срок действия вашей подписки истек.<br>
+                Для продолжения работы необходимо продлить доступ.
+            </p>
+            
+            <div class="paywall-price-card">
+                <div class="paywall-price">300 сом</div>
+                <div class="paywall-period">в месяц</div>
+            </div>
+            
+            <div class="paywall-details">
+                <div class="paywall-detail-row">
+                    <span class="paywall-label">MBank</span>
+                    <span class="paywall-value">0555 123 456</span>
+                </div>
+                <div class="paywall-detail-row">
+                    <span class="paywall-label">Получатель</span>
+                    <span class="paywall-value">Аскар Идирисов</span>
+                </div>
+            </div>
+            
+            <div class="paywall-actions">
+                <button class="paywall-btn primary" onclick="window.Telegram.WebApp.openTelegramLink('https://t.me/idirisovaskar')">
+                    <i class="fab fa-telegram-plane"></i> Отправить чек
+                </button>
+                <button class="paywall-btn secondary" onclick="recheckSubscription()">
+                    <i class="fas fa-sync-alt"></i> Я оплатил, проверить
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             🛠 ADMIN PANEL
+        ═══════════════════════════════════════════════════════════════ -->
+        <div id="admin-screen" class="screen">
+            <header class="screen-header">
+                <button class="back-btn" onclick="switchScreen('profile')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Админ панель</h1>
+                <div class="header-actions"></div>
+            </header>
+            
+            <div class="admin-panel">
+                <div class="admin-stats">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="admin-total-users">-</div>
+                        <div class="admin-stat-label">Всего пользователей</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="admin-active-subs">-</div>
+                        <div class="admin-stat-label">Активные подписки</div>
+                    </div>
+                </div>
+                
+                <div class="search-bar" style="margin-bottom: 16px;">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="admin-user-search" placeholder="Поиск пользователя..." oninput="debounce(loadAdminUsers, 500)()">
+                </div>
+                
+                <div id="admin-users-list" class="admin-users-list">
+                    <!-- Users will be loaded here -->
+                    <div class="loading-placeholder">
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ═══════════════════════════════════════════════════════════════
              🏠 HOME / DASHBOARD (REDESIGNED)
         ═══════════════════════════════════════════════════════════════ -->
@@ -838,6 +918,18 @@
                 <div class="settings-group">
                     <h3 data-i18n="quick_actions">Быстрые действия</h3>
                     
+                    <!-- Админ панель (показывается только админам) -->
+                    <div class="setting-row clickable" id="admin-panel-menu-item" style="display: none;" onclick="switchScreen('admin'); loadAdminStats(); loadAdminUsers();">
+                        <div class="setting-left">
+                            <i class="fas fa-shield-alt" style="color: var(--accent);"></i>
+                            <div>
+                                <span class="setting-title">Админ панель</span>
+                                <span class="setting-desc">Управление подписками</span>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    
                     <div class="setting-row clickable" onclick="showExportModal()">
                         <div class="setting-left">
                             <i class="fas fa-file-export"></i>
@@ -1555,7 +1647,43 @@
         </div>
 
         <!-- ═══════════════════════════════════════════════════════════════
-             💰 BUDGETS SCREEN
+                <button class="back-btn" onclick="switchScreen('profile')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Админ панель</h1>
+                <div class="header-actions"></div>
+            </header>
+            
+            <div class="admin-panel">
+                <div class="admin-stats">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="admin-total-users">-</div>
+                        <div class="admin-stat-label">Всего пользователей</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-value" id="admin-active-subs">-</div>
+                        <div class="admin-stat-label">Активные подписки</div>
+                    </div>
+                </div>
+                
+                <div class="search-bar" style="margin-bottom: 16px;">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="admin-user-search" placeholder="Поиск пользователя..." oninput="debounce(loadAdminUsers, 500)()">
+                </div>
+                
+                <div id="admin-users-list" class="admin-users-list">
+                    <!-- Users will be loaded here -->
+                    <div class="loading-placeholder">
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                        <div class="skeleton-item"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             �💰 BUDGETS SCREEN
         ═══════════════════════════════════════════════════════════════ -->
         <div id="budgets-screen" class="screen">
             <header class="screen-header">
@@ -1654,12 +1782,10 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <!-- Scripts -->
-    <script src="i18n.js"></script>
+<script src="i18n.js"></script>
     <script src="miniapp-config.js"></script>
     <script src="websocket.js"></script>
     <script src="api-helper.js"></script>
     <script src="onboarding.js"></script>
+    <script src="admin.js"></script>
     <script src="app.js"></script>
-</body>
-</html>

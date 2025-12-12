@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Игнорируем лишние поля из .env
 
 
 settings = Settings()

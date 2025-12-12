@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from . import expenses, income, budget, auth, users, categories, rates, analytics, reports, websocket, transactions, recurring, debts, ai_analytics, onboarding, export, gamification, goals
+from . import expenses, income, budget, auth, users, categories, rates, analytics, reports, websocket, transactions, recurring, debts, ai_analytics, onboarding, export, gamification, goals, admin
 
 router = APIRouter()
 
 # Подключаем роуты
+router.include_router(admin.router, prefix="/admin", tags=["Admin"])
 router.include_router(onboarding.router, prefix="/onboarding", tags=["Onboarding"])
 router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 router.include_router(users.router, prefix="/users", tags=["Users"])

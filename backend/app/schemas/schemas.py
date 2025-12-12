@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Optional, Generic, TypeVar, List
+from typing import Optional, Generic, TypeVar, List, Union
 
 # Generic type для pagination
 T = TypeVar('T')
@@ -18,7 +18,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 # User Schemas
 class UserBase(BaseModel):
-    telegram_chat_id: Optional[str] = None
+    telegram_chat_id: Optional[int] = None
     username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -46,6 +46,8 @@ class User(UserBase):
     usage_type: Optional[str] = None
     created_at: Optional[datetime] = None
     last_activity: Optional[datetime] = None
+    subscription_expires_at: Optional[datetime] = None
+    is_admin: bool = False
 
 
 # Expense Schemas
