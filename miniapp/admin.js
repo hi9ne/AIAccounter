@@ -258,10 +258,20 @@ async function showUserStats(userId) {
             return;
         }
         
+        // Load user's financial statistics
+        let userStats = null;
+        try {
+            const response = await api.get(`/admin/users/${userId}/stats?period=month`);
+            userStats = response;
+        } catch (e) {
+            console.log('Could not load user stats:', e);
+        }
+        
         const expiry = user.subscription_expires_at ? new Date(user.subscription_expires_at) : null;
         const isExpired = !expiry || expiry < new Date();
         const daysRemaining = expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0;
         const createdDate = user.created_at || user.last_activity;
+        const accountAge = createdDate ? Math.floor((new Date() - new Date(createdDate)) / (1000 * 60 * 60 * 24)) : 0;
         
         const modalHtml = `
             <div class="modal-overlay active" onclick="this.remove()">
@@ -329,7 +339,7 @@ async function showUserStats(userId) {
                         </div>
                         
                         <!-- User Details -->
-                        <div style="background: var(--bg-card); padding: 16px; border-radius: 12px;">
+                        <div style="background: var(--bg-card); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
                             <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
                                 <i class="fas fa-info-circle" style="color: var(--accent);"></i> Детали
                             </div>
@@ -337,6 +347,10 @@ async function showUserStats(userId) {
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="color: var(--text-secondary); font-size: 13px;">Регистрация:</span>
                                     <span style="font-weight: 600; font-size: 13px;">${createdDate ? formatDate(new Date(createdDate)) : 'Н/Д'}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Возраст аккаунта:</span>
+                                    <span style="font-weight: 600; font-size: 13px;">${accountAge} ${getPluralForm(accountAge, 'день', 'дня', 'дней')}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="color: var(--text-secondary); font-size: 13px;">Язык:</span>
@@ -354,6 +368,55 @@ async function showUserStats(userId) {
                                 ` : ''}
                             </div>
                         </div>
+                        
+                        ${userStats ? `
+                        <!-- Financial Statistics -->
+                        <div style="background: var(--bg-card); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+                            <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                                <i class="fas fa-chart-pie" style="color: var(--accent);"></i> Статистика за месяц
+                            </div>
+                            <div style="display: grid; gap: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Баланс:</span>
+                                    <span style="font-weight: 600; font-size: 13px; color: ${(userStats.balance || 0) >= 0 ? 'var(--success)' : 'var(--error)'};">
+                                        ${formatMoney(userStats.balance || 0, user.currency || 'KGS')}
+                                    </span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Доходы:</span>
+                                    <span style="font-weight: 600; font-size: 13px; color: var(--success);">
+                                        +${formatMoney(userStats.total_income || 0, user.currency || 'KGS')}
+                                    </span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Расходы:</span>
+                                    <span style="font-weight: 600; font-size: 13px; color: var(--error);">
+                                        -${formatMoney(userStats.total_expenses || 0, user.currency || 'KGS')}
+                                    </span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Транзакций:</span>
+                                    <span style="font-weight: 600; font-size: 13px;">
+                                        ${(userStats.total_transactions || 0)} шт
+                                    </span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Средний чек:</span>
+                                    <span style="font-weight: 600; font-size: 13px;">
+                                        ${formatMoney(userStats.average_expense || 0, user.currency || 'KGS')}
+                                    </span>
+                                </div>
+                                ${userStats.top_category ? `
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 13px;">Топ категория:</span>
+                                    <span style="font-weight: 600; font-size: 13px;">
+                                        ${userStats.top_category}
+                                    </span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
                         
                         <!-- Actions -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px;">
