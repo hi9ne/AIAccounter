@@ -39,7 +39,12 @@ class UserUpdate(BaseModel):
 
 
 class User(UserBase):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            datetime: lambda v: v.isoformat() if v else None
+        }
+    )
     
     user_id: int
     is_active: bool

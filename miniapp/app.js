@@ -676,11 +676,36 @@ function checkSubscription(user) {
         return false;
     }
     
-    const expiry = new Date(user.subscription_expires_at);
-    const now = new Date();
-    console.log('📅 Subscription expires:', expiry, 'Now:', now, 'Valid:', expiry > now);
+    // Парсим дату с учетом разных форматов (ISO с timezone и без)
+    let expiry;
+    try {
+        const dateStr = user.subscription_expires_at;
+        console.log('🔍 Raw subscription_expires_at:', dateStr, 'Type:', typeof dateStr);
+        
+        // Если дата в формате YYYY-MM-DD HH:MM:SS без timezone - добавляем Z для UTC
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+            expiry = new Date(dateStr.replace(' ', 'T') + 'Z');
+            console.log('🔍 Parsed as UTC datetime:', expiry);
+        } else {
+            expiry = new Date(dateStr);
+            console.log('🔍 Parsed as ISO datetime:', expiry);
+        }
+        
+        // Проверяем, что дата валидна
+        if (isNaN(expiry.getTime())) {
+            console.error('❌ Invalid date format:', dateStr);
+            return false;
+        }
+    } catch (e) {
+        console.error('❌ Error parsing date:', e);
+        return false;
+    }
     
-    return expiry > now;
+    const now = new Date();
+    const isValid = expiry > now;
+    console.log('📅 Subscription expires:', expiry.toISOString(), 'Now:', now.toISOString(), 'Valid:', isValid);
+    
+    return isValid;
 }
 
 // Повторная проверка подписки (для Paywall)
