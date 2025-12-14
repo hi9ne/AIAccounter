@@ -1,13 +1,13 @@
 // Service Worker for AIAccounter Mini App
 // Provides offline caching and PWA capabilities
 
-const CACHE_NAME = 'aiaccounter-v8';
-const RUNTIME_CACHE = 'aiaccounter-runtime-v3';
+const CACHE_NAME = 'aiaccounter-v13';
+const RUNTIME_CACHE = 'aiaccounter-runtime-v8';
 
 // Critical assets to cache on install
 const PRECACHE_ASSETS = [
     './',
-    './index.html',
+    // './index.html',
     './styles/variables.css',
     './styles/theme.css',
     './styles/base.css',

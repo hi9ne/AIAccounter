@@ -1743,45 +1743,9 @@
         </div>
 
         <!-- ═══════════════════════════════════════════════════════════════
-                <button class="back-btn" onclick="switchScreen('profile')">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h1>Админ панель</h1>
-                <div class="header-actions"></div>
-            </header>
-            
-            <div class="admin-panel">
-                <div class="admin-stats">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="admin-total-users">-</div>
-                        <div class="admin-stat-label">Всего пользователей</div>
-                    </div>
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-value" id="admin-active-subs">-</div>
-                        <div class="admin-stat-label">Активные подписки</div>
-                    </div>
-                </div>
-                
-                <div class="search-bar" style="margin-bottom: 16px;">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="admin-user-search" placeholder="Поиск пользователя..." oninput="debounce(loadAdminUsers, 500)()">
-                </div>
-                
-                <div id="admin-users-list" class="admin-users-list">
-                    <!-- Users will be loaded here -->
-                    <div class="loading-placeholder">
-                        <div class="skeleton-item"></div>
-                        <div class="skeleton-item"></div>
-                        <div class="skeleton-item"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════════════════
-             �💰 BUDGETS SCREEN
+             💰 BUDGETS SCREEN [UPDATE: 15.12.2025 17:45 - FIXED]
         ═══════════════════════════════════════════════════════════════ -->
-        <div id="budgets-screen" class="screen">
+        <div id="budgets-screen" class="screen" data-updated="20251215-fixed">
             <header class="screen-header">
                 <button class="btn-back" onclick="switchScreen('settings')">
                     <i class="fas fa-arrow-left"></i>
@@ -1791,9 +1755,9 @@
                     <i class="fas fa-plus"></i>
                 </button>
             </header>
-            <div class="screen-body">
+            <div class="screen-body" style="padding-top: 68px !important; padding-bottom: 8px !important;">
                 <!-- Текущий месяц -->
-                <div class="budget-current-card" id="budget-current-card">
+                <div class="budget-current-card" id="budget-current-card" style="margin-top: 0 !important;">
                     <div class="budget-card-header">
                         <div class="budget-card-title">
                             <i class="fas fa-calendar"></i>
@@ -1839,6 +1803,7 @@
                 </div>
             </div>
         </div>
+    </div> <!-- .app -->
 
         <!-- ═══════════════════════════════════════════════════════════════
              BOTTOM NAV
