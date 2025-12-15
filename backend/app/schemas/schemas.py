@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, Generic, TypeVar, List, Union
 
 # Generic type для pagination
@@ -61,7 +61,7 @@ class ExpenseBase(BaseModel):
     currency: str = "KGS"
     category: str
     description: Optional[str] = None
-    date: datetime
+    date: date
 
 
 class ExpenseCreate(ExpenseBase):
@@ -73,7 +73,7 @@ class ExpenseUpdate(BaseModel):
     currency: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    date: Optional[datetime] = None
+    date: Optional[date] = None
 
 
 class Expense(ExpenseBase):
@@ -91,7 +91,7 @@ class IncomeBase(BaseModel):
     currency: str = "KGS"
     category: str
     description: Optional[str] = None
-    date: datetime
+    date: date
 
 
 class IncomeCreate(IncomeBase):
@@ -103,7 +103,7 @@ class IncomeUpdate(BaseModel):
     currency: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
-    date: Optional[datetime] = None
+    date: Optional[date] = None
 
 
 class Income(IncomeBase):

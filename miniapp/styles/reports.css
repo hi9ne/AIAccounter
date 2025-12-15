@@ -27,6 +27,38 @@
     gap: 12px;
 }
 
+.reports-generate {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.reports-generate-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reports-generate-btn i {
+    width: 24px;
+    text-align: center;
+    color: var(--accent);
+}
+
+.reports-generate-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-light);
+}
+
 .report-item {
     display: flex;
     align-items: center;

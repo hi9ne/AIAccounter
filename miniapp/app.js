@@ -1771,6 +1771,25 @@ async function downloadExport() {
     const period = document.getElementById('export-period')?.value || 'month';
     const type = document.getElementById('export-type')?.value || 'all';
     
+    // Handle PDF generation
+    if (format === 'pdf') {
+        try {
+            closeExportModal();
+            if (period === 'week') {
+                await generateWeeklyReport();
+            } else if (period === 'month') {
+                await generateMonthlyReport();
+            } else {
+                await generatePeriodReport();
+            }
+            return;
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            showToast('Ошибка генерации PDF', 'error');
+            return;
+        }
+    }
+    
     // Calculate dates based on period
     let startDate, endDate;
     const now = new Date();
@@ -3118,6 +3137,74 @@ async function loadReports() {
     }
 }
 
+async function generateWeeklyReport() {
+    try {
+        showLoading('Генерация недельного отчёта...');
+
+        const today = new Date();
+        const day = (today.getDay() + 6) % 7; // Monday=0
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - day);
+        const weekStartIso = weekStart.toISOString().split('T')[0];
+
+        const res = await api.generateReportPDF(weekStartIso, weekStartIso, 'weekly');
+        if (res?.pdf_url) {
+            window.open(res.pdf_url, '_blank');
+        }
+
+        cache.clearMatching('reports:');
+        await loadReports();
+        showSuccess('Недельный отчёт готов');
+    } catch (e) {
+        handleError(e, 'Не удалось сгенерировать недельный отчёт');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function generateMonthlyReport() {
+    try {
+        showLoading('Генерация месячного отчёта...');
+
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthStartIso = monthStart.toISOString().split('T')[0];
+
+        const res = await api.generateReportPDF(monthStartIso, monthStartIso, 'monthly');
+        if (res?.pdf_url) {
+            window.open(res.pdf_url, '_blank');
+        }
+
+        cache.clearMatching('reports:');
+        await loadReports();
+        showSuccess('Месячный отчёт готов');
+    } catch (e) {
+        handleError(e, 'Не удалось сгенерировать месячный отчёт');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function generatePeriodReport() {
+    try {
+        showLoading('Генерация отчёта за период...');
+
+        const range = getDateRangeFor('month');
+        const res = await api.generateReportPDF(range.start_date, range.end_date, 'period');
+        if (res?.pdf_url) {
+            window.open(res.pdf_url, '_blank');
+        }
+
+        cache.clearMatching('reports:');
+        await loadReports();
+        showSuccess('Отчёт за период готов');
+    } catch (e) {
+        handleError(e, 'Не удалось сгенерировать отчёт за период');
+    } finally {
+        hideLoading();
+    }
+}
+
 function updateReportsUI(reports) {
     const container = document.getElementById('reports-list');
     if (!container) return;
@@ -3139,17 +3226,35 @@ function updateReportsUI(reports) {
             ? `${new Date(r.period_start).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} - ${new Date(r.period_end).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}`
             : '';
         
+        // Определяем иконку и действие по формату
+        let icon = 'fa-file-pdf';
+        let downloadAction = '';
+        
+        if (r.format === 'csv') {
+            icon = 'fa-file-csv';
+            const startDate = r.report_data?.start_date || r.period_start;
+            const endDate = r.report_data?.end_date || r.period_end;
+            downloadAction = `onclick="api.exportCSV('${startDate}', '${endDate}')"`;
+        } else if (r.format === 'xlsx') {
+            icon = 'fa-file-excel';
+            const startDate = r.report_data?.start_date || r.period_start;
+            const endDate = r.report_data?.end_date || r.period_end;
+            downloadAction = `onclick="api.exportExcel('${startDate}', '${endDate}')"`;
+        } else if (r.pdf_url) {
+            downloadAction = `onclick="window.open('${r.pdf_url}', '_blank')"`;
+        }
+        
         return `
             <div class="report-item">
                 <div class="report-icon">
-                    <i class="fas fa-file-pdf"></i>
+                    <i class="fas ${icon}"></i>
                 </div>
                 <div class="report-info">
                     <div class="report-title">${r.title || 'Отчёт'}</div>
                     <div class="report-meta">${createdDate}${periodInfo ? ' • ' + periodInfo : ''}</div>
                 </div>
                 <div class="report-actions">
-                    ${r.pdf_url ? `<button class="icon-btn" onclick="window.open('${r.pdf_url}', '_blank')"><i class="fas fa-download"></i></button>` : ''}
+                    ${downloadAction ? `<button class="icon-btn" ${downloadAction}><i class="fas fa-download"></i></button>` : ''}
                 </div>
             </div>
         `;

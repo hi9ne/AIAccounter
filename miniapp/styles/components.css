@@ -1334,12 +1334,12 @@
 
 /* =========== EXPORT FORMAT SELECTOR =========== */
 .export-format-selector {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 10px;
 }
 
 .format-option {
-    flex: 1;
     cursor: pointer;
 }
 
@@ -1747,12 +1747,12 @@
 
 /* =========== EXPORT FORMAT SELECTOR =========== */
 .export-format-selector {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     gap: 10px;
 }
 
 .format-option {
-    flex: 1;
     cursor: pointer;
 }
 

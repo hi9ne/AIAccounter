@@ -16,6 +16,7 @@ router = APIRouter(prefix="/debts", tags=["debts"])
 from sqlalchemy import Column, Integer, BigInteger, String, Float, DateTime, Boolean, Text, Date, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
 from ...database import Base
+from decimal import Decimal
 
 
 class Debt(Base):
@@ -72,6 +73,12 @@ def debt_to_response(debt: Debt, today: date) -> DebtResponse:
         days_until_due = (debt.due_date - today).days
         is_overdue = days_until_due < 0 and not debt.is_settled
     
+    # In async SQLAlchemy, accessing an unloaded relationship can raise MissingGreenlet.
+    # Use the loaded value if present; otherwise treat as empty.
+    loaded_payments = debt.__dict__.get("payments")
+    if loaded_payments is None:
+        loaded_payments = []
+
     payments = [
         DebtPaymentResponse(
             id=p.id,
@@ -82,7 +89,7 @@ def debt_to_response(debt: Debt, today: date) -> DebtResponse:
             related_transaction_id=p.related_transaction_id,
             created_at=p.created_at
         )
-        for p in (debt.payments or [])
+        for p in (loaded_payments or [])
     ]
     
     return DebtResponse(
@@ -208,12 +215,13 @@ async def create_debt(
     user_id: int = Depends(get_current_user_id),
 ):
     """Создать новый долг"""
+    original_amount = Decimal(str(data.original_amount))
     debt = Debt(
         user_id=user_id,
         person_name=data.person_name,
         debt_type=data.debt_type,
-        original_amount=data.original_amount,
-        remaining_amount=data.original_amount,
+        original_amount=original_amount,
+        remaining_amount=original_amount,
         currency=data.currency,
         description=data.description,
         due_date=data.due_date,
@@ -223,7 +231,15 @@ async def create_debt(
     db.add(debt)
     await db.commit()
     await db.refresh(debt)
-    
+
+    # Avoid async lazy-loading (MissingGreenlet) when accessing `debt.payments`
+    result = await db.execute(
+        select(Debt)
+        .options(selectinload(Debt.payments))
+        .where(Debt.id == debt.id, Debt.user_id == user_id)
+    )
+    debt = result.scalar_one()
+
     return debt_to_response(debt, date.today())
 
 
@@ -290,7 +306,9 @@ async def add_payment(
     if debt.is_settled:
         raise HTTPException(status_code=400, detail="Долг уже погашен")
     
-    if data.amount > float(debt.remaining_amount):
+    payment_amount = Decimal(str(data.amount))
+
+    if payment_amount > Decimal(debt.remaining_amount):
         raise HTTPException(
             status_code=400, 
             detail=f"Сумма платежа ({data.amount}) превышает остаток долга ({debt.remaining_amount})"
@@ -299,7 +317,7 @@ async def add_payment(
     # Создаём платёж
     payment = DebtPayment(
         debt_id=debt_id,
-        amount=data.amount,
+        amount=payment_amount,
         payment_date=data.payment_date or date.today(),
         note=data.note,
     )
@@ -310,7 +328,7 @@ async def add_payment(
             # Нам вернули долг = доход
             transaction = Income(
                 user_id=user_id,
-                amount=data.amount,
+                amount=float(payment_amount),
                 currency=debt.currency,
                 category="Возврат долга",
                 description=f"Возврат от {debt.person_name}" + (f": {data.note}" if data.note else ""),
@@ -320,7 +338,7 @@ async def add_payment(
             # Мы вернули долг = расход
             transaction = Expense(
                 user_id=user_id,
-                amount=data.amount,
+                amount=float(payment_amount),
                 currency=debt.currency,
                 category="Возврат долга",
                 description=f"Возврат {debt.person_name}" + (f": {data.note}" if data.note else ""),
@@ -333,13 +351,13 @@ async def add_payment(
     db.add(payment)
     
     # Обновляем остаток долга
-    debt.remaining_amount = float(debt.remaining_amount) - data.amount
+    debt.remaining_amount = Decimal(debt.remaining_amount) - payment_amount
     
     # Если погашен полностью
     if debt.remaining_amount <= 0:
         debt.is_settled = True
         debt.settled_at = datetime.now()
-        debt.remaining_amount = 0
+        debt.remaining_amount = Decimal("0")
     
     await db.commit()
     await db.refresh(debt)

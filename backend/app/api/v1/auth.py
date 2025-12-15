@@ -34,6 +34,7 @@ async def telegram_auth(
         # Если пользователя нет - создаём автоматически
         if not user:
             user = User(
+                user_id=int(auth_data.telegram_chat_id),
                 telegram_chat_id=int(auth_data.telegram_chat_id),
                 username=auth_data.username,
                 first_name=auth_data.first_name,
@@ -45,6 +46,10 @@ async def telegram_auth(
             await db.commit()
             await db.refresh(user)
         else:
+            # На старых/битых данных user_id может быть NULL — восстанавливаем из telegram_chat_id
+            if user.user_id is None and user.telegram_chat_id is not None:
+                user.user_id = int(user.telegram_chat_id)
+
             # Обновляем данные пользователя если изменились
             updated = False
             if auth_data.username and auth_data.username != user.username:
@@ -57,7 +62,7 @@ async def telegram_auth(
                 user.last_name = auth_data.last_name
                 updated = True
             
-            if updated:
+            if updated or user.user_id is None:
                 await db.commit()
         
         # Создаём JWT токен

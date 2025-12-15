@@ -421,12 +421,10 @@ class APIHelper {
     }
     
     async generateReportPDF(startDate, endDate, reportType = 'period') {
-        const params = new URLSearchParams({
-            start_date: startDate,
-            end_date: endDate
-        });
-        
         if (reportType === 'weekly') {
+            const params = new URLSearchParams({
+                week_start: startDate
+            });
             return this.post(`/reports/weekly?${params}`);
         } else if (reportType === 'monthly') {
             // Extract year and month from startDate

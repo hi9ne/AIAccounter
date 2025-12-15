@@ -1,0 +1,118 @@
+﻿GET    /                                                  [] Root
+GET    /api/v1/admin/stats                                [Admin] Get Admin Stats
+GET    /api/v1/admin/users                                [Admin] Get Users
+GET    /api/v1/admin/users/{user_id}/stats                [Admin] Get User Stats
+POST   /api/v1/admin/users/{user_id}/subscription         [Admin] Extend Subscription
+GET    /api/v1/ai-analytics/analyze                       [AI Analytics, ai-analytics] Analyze Spending
+GET    /api/v1/ai-analytics/insights                      [AI Analytics, ai-analytics] Get Insights
+GET    /api/v1/ai-analytics/trends                        [AI Analytics, ai-analytics] Get Trends
+GET    /api/v1/analytics/batch                            [Analytics] Get Batch Analytics
+GET    /api/v1/analytics/categories/top                   [Analytics] Get Top Expense Categories
+GET    /api/v1/analytics/chart/balance-trend              [Analytics] Get Balance Trend
+GET    /api/v1/analytics/chart/category-pie               [Analytics] Get Category Pie Chart
+GET    /api/v1/analytics/chart/income-expense             [Analytics] Get Income Expense Chart
+GET    /api/v1/analytics/compare-periods                  [Analytics] Compare Periods
+GET    /api/v1/analytics/dashboard                        [Analytics] Get Dashboard Data
+GET    /api/v1/analytics/overview-old                     [Analytics] Get Dashboard Data Old
+GET    /api/v1/analytics/patterns                         [Analytics] Get Spending Patterns
+GET    /api/v1/analytics/stats                            [Analytics] Get Income Expense Statistics
+GET    /api/v1/analytics/trends                           [Analytics] Get Spending Trends
+GET    /api/v1/auth/me                                    [Auth] Get Current User Info
+POST   /api/v1/auth/telegram                              [Auth] Telegram Auth
+GET    /api/v1/auth/verify                                [Auth] Verify Token
+GET    /api/v1/budget                                     [Budget] Get Budgets
+POST   /api/v1/budget                                     [Budget] Create Budget
+DELETE /api/v1/budget/{month}                             [Budget] Delete Budget
+GET    /api/v1/budget/{month}                             [Budget] Get Budget
+PUT    /api/v1/budget/{month}                             [Budget] Update Budget
+GET    /api/v1/budget/{month}/status                      [Budget] Get Budget Status
+GET    /api/v1/budget/current/status                      [Budget] Get Current Budget Status
+POST   /api/v1/categories/                                [Categories] Create Category
+DELETE /api/v1/categories/{category_id}                   [Categories] Delete Category
+PUT    /api/v1/categories/{category_id}                   [Categories] Update Category
+POST   /api/v1/categories/{category_id}/restore           [Categories] Restore Category
+GET    /api/v1/categories/all                             [Categories] Get All Categories
+GET    /api/v1/categories/currencies                      [Categories] Get Currencies
+GET    /api/v1/categories/expenses                        [Categories] Get Expense Categories
+GET    /api/v1/categories/income                          [Categories] Get Income Categories
+GET    /api/v1/categories/my                              [Categories] Get User Categories
+GET    /api/v1/categories/public/expenses                 [Categories] Get Expense Categories Public
+GET    /api/v1/categories/public/income                   [Categories] Get Income Categories Public
+GET    /api/v1/debts/                                     [Debts, debts] Get Debts
+POST   /api/v1/debts/                                     [Debts, debts] Create Debt
+DELETE /api/v1/debts/{debt_id}                            [Debts, debts] Delete Debt
+GET    /api/v1/debts/{debt_id}                            [Debts, debts] Get Debt
+PUT    /api/v1/debts/{debt_id}                            [Debts, debts] Update Debt
+POST   /api/v1/debts/{debt_id}/payments                   [Debts, debts] Add Payment
+POST   /api/v1/debts/{debt_id}/settle                     [Debts, debts] Settle Debt
+GET    /api/v1/debts/summary                              [Debts, debts] Get Debt Summary
+GET    /api/v1/expenses                                   [Expenses] Get Expenses
+POST   /api/v1/expenses                                   [Expenses] Create Expense
+DELETE /api/v1/expenses/{expense_id}                      [Expenses] Delete Expense
+GET    /api/v1/expenses/{expense_id}                      [Expenses] Get Expense
+PUT    /api/v1/expenses/{expense_id}                      [Expenses] Update Expense
+GET    /api/v1/expenses/stats/by-category                 [Expenses] Get Expenses By Category
+GET    /api/v1/expenses/stats/summary                     [Expenses] Get Expenses Summary
+GET    /api/v1/export/summary                             [Export, export] Export Summary
+GET    /api/v1/export/transactions                        [Export, export] Export Transactions
+GET    /api/v1/gamification/achievements                  [Gamification, gamification] Get Achievements
+GET    /api/v1/gamification/achievements/{achievement_id} [Gamification, gamification] Get Achievement Detail
+GET    /api/v1/gamification/daily-quests                  [Gamification, gamification] Get Daily Quests
+GET    /api/v1/gamification/leaderboard                   [Gamification, gamification] Get Leaderboard
+GET    /api/v1/gamification/profile                       [Gamification, gamification] Get Gamification Profile
+POST   /api/v1/gamification/settings                      [Gamification, gamification] Update Gamification Settings
+GET    /api/v1/gamification/xp-history                    [Gamification, gamification] Get Xp History
+GET    /api/v1/goals                                      [Savings Goals] Get Goals
+POST   /api/v1/goals                                      [Savings Goals] Create Goal
+DELETE /api/v1/goals/{goal_id}                            [Savings Goals] Delete Goal
+GET    /api/v1/goals/{goal_id}                            [Savings Goals] Get Goal
+PUT    /api/v1/goals/{goal_id}                            [Savings Goals] Update Goal
+POST   /api/v1/goals/{goal_id}/complete                   [Savings Goals] Mark Goal Complete
+POST   /api/v1/goals/{goal_id}/contribute                 [Savings Goals] Contribute To Goal
+GET    /api/v1/goals/{goal_id}/contributions              [Savings Goals] Get Contributions
+POST   /api/v1/goals/{goal_id}/reactivate                 [Savings Goals] Reactivate Goal
+POST   /api/v1/goals/quick-deposit                        [Savings Goals] Quick Deposit
+GET    /api/v1/goals/stats                                [Savings Goals] Get Goals Stats
+GET    /api/v1/income                                     [Income] Get Income List
+POST   /api/v1/income                                     [Income] Create Income
+DELETE /api/v1/income/{income_id}                         [Income] Delete Income
+GET    /api/v1/income/{income_id}                         [Income] Get Income
+PUT    /api/v1/income/{income_id}                         [Income] Update Income
+GET    /api/v1/onboarding/categories/{usage_type}         [Onboarding] Get Category Templates
+POST   /api/v1/onboarding/complete                        [Onboarding] Complete Onboarding
+POST   /api/v1/onboarding/reset                           [Onboarding] Reset Onboarding
+GET    /api/v1/onboarding/status                          [Onboarding] Get Onboarding Status
+POST   /api/v1/onboarding/step/1                          [Onboarding] Save Step1 Currency
+POST   /api/v1/onboarding/step/2                          [Onboarding] Save Step2 Usage Type
+POST   /api/v1/onboarding/step/3                          [Onboarding] Save Step3 Budget
+POST   /api/v1/onboarding/step/4                          [Onboarding] Save Step4 Categories
+POST   /api/v1/onboarding/step/5                          [Onboarding] Save Step5 Notifications
+GET    /api/v1/onboarding/summary                         [Onboarding] Get Onboarding Summary
+POST   /api/v1/rates/                                     [Exchange Rates] Create Rate
+GET    /api/v1/rates/{from_currency}/{to_currency}        [Exchange Rates] Get Rate
+POST   /api/v1/rates/convert                              [Exchange Rates] Convert Currency
+POST   /api/v1/rates/convert/batch                        [Exchange Rates] Convert Currency Batch
+GET    /api/v1/rates/currencies/supported                 [Exchange Rates] Get Supported Currencies
+GET    /api/v1/rates/history                              [Exchange Rates] Get Rates History
+GET    /api/v1/rates/latest                               [Exchange Rates] Get Latest Rates
+GET    /api/v1/recurring                                  [Recurring Payments, recurring-payments] Get Recurring Payments
+POST   /api/v1/recurring                                  [Recurring Payments, recurring-payments] Create Recurring Payment
+DELETE /api/v1/recurring/{payment_id}                     [Recurring Payments, recurring-payments] Delete Recurring Payment
+GET    /api/v1/recurring/{payment_id}                     [Recurring Payments, recurring-payments] Get Recurring Payment
+PUT    /api/v1/recurring/{payment_id}                     [Recurring Payments, recurring-payments] Update Recurring Payment
+POST   /api/v1/recurring/{payment_id}/mark-paid           [Recurring Payments, recurring-payments] Mark Payment As Paid
+GET    /api/v1/recurring/upcoming/summary                 [Recurring Payments, recurring-payments] Get Upcoming Summary
+GET    /api/v1/reports/export/csv                         [Reports] Export Transactions Csv
+GET    /api/v1/reports/export/excel                       [Reports] Export Transactions Excel
+GET    /api/v1/reports/history                            [Reports] Get Report History
+POST   /api/v1/reports/monthly                            [Reports] Generate Monthly Report
+POST   /api/v1/reports/period                             [Reports] Generate Period Report
+POST   /api/v1/reports/weekly                             [Reports] Generate Weekly Report
+GET    /api/v1/transactions                               [Transactions, transactions] Get Transactions
+GET    /api/v1/users/me                                   [Users] Get Current User Profile
+PUT    /api/v1/users/me                                   [Users] Update Current User Profile
+GET    /api/v1/users/me/stats                             [Users] Get User Statistics
+GET    /api/v1/ws/stats                                   [WebSocket] Get Websocket Stats
+GET    /cache/stats                                       [] Cache Stats
+GET    /health                                            [] Health Check
+GET    /warmup                                            [] Warmup

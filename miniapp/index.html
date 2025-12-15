@@ -560,9 +560,6 @@
                 </button>
                 <h1 data-i18n="history">История</h1>
                 <div class="header-actions">
-                    <button class="btn-icon" onclick="showExportModal()">
-                        <i class="fas fa-download"></i>
-                    </button>
                     <button class="btn-icon" onclick="toggleFilters()">
                         <i class="fas fa-sliders"></i>
                     </button>
@@ -634,18 +631,18 @@
                     <i class="fas fa-arrow-left"></i>
                 </button>
                 <h1 data-i18n="reports">Отчёты</h1>
-                <div style="width: 40px;"></div>
+                <div class="header-actions">
+                    <button class="btn-icon" onclick="showExportModal()">
+                        <i class="fas fa-file-export"></i>
+                    </button>
+                </div>
             </header>
             <div class="screen-body">
-                <div class="info-box">
-                    <i class="fas fa-circle-info"></i>
-                    <p data-i18n="reports_info">Отчёты генерируются через Telegram бота. Здесь можно просмотреть и скачать готовые PDF.</p>
-                </div>
                 <div id="reports-list" class="reports-list">
                     <div class="empty-state">
                         <i class="fas fa-file-lines"></i>
                         <h3 data-i18n="no_reports">Нет отчётов</h3>
-                        <p data-i18n="request_report">Запросите отчёт в Telegram боте</p>
+                        <p data-i18n="request_report">Нажмите на иконку экспорта чтобы сгенерировать</p>
                     </div>
                 </div>
             </div>
@@ -1025,17 +1022,6 @@
                         </div>
                         <i class="fas fa-chevron-right"></i>
                     </div>
-                    
-                    <div class="setting-row clickable" onclick="showExportModal()">
-                        <div class="setting-left">
-                            <i class="fas fa-file-export"></i>
-                            <div>
-                                <span class="setting-title" data-i18n="export_data">Экспорт данных</span>
-                                <span class="setting-desc" data-i18n="download_csv_excel">Скачать CSV/Excel</span>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1101,7 +1087,7 @@
             <div class="modal-backdrop" onclick="closeExportModal()"></div>
             <div class="modal-box">
                 <div class="modal-head">
-                    <h3 data-i18n="export_transactions">Экспорт транзакций</h3>
+                    <h3 data-i18n="export_transactions">Экспорт данных</h3>
                     <button class="btn-icon" onclick="closeExportModal()"><i class="fas fa-xmark"></i></button>
                 </div>
                 <div class="export-options">
@@ -1120,6 +1106,13 @@
                                 <span class="format-label">
                                     <i class="fas fa-file-csv"></i>
                                     <span>CSV (.csv)</span>
+                                </span>
+                            </label>
+                            <label class="format-option">
+                                <input type="radio" name="export-format" value="pdf">
+                                <span class="format-label">
+                                    <i class="fas fa-file-pdf"></i>
+                                    <span>PDF</span>
                                 </span>
                             </label>
                         </div>

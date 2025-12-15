@@ -13,25 +13,69 @@ import os
 import io
 import csv
 import logging
+import base64
+import binascii
 
 from app.database import get_db
 from app.models.models import User, SavedReport
 from app.schemas.report import ReportRequest, ReportResponse, ReportType
 from app.utils.auth import get_current_user
-from app.config import settings
+from app.config import settings, Settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# APITemplate.io настройки (из config)
-APITEMPLATE_API_KEY = settings.APITEMPLATE_API_KEY
+# APITemplate.io настройки
 APITEMPLATE_BASE_URL = "https://rest.apitemplate.io/v2"
 
-# Template IDs (из config)
-WEEKLY_TEMPLATE_ID = settings.WEEKLY_TEMPLATE_ID
-MONTHLY_TEMPLATE_ID = settings.MONTHLY_TEMPLATE_ID
-PERIOD_TEMPLATE_ID = settings.PERIOD_TEMPLATE_ID
+
+def _get_report_settings() -> Settings:
+    """Load settings from environment/.env.
+
+    Important: the server process may keep running while .env changes; reloading here
+    allows updating APITemplate credentials without restarting the API.
+    """
+
+    try:
+        return Settings()
+    except Exception:
+        # Fallback to already-loaded settings if reloading fails for any reason
+        return settings  # type: ignore[return-value]
+
+
+def _normalize_apitemplate_api_key(raw: str) -> str:
+    """Normalize APITemplate API key.
+
+    Some deployments store the key base64-encoded; if the value looks like base64
+    and decodes into a printable, non-whitespace token, use decoded form.
+    """
+
+    value = (raw or "").strip().strip('"')
+    if not value:
+        return ""
+
+    # If the key already contains separators, treat as raw key.
+    if ":" in value:
+        return value
+
+    # Heuristic: some deployments store the key base64/base64url-encoded, sometimes without padding.
+    # Try to decode, but only accept decoded tokens that look like an API key (non-whitespace, printable).
+    candidate = value.replace("-", "+").replace("_", "/")
+    # add padding if missing
+    pad = (-len(candidate)) % 4
+    if pad:
+        candidate = candidate + ("=" * pad)
+
+    try:
+        decoded = base64.b64decode(candidate, validate=False)
+        decoded_text = decoded.decode("utf-8", errors="strict").strip()
+        if decoded_text and (" " not in decoded_text) and ("\n" not in decoded_text) and len(decoded_text) >= 16:
+            return decoded_text
+    except (binascii.Error, UnicodeDecodeError, ValueError):
+        pass
+
+    return value
 
 
 def generate_ai_summary(stats: Dict, top_categories: List[Dict], period_days: int) -> str:
@@ -96,30 +140,57 @@ async def fetch_report_data(
     """
     Получить все данные для отчёта
     """
-    # Базовая статистика
-    stats_query = text("""
-        SELECT * FROM get_income_expense_stats(
-            :user_id, :start_date, :end_date
-        )
-    """)
-    stats_result = await db.execute(stats_query, {
-        "user_id": user_id,
-        "start_date": start_date,
-        "end_date": end_date
-    })
-    stats = stats_result.fetchone()
-    
-    # Топ категории
-    top_cat_query = text("""
-        SELECT * FROM get_top_categories(
-            :user_id, :start_date, :end_date, 10
-        )
-    """)
-    top_cat_result = await db.execute(top_cat_query, {
-        "user_id": user_id,
-        "start_date": start_date,
-        "end_date": end_date
-    })
+    # Базовая статистика (без зависимостей на SQL-функции)
+    income_stats_result = await db.execute(
+        text("""
+            SELECT
+                COALESCE(SUM(amount), 0) AS total_income,
+                COUNT(*) AS income_count
+            FROM income
+            WHERE user_id = :user_id
+              AND date >= :start_date
+              AND date <= :end_date
+              AND deleted_at IS NULL
+        """),
+        {"user_id": user_id, "start_date": start_date, "end_date": end_date}
+    )
+    total_income, income_count = income_stats_result.first() or (0, 0)
+
+    expense_stats_result = await db.execute(
+        text("""
+            SELECT
+                COALESCE(SUM(amount), 0) AS total_expense,
+                COUNT(*) AS expense_count
+            FROM expenses
+            WHERE user_id = :user_id
+              AND date >= :start_date
+              AND date <= :end_date
+              AND deleted_at IS NULL
+        """),
+        {"user_id": user_id, "start_date": start_date, "end_date": end_date}
+    )
+    total_expense, expense_count = expense_stats_result.first() or (0, 0)
+
+    balance = float(total_income or 0) - float(total_expense or 0)
+
+    # Топ категории расходов
+    top_cat_result = await db.execute(
+        text("""
+            SELECT
+                category,
+                COALESCE(SUM(amount), 0) AS total_amount,
+                COUNT(*) AS transaction_count
+            FROM expenses
+            WHERE user_id = :user_id
+              AND date >= :start_date
+              AND date <= :end_date
+              AND deleted_at IS NULL
+            GROUP BY category
+            ORDER BY total_amount DESC
+            LIMIT 10
+        """),
+        {"user_id": user_id, "start_date": start_date, "end_date": end_date}
+    )
     top_categories = top_cat_result.fetchall()
     
     # Тренд баланса - используем прямой запрос вместо функции
@@ -180,6 +251,7 @@ async def fetch_report_data(
         WHERE i.user_id = :user_id
             AND i.date >= :start_date
             AND i.date <= :end_date
+            AND i.deleted_at IS NULL
         ORDER BY date DESC
     """)
     trans_result = await db.execute(transactions_query, {
@@ -191,27 +263,27 @@ async def fetch_report_data(
     
     return {
         "stats": {
-            "total_income": float(stats[0]) if stats else 0,
-            "total_expense": float(stats[1]) if stats else 0,
-            "balance": float(stats[2]) if stats else 0,
-            "income_count": stats[3] if stats else 0,
-            "expense_count": stats[4] if stats else 0
+            "total_income": float(total_income or 0),
+            "total_expense": float(total_expense or 0),
+            "balance": float(balance),
+            "income_count": int(income_count or 0),
+            "expense_count": int(expense_count or 0)
         },
         "top_categories": [
             {
                 "category": cat[0],
                 "total_amount": float(cat[1]),
                 "transaction_count": int(cat[2]),
-                "percentage": float(cat[3])
+                "percentage": round((float(cat[1]) / float(total_expense) * 100), 1) if float(total_expense or 0) > 0 else 0.0
             }
             for cat in top_categories
         ],
         "balance_trend": [
             {
                 "date": str(t[0]),
-                "balance": float(t[1]),
-                "income": float(t[2]) if len(t) > 2 else 0,
-                "expense": float(t[3]) if len(t) > 3 else 0
+                "income": float(t[1]) if len(t) > 1 and t[1] is not None else 0.0,
+                "expense": float(t[2]) if len(t) > 2 and t[2] is not None else 0.0,
+                "balance": float(t[3]) if len(t) > 3 and t[3] is not None else 0.0
             }
             for t in trend
         ],
@@ -236,7 +308,10 @@ async def generate_pdf_via_apitemplate(
     Генерация PDF через APITemplate.io
     Возвращает URL сгенерированного PDF
     """
-    if not APITEMPLATE_API_KEY:
+    current_settings = _get_report_settings()
+    api_key = _normalize_apitemplate_api_key(current_settings.APITEMPLATE_API_KEY or "")
+
+    if not api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="APITemplate.io API key not configured"
@@ -252,11 +327,12 @@ async def generate_pdf_via_apitemplate(
     url = f"{APITEMPLATE_BASE_URL}/create-pdf?template_id={template_id}"
     
     headers = {
-        "X-API-KEY": APITEMPLATE_API_KEY,
+        "X-API-KEY": api_key,
         "Content-Type": "application/json"
     }
     
-    payload = data  # Send data directly as payload
+    # APITemplate expects substitution variables inside the top-level "data" object.
+    payload = {"data": data}
     
     logger.info(f"📄 Sending request to APITemplate.io")
     logger.info(f"   URL: {url}")
@@ -284,11 +360,31 @@ async def generate_pdf_via_apitemplate(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"PDF generation failed: {result.get('message', 'Unknown error')}"
                 )
+        except httpx.HTTPStatusError as e:
+            body = ""
+            try:
+                body = (e.response.text or "").strip()
+            except Exception:
+                body = ""
+            if body:
+                body = body[:2000] + ("\n…(truncated)…" if len(body) > 2000 else "")
+
+            logger.error(f"❌ APITemplate.io HTTP error: {str(e)}")
+            if body:
+                logger.error(f"   Response body: {body}")
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=(
+                    f"APITemplate.io request failed: {str(e)}"
+                    + (f" | body: {body}" if body else "")
+                ),
+            )
         except httpx.HTTPError as e:
             logger.error(f"❌ APITemplate.io error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"APITemplate.io request failed: {str(e)}"
+                detail=f"APITemplate.io request failed: {str(e)}",
             )
 
 
@@ -327,17 +423,33 @@ async def generate_weekly_report(
         "ai_summary": ai_summary,
         **report_data
     }
-    
+
     # Генерация PDF
-    pdf_url = await generate_pdf_via_apitemplate(WEEKLY_TEMPLATE_ID, template_data)
-    
+    current_settings = _get_report_settings()
+    pdf_url = await generate_pdf_via_apitemplate(current_settings.WEEKLY_TEMPLATE_ID, template_data)
+
+    # Сохраняем отчет в базу (чтобы он появился в miniapp)
+    saved_report = SavedReport(
+        user_id=current_user.user_id,
+        report_type="weekly",
+        title=f"Недельный отчёт {week_start.strftime('%d.%m.%Y')} - {week_end.strftime('%d.%m.%Y')}",
+        period_start=week_start,
+        period_end=week_end,
+        pdf_url=pdf_url,
+        format="pdf",
+        report_data=template_data,
+        expires_at=datetime.now() + timedelta(days=5),
+    )
+    db.add(saved_report)
+    await db.commit()
+    await db.refresh(saved_report)
+
     return {
         "report_type": "weekly",
-        "user_id": current_user.user_id,
         "start_date": week_start,
         "end_date": week_end,
         "pdf_url": pdf_url,
-        "generated_at": datetime.now()
+        "generated_at": datetime.now(),
     }
 
 
@@ -366,32 +478,10 @@ async def generate_monthly_report(
     
     # Получаем данные
     report_data = await fetch_report_data(current_user.user_id, month_start, month_end, db)
-    
-    # Получаем бюджеты
-    budget_query = text("""
-        SELECT 
-            b.category,
-            b.budget_amount,
-            COALESCE(SUM(e.amount), 0) as spent_amount,
-            b.budget_amount - COALESCE(SUM(e.amount), 0) as remaining
-        FROM budgets b
-        LEFT JOIN expenses e 
-            ON e.category = b.category 
-            AND e.user_id = b.user_id
-            AND e.date >= :start_date
-            AND e.date <= :end_date
-        WHERE b.user_id = :user_id
-            AND b.start_date <= :end_date
-            AND b.end_date >= :start_date
-        GROUP BY b.category, b.budget_amount
-    """)
-    
-    budget_result = await db.execute(budget_query, {
-        "user_id": current_user.user_id,
-        "start_date": month_start,
-        "end_date": month_end
-    })
-    budgets = budget_result.fetchall()
+
+    # Бюджеты в текущей схеме хранятся помесячно (budgets.month/budget_amount) и не привязаны к категориям.
+    # Для PDF-шаблона оставляем список бюджетов пустым, чтобы не падать на несовместимом SQL.
+    budgets = []
     
     # Генерируем AI комментарий
     period_days = (month_end - month_start).days + 1
@@ -411,29 +501,36 @@ async def generate_monthly_report(
         "generated_at": datetime.now().strftime("%d.%m.%Y %H:%M"),
         "user_name": f"{current_user.first_name} {current_user.last_name or ''}".strip(),
         "ai_summary": ai_summary,
-        "budgets": [
-            {
-                "category": b[0],
-                "budget_amount": float(b[1]),
-                "spent_amount": float(b[2]),
-                "remaining": float(b[3]),
-                "percentage": round(float(b[2]) / float(b[1]) * 100, 1) if b[1] > 0 else 0
-            }
-            for b in budgets
-        ],
+        "budgets": [],
         **report_data
     }
-    
+
     # Генерация PDF
-    pdf_url = await generate_pdf_via_apitemplate(MONTHLY_TEMPLATE_ID, template_data)
-    
+    current_settings = _get_report_settings()
+    pdf_url = await generate_pdf_via_apitemplate(current_settings.MONTHLY_TEMPLATE_ID, template_data)
+
+    # Сохраняем отчет в базу (чтобы он появился в miniapp)
+    saved_report = SavedReport(
+        user_id=current_user.user_id,
+        report_type="monthly",
+        title=f"Месячный отчёт {month_names[month]} {year}",
+        period_start=month_start,
+        period_end=month_end,
+        pdf_url=pdf_url,
+        format="pdf",
+        report_data=template_data,
+        expires_at=datetime.now() + timedelta(days=5),
+    )
+    db.add(saved_report)
+    await db.commit()
+    await db.refresh(saved_report)
+
     return {
         "report_type": "monthly",
-        "user_id": current_user.user_id,
         "start_date": month_start,
         "end_date": month_end,
         "pdf_url": pdf_url,
-        "generated_at": datetime.now()
+        "generated_at": datetime.now(),
     }
 
 
@@ -478,7 +575,8 @@ async def generate_period_report(
         template_data["transactions"] = []
     
     # Генерация PDF
-    pdf_url = await generate_pdf_via_apitemplate(PERIOD_TEMPLATE_ID, template_data)
+    current_settings = _get_report_settings()
+    pdf_url = await generate_pdf_via_apitemplate(current_settings.PERIOD_TEMPLATE_ID, template_data)
     
     # Сохраняем отчет в базу
     saved_report = SavedReport(
@@ -592,6 +690,22 @@ async def export_transactions_csv(
     })
     transactions = result.fetchall()
     
+    # Сохраняем запись в историю
+    saved_report = SavedReport(
+        user_id=current_user.user_id,
+        report_type="export",
+        title=f"CSV экспорт {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}",
+        period_start=start_date,
+        period_end=end_date,
+        pdf_url=None,
+        format="csv",
+        report_data={"start_date": start_date.isoformat(), "end_date": end_date.isoformat()},
+        expires_at=datetime.now() + timedelta(days=30),
+    )
+    db.add(saved_report)
+    await db.commit()
+    await db.refresh(saved_report)
+    
     # Создаем CSV в памяти
     output = io.StringIO()
     writer = csv.writer(output)
@@ -645,6 +759,22 @@ async def export_transactions_excel(
     
     # Получаем данные
     report_data = await fetch_report_data(current_user.user_id, start_date, end_date, db)
+    
+    # Сохраняем запись в историю
+    saved_report = SavedReport(
+        user_id=current_user.user_id,
+        report_type="export",
+        title=f"Excel отчёт {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}",
+        period_start=start_date,
+        period_end=end_date,
+        pdf_url=None,
+        format="xlsx",
+        report_data={"start_date": start_date.isoformat(), "end_date": end_date.isoformat()},
+        expires_at=datetime.now() + timedelta(days=30),
+    )
+    db.add(saved_report)
+    await db.commit()
+    await db.refresh(saved_report)
     
     # Создаем Excel файл
     wb = Workbook()
