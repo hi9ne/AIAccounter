@@ -548,7 +548,7 @@ class APIHelper {
     // ===== RECURRING PAYMENTS =====
     
     async getRecurringPayments(activeOnly = true) {
-        return this.get('/recurring/', { active_only: activeOnly });
+        return this.get('/recurring', { active_only: activeOnly });
     }
 
     async getRecurringPayment(id) {
@@ -556,7 +556,7 @@ class APIHelper {
     }
 
     async createRecurringPayment(data) {
-        return this.post('/recurring/', data);
+        return this.post('/recurring', data);
     }
 
     async updateRecurringPayment(id, data) {
