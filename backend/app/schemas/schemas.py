@@ -51,6 +51,7 @@ class User(UserBase):
     usage_type: Optional[str] = None
     created_at: Optional[datetime] = None
     last_activity: Optional[datetime] = None
+    registered_date: Optional[datetime] = None
     subscription_expires_at: Optional[datetime] = None
     is_admin: bool = False
 

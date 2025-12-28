@@ -717,7 +717,7 @@ async function recheckSubscription() {
     btn.disabled = true;
     
     try {
-        const user = await api.get('/users/me');
+        const user = await api.get('/auth/me');
         if (checkSubscription(user)) {
             showSuccess('Подписка активна!');
             haptic.success();
@@ -3638,7 +3638,10 @@ document.addEventListener('DOMContentLoaded', () => {
         debug.log('✅ Authentication successful, token set');
 
         // 2.1 Проверка подписки
-        const userProfile = await api.get('/users/me');
+        const authProfile = await api.get('/auth/me');
+        let userProfile = await api.get('/users/me');
+        // Merge auth profile into full user profile so we always have registered_date & subscription fields
+        userProfile = Object.assign({}, userProfile || {}, authProfile || {});
         if (userProfile) {
             // Сохраняем профиль в глобальном состоянии
             state.userProfile = userProfile;
