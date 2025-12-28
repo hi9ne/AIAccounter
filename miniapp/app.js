@@ -669,43 +669,42 @@ function checkSubscription(user) {
         console.log('✅ User is admin, access granted');
         return true;
     }
-    
-    // Если нет даты окончания - считаем что подписки нет
-    if (!user.subscription_expires_at) {
-        console.log('❌ No subscription_expires_at, access denied');
-        return false;
-    }
-    
-    // Парсим дату с учетом разных форматов (ISO с timezone и без)
-    let expiry;
-    try {
-        const dateStr = user.subscription_expires_at;
-        console.log('🔍 Raw subscription_expires_at:', dateStr, 'Type:', typeof dateStr);
-        
-        // Если дата в формате YYYY-MM-DD HH:MM:SS без timezone - добавляем Z для UTC
-        if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-            expiry = new Date(dateStr.replace(' ', 'T') + 'Z');
-            console.log('🔍 Parsed as UTC datetime:', expiry);
-        } else {
-            expiry = new Date(dateStr);
-            console.log('🔍 Parsed as ISO datetime:', expiry);
+
+    // If there is a subscription expiration date, validate it
+    if (user.subscription_expires_at) {
+        try {
+            const dateStr = user.subscription_expires_at;
+            let expiry = null;
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                expiry = new Date(dateStr.replace(' ', 'T') + 'Z');
+            } else {
+                expiry = new Date(dateStr);
+            }
+            if (!isNaN(expiry.getTime()) && expiry > new Date()) {
+                return true;
+            }
+        } catch (e) {
+            console.warn('⚠️ Error parsing subscription_expires_at, falling back to trial check', e);
         }
-        
-        // Проверяем, что дата валидна
-        if (isNaN(expiry.getTime())) {
-            console.error('❌ Invalid date format:', dateStr);
-            return false;
-        }
-    } catch (e) {
-        console.error('❌ Error parsing date:', e);
-        return false;
     }
-    
-    const now = new Date();
-    const isValid = expiry > now;
-    console.log('📅 Subscription expires:', expiry.toISOString(), 'Now:', now.toISOString(), 'Valid:', isValid);
-    
-    return isValid;
+
+    // Fallback: allow 3-day trial based on registered_date if present
+    if (user.registered_date) {
+        try {
+            const rd = new Date(user.registered_date);
+            const threeDaysAgo = new Date(Date.now() - (3 * 24 * 60 * 60 * 1000));
+            if (!isNaN(rd.getTime()) && rd >= threeDaysAgo) {
+                console.log('✅ Within 3-day trial based on registered_date');
+                return true;
+            }
+        } catch (e) {
+            console.warn('⚠️ Error parsing registered_date', e);
+        }
+    }
+
+    // No valid subscription or trial
+    console.log('❌ No valid subscription or trial period found');
+    return false;
 }
 
 // Повторная проверка подписки (для Paywall)
@@ -2436,6 +2435,33 @@ function updateProfileUI(data) {
     if (profileUsername) {
         profileUsername.textContent = state.userName || 'Пользователь';
     }
+
+    // Show subscription info (if available)
+    try {
+        const subEl = document.getElementById('profile-subscription');
+        if (subEl) {
+            const up = state.userProfile || {};
+            let text = 'Подписка: отсутствует';
+            if (up.subscription_expires_at) {
+                const d = new Date(up.subscription_expires_at);
+                if (!isNaN(d.getTime())) {
+                    text = 'Подписка активна до ' + d.toLocaleString();
+                }
+            } else if (up.registered_date) {
+                // if within trial - show trial expiry
+                const rd = new Date(up.registered_date);
+                if (!isNaN(rd.getTime())) {
+                    const trialEnd = new Date(rd.getTime() + 3 * 24 * 60 * 60 * 1000);
+                    if (trialEnd > new Date()) {
+                        text = 'Триальный период до ' + trialEnd.toLocaleString();
+                    }
+                }
+            }
+            subEl.textContent = text;
+        }
+    } catch (e) {
+        console.warn('Failed to update subscription UI', e);
+    }
     
     const profileLevelName = document.getElementById('profile-level-name');
     if (profileLevelName) {
@@ -3614,6 +3640,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2.1 Проверка подписки
         const userProfile = await api.get('/users/me');
         if (userProfile) {
+            // Сохраняем профиль в глобальном состоянии
+            state.userProfile = userProfile;
+
             // Сохраняем статус админа
             state.isAdmin = userProfile.is_admin;
             debug.log('👑 Admin status set:', state.isAdmin);

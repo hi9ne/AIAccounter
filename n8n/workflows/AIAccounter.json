@@ -5,10 +5,10 @@
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "position": [
-        16,
-        -1640
+        -688,
+        1816
       ],
-      "id": "fbea2197-422e-4696-bda8-9296580641d4",
+      "id": "634f2ca0-d1af-4fc5-84fb-d67810306fbf",
       "name": "Error Trigger"
     },
     {
@@ -18,10 +18,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        240,
-        -1640
+        -464,
+        1816
       ],
-      "id": "399c5261-ee7c-4876-b83f-91cc1d213d38",
+      "id": "112f9c9a-a4c8-4c0e-8973-c15f2ee9ffe8",
       "name": "Process Error"
     },
     {
@@ -50,10 +50,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        464,
-        -1640
+        -240,
+        1816
       ],
-      "id": "cfc23052-2bad-43c5-a41b-f9a2ee44747e",
+      "id": "595bdc39-411f-495b-9204-17dde8dbd32b",
       "name": "Should Notify User?"
     },
     {
@@ -67,16 +67,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        688,
-        -1736
+        -16,
+        1720
       ],
-      "id": "a4d13282-538b-47ea-b141-eaaaebe14688",
+      "id": "87eff91b-4ce7-4ae7-b172-c5f6b7d8b0c4",
       "name": "Notify User About Error",
       "webhookId": "8bd2183a-8af3-46ad-80c8-007651da20d4",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -92,16 +92,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        688,
-        -1544
+        -16,
+        1912
       ],
-      "id": "654350c6-ce91-4ae3-9e29-144bddd824d0",
+      "id": "fb17cdcc-be7f-4eb3-bfe2-6f0b656c9b5f",
       "name": "Notify Admin",
       "webhookId": "10474645-7335-4445-b1ff-6b65e7e2b12b",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -115,37 +115,37 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        16,
-        -2768
+        -688,
+        240
       ],
-      "id": "0b15f4dc-5fad-41af-99f6-3bad1c71b656",
+      "id": "c40aa2de-d325-408a-831a-9f8d5b5eeec1",
       "name": "Telegram Trigger",
       "webhookId": "7d5db243-2146-45ba-a9b7-d0d743f58df0",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=INSERT INTO users (user_id, telegram_chat_id, first_name, registered_date, last_activity, is_active, registration_source)\nVALUES (\n  {{ $json.message.from.id }},\n  {{ $json.message.chat.id }},\n  '{{ $json.message.from.first_name || \"User\" }}',\n  NOW(),\n  NOW(),\n  true,\n  'telegram'\n)\nON CONFLICT (user_id) DO UPDATE SET\n  first_name = EXCLUDED.first_name,\n  last_activity = NOW()\nRETURNING user_id, onboarding_completed, onboarding_step, preferred_currency, usage_type, subscription_expires_at, is_admin",
+        "query": "=INSERT INTO users (user_id, telegram_chat_id, first_name, registered_date, last_activity, is_active, registration_source, subscription_expires_at)\nVALUES (\n  {{ $json.message.from.id }},\n  {{ $json.message.chat.id }},\n  '{{ $json.message.from.first_name || \"User\" }}',\n  NOW(),\n  NOW(),\n  true,\n  'telegram',\n  NOW() + INTERVAL '3 days'\n)\nON CONFLICT (user_id) DO UPDATE SET\n  first_name = EXCLUDED.first_name,\n  last_activity = NOW()\nRETURNING user_id, onboarding_completed, onboarding_step, preferred_currency, usage_type, subscription_expires_at, registered_date, is_admin",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        240,
-        -2768
+        -464,
+        240
       ],
-      "id": "97b310d2-206b-4eaa-8990-9695e589f26d",
+      "id": "acb9dfb6-6120-4c1b-9f23-5e2fac9e2705",
       "name": "Ensure User",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -169,7 +169,7 @@
             },
             {
               "id": "has-subscription",
-              "leftValue": "={{ $json.subscription_expires_at ? new Date($json.subscription_expires_at) > new Date() : false }}",
+              "leftValue": "={{ $json.subscription_expires_at ? new Date($json.subscription_expires_at) > new Date() : ($json.registered_date ? new Date($json.registered_date) > new Date(Date.now() - (3*24*60*60*1000)) : false) }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -184,10 +184,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        350,
-        -2768
+        -688,
+        664
       ],
-      "id": "check-subscription-node",
+      "id": "a0889406-1fce-4378-a063-5945eeecc269",
       "name": "Check Subscription"
     },
     {
@@ -201,15 +201,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        350,
-        -2600
+        -688,
+        888
       ],
-      "id": "subscription-expired-msg",
+      "id": "b33bdccb-4290-407b-80c2-d06967fcd7f9",
       "name": "Send Subscription Expired",
+      "webhookId": "cce72062-2c51-41cd-97a3-65c2a3e73ae7",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -270,10 +271,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        464,
-        -2768
+        -240,
+        240
       ],
-      "id": "afab932c-1fa0-48e1-831b-a23856e6c5c7",
+      "id": "d5c356d6-6907-4148-9d41-25b310328232",
       "name": "Check Onboarding"
     },
     {
@@ -283,10 +284,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        -2960
+        -16,
+        48
       ],
-      "id": "f613f70d-916b-44bf-9049-2a2dfd6b7101",
+      "id": "afc9f21a-4e1f-476f-bcea-1ce1d52b79c4",
       "name": "Onboarding Logic"
     },
     {
@@ -298,15 +299,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        912,
-        -2960
+        208,
+        48
       ],
-      "id": "50e9f77c-c8eb-4075-84d3-7ce3e4bf577e",
+      "id": "0687addc-e338-4753-aca8-5bf286249684",
       "name": "Update Onboarding",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -321,16 +322,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1136,
-        -2960
+        432,
+        48
       ],
-      "id": "4be46c00-da04-43f7-a5a6-657f38f8755e",
+      "id": "6be62d7f-321c-4797-b803-eedf5e6910d9",
       "name": "Send Onboarding",
       "webhookId": "9d2d31e7-e197-4365-8986-51bee248c894",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -393,10 +394,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        688,
-        -2672
+        -16,
+        336
       ],
-      "id": "d60a8a04-c4d7-49d9-8dc6-215b5000cde4",
+      "id": "afc5cbc7-4699-41dd-ad93-2fd62ccff34e",
       "name": "Message Type"
     },
     {
@@ -408,16 +409,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        912,
-        -2768
+        208,
+        240
       ],
-      "id": "98a45241-5d2e-423a-b726-0a05978385a9",
+      "id": "4f978499-19ad-4f4d-8e61-07809a2a9f3c",
       "name": "Download Voice",
       "webhookId": "ebbba00f-fb0b-4458-ade5-3e826582610f",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -430,14 +431,14 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        1136,
-        -2768
+        432,
+        240
       ],
-      "id": "1d5b90f0-7927-4847-841c-f50c35c6c745",
+      "id": "a1a21903-abb0-4d2c-96e0-8101afee1ad2",
       "name": "Whisper STT",
       "credentials": {
         "openAiApi": {
-          "id": "1T30bcIe2tfs32N6",
+          "id": "sFZBDleS9sCdlRLI",
           "name": "OpenAi account"
         }
       }
@@ -477,10 +478,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1360,
-        -2768
+        656,
+        240
       ],
-      "id": "39520000-c916-4f20-93f4-9b47368517f1",
+      "id": "67b4e73b-763a-40ce-96e1-503e405996b6",
       "name": "Set Voice Data"
     },
     {
@@ -518,10 +519,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1360,
-        -2576
+        656,
+        432
       ],
-      "id": "d6689a9a-3354-4aa3-baf7-8339ab7ca34a",
+      "id": "1f9eff6a-c267-45ee-89e2-146bd8480b2c",
       "name": "Set Text Data"
     },
     {
@@ -536,10 +537,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        2600,
-        -2672
+        1960,
+        336
       ],
-      "id": "60785432-7e17-4846-a0fc-ea74b4a0fc36",
+      "id": "854a6726-ff8d-4a77-bbd4-f9bb4047c3c3",
       "name": "AI Agent"
     },
     {
@@ -554,16 +555,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        3968,
-        -2672
+        3392,
+        336
       ],
-      "id": "4fdb4a9a-b080-4917-ad4f-3c2881e38fee",
+      "id": "2800fc37-9159-4c72-81b5-88ceecc8e635",
       "name": "Send Reply",
       "webhookId": "9c3b0626-7240-4ad1-a03e-14cee62b4802",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -582,14 +583,14 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1584,
-        -2448
+        880,
+        560
       ],
-      "id": "eda30001-0c26-4cf3-b7f0-062a0d1b4c5d",
+      "id": "4e4cc6ef-dc17-4841-8dff-8f7348baac07",
       "name": "GPT-4.1 Mini",
       "credentials": {
         "openAiApi": {
-          "id": "1T30bcIe2tfs32N6",
+          "id": "sFZBDleS9sCdlRLI",
           "name": "OpenAi account"
         }
       }
@@ -603,15 +604,15 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        1712,
-        -2448
+        1008,
+        560
       ],
-      "id": "3e7a041f-079e-4f1e-9bb3-01586d74e696",
+      "id": "1de81929-23f4-4a5b-bcff-2cfe85e172a5",
       "name": "Chat Memory",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -626,15 +627,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1840,
-        -2448
+        1136,
+        560
       ],
-      "id": "9f7a841e-06af-449f-8dec-de19082057bc",
+      "id": "7a323154-cb1c-44a9-92b3-b3e1302ae458",
       "name": "Get_Expenses",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -649,15 +650,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        1968,
-        -2448
+        1264,
+        560
       ],
-      "id": "f38d8c3a-73be-46e4-a172-533066ec4bf9",
+      "id": "fe0f74b0-c1b4-42e2-b3b2-5ff928c24da7",
       "name": "Get_Income",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -672,15 +673,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2096,
-        -2448
+        1392,
+        560
       ],
-      "id": "ddc6a2c6-3238-4a34-8b29-17d69682a7ca",
+      "id": "3e16550e-eb30-4ed7-b0aa-35f407226e46",
       "name": "Create_Expense",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -695,15 +696,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2224,
-        -2448
+        1520,
+        560
       ],
-      "id": "a0a155b1-870a-4886-b883-84545149f66e",
+      "id": "5a6b88ec-65db-4111-a012-cd1c1ec4baa4",
       "name": "Create_Income",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -718,15 +719,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2352,
-        -2448
+        1648,
+        560
       ],
-      "id": "008e895b-7cde-4c2e-a0f1-d344ddf70e49",
+      "id": "2705dd09-c074-460c-813b-2153c0816d9c",
       "name": "Delete_Expense",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -741,15 +742,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        2480,
-        -2448
+        1776,
+        560
       ],
-      "id": "9959bea2-807c-45d8-ab3c-1f4fcf3ef610",
+      "id": "03bc0243-fcf5-4ff1-96a6-5d035a76ed1c",
       "name": "Delete_Income",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -758,10 +759,10 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        2608,
-        -2448
+        1904,
+        560
       ],
-      "id": "381a70be-12a5-4924-8179-f98f63d2b22a",
+      "id": "9a2e68f4-2859-4739-bb51-5821ada92069",
       "name": "Calculator"
     },
     {
@@ -777,10 +778,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        2736,
-        -2448
+        2032,
+        560
       ],
-      "id": "86f9cd3a-4343-47af-ab01-5e6e31c3b614",
+      "id": "43d6242f-e17b-4598-a854-e47addc91dae",
       "name": "Report_Daily"
     },
     {
@@ -796,10 +797,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        2864,
-        -2448
+        2160,
+        560
       ],
-      "id": "766d723b-e710-47a3-82fd-79c689c05676",
+      "id": "fab5ad22-afbd-4b8c-b2d0-3cd2b9445b9b",
       "name": "Report_Weekly"
     },
     {
@@ -815,10 +816,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        2992,
-        -2448
+        2288,
+        560
       ],
-      "id": "c6ac2602-9b4c-4ae6-92ab-d17a831826b6",
+      "id": "f74d9c97-a3c1-429a-89cf-d9b85fcb228f",
       "name": "Report_Monthly"
     },
     {
@@ -834,10 +835,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        3120,
-        -2448
+        2416,
+        560
       ],
-      "id": "d368bdda-370f-40b8-ba37-e17f5604fb90",
+      "id": "0df07f18-43da-4ba3-bbda-fac4b0b15c30",
       "name": "Report_Period"
     },
     {
@@ -853,10 +854,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        3248,
-        -2448
+        2544,
+        560
       ],
-      "id": "177b8dfa-ad24-4f4d-9fe3-0493d6149b25",
+      "id": "8bafea01-1bb9-4b10-8c31-1aa4db962732",
       "name": "Category_Manager"
     },
     {
@@ -872,10 +873,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        3376,
-        -2448
+        2672,
+        560
       ],
-      "id": "c7337502-0043-496d-82cc-99eec42d2708",
+      "id": "2924ad14-e7fa-4be6-a6da-95a07f667dc7",
       "name": "Debt_Manager"
     },
     {
@@ -891,10 +892,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        3504,
-        -2448
+        2800,
+        560
       ],
-      "id": "a228d1a3-4b98-4cd8-a5ac-9b74e007cc8f",
+      "id": "ce02caea-86f6-40aa-9ae0-a4675369a0c9",
       "name": "Recurring_Manager"
     },
     {
@@ -910,10 +911,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        3632,
-        -2448
+        2928,
+        560
       ],
-      "id": "f1f1e0bc-ae01-404f-b596-9d05843eee4c",
+      "id": "8b8f3cdd-ee00-4cb8-9f5d-5a85b3b4c04e",
       "name": "Budget_Manager"
     },
     {
@@ -929,10 +930,10 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        3888,
-        -2448
+        3056,
+        560
       ],
-      "id": "goals-manager-tool-001",
+      "id": "b9f66f6c-75f4-4a8f-ade8-8b3abd6437aa",
       "name": "Goals_Manager"
     },
     {
@@ -946,15 +947,15 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        3760,
-        -2448
+        3184,
+        560
       ],
-      "id": "d90634bd-8204-459a-9174-eddb629fd44d",
+      "id": "e6e2a008-a71f-4819-bd7a-15a6d60bb512",
       "name": "Search_Transactions",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -968,10 +969,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        16,
-        -2152
+        -688,
+        1304
       ],
-      "id": "fad81420-b082-4d1d-a1cc-c72b0002ee2d",
+      "id": "4b497b49-0053-420b-9a06-d65d1e59adb3",
       "name": "Categories Webhook",
       "webhookId": "categories-webhook-id"
     },
@@ -1055,10 +1056,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        240,
-        -2168
+        -464,
+        1288
       ],
-      "id": "af1032c7-486b-41eb-99b8-bcd837d49893",
+      "id": "2818f2b5-ab79-49e3-b991-ee7e51e0c72b",
       "name": "Route Category Action"
     },
     {
@@ -1070,15 +1071,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -2344
+        -240,
+        1112
       ],
-      "id": "67803bf9-e033-46de-8b12-a4c40ec4495d",
+      "id": "8f929582-9825-4db1-a492-7b589e613595",
       "name": "Get Categories",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1091,15 +1092,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -2152
+        -240,
+        1304
       ],
-      "id": "7caebde3-92b6-416b-8ec0-d56c5e394ad6",
+      "id": "822d0c13-cc3a-493d-b016-66c8f332f12a",
       "name": "Add Category",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1112,15 +1113,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -1960
+        -240,
+        1496
       ],
-      "id": "1cc40132-2f56-4ab6-b0a9-00e36f026ae6",
+      "id": "d4977e2a-a403-43b5-8d64-6d367c613ae5",
       "name": "Delete Category",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1131,10 +1132,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        -2152
+        -16,
+        1304
       ],
-      "id": "f7ff7c50-bf1d-465b-b9cd-3c9a47a1aeda",
+      "id": "20a18ccf-c3d6-410e-baff-d41152664239",
       "name": "Format Category Response"
     },
     {
@@ -1146,10 +1147,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        912,
-        -2152
+        208,
+        1304
       ],
-      "id": "03480f91-443e-46df-a313-c5212cec0aad",
+      "id": "cffb04e0-24e2-4487-acc6-b197a590b087",
       "name": "Respond Categories"
     },
     {
@@ -1161,10 +1162,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -64,
-        -2400
+        -784,
+        1032
       ],
-      "id": "a8224cb4-7ec9-4dd2-b41a-1c08bec32ab3",
+      "id": "2b2ca9db-7b00-41dd-b143-8def0d7c4996",
       "name": "Sticky Note"
     },
     {
@@ -1177,10 +1178,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        16,
-        -936
+        -688,
+        2520
       ],
-      "id": "130c257c-467a-49ff-9ff4-c1a5eeac7ab4",
+      "id": "b78076a0-872e-4335-a3ff-82b54718947a",
       "name": "Debts Webhook",
       "webhookId": "debts-webhook-id"
     },
@@ -1310,10 +1311,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        240,
-        -984
+        -464,
+        2472
       ],
-      "id": "28e36868-4d05-4176-a842-b7660f306e9c",
+      "id": "dd0b2cd7-b3ca-4e8a-a961-169b432311c9",
       "name": "Route Debt Action"
     },
     {
@@ -1325,15 +1326,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -1320
+        -240,
+        2136
       ],
-      "id": "58572148-5247-40ba-820c-09dcf076491f",
+      "id": "4ea65c8e-4f00-43b7-acc5-2db1ce5c1e20",
       "name": "Get Debts",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1346,15 +1347,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -1128
+        -240,
+        2328
       ],
-      "id": "b6c76e11-6c3d-45d5-94e4-18147557236e",
+      "id": "1d7b262c-3cea-4540-aea5-f8c09dd96712",
       "name": "Add Debt",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1367,15 +1368,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -936
+        -240,
+        2520
       ],
-      "id": "3ee4038f-eb64-44d5-bc36-0c18d08f4fb4",
+      "id": "1753f83f-c3e8-4f86-890a-c67e1cafe49d",
       "name": "Pay Debt",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1388,15 +1389,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -744
+        -240,
+        2712
       ],
-      "id": "6bf0d891-4ae5-4ce5-9345-3668aaf5efab",
+      "id": "07fa9721-ffd2-4af0-9f09-5106b6722612",
       "name": "Settle Debt",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1409,15 +1410,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -552
+        -240,
+        2904
       ],
-      "id": "79e23099-3f54-4a30-9f9c-8831d8a82a00",
+      "id": "7f7ac21c-ba58-4c24-b391-c08e56d38d55",
       "name": "Delete Debt",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1428,10 +1429,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        -936
+        -16,
+        2520
       ],
-      "id": "84d059ac-2b06-47d3-a3ae-4728419300cd",
+      "id": "2b2e0ff7-08e6-42a6-ac39-f6454e4330d2",
       "name": "Format Debt Response"
     },
     {
@@ -1443,10 +1444,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        912,
-        -936
+        208,
+        2520
       ],
-      "id": "35671208-0b93-43bc-8c90-24da9144fa91",
+      "id": "d505b668-d0ac-4e73-8076-8ae004539e72",
       "name": "Respond Debts"
     },
     {
@@ -1459,10 +1460,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        16,
-        56
+        -688,
+        3512
       ],
-      "id": "aba997cb-0214-4f6b-be35-d0afca1d345e",
+      "id": "6ce6cb6c-3bc2-40a2-ae53-0ad837fcdef6",
       "name": "Recurring Webhook",
       "webhookId": "recurring-webhook-id"
     },
@@ -1592,10 +1593,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        240,
-        8
+        -464,
+        3464
       ],
-      "id": "b82e5660-94ec-4378-8a90-c18aef62ffd1",
+      "id": "e5df1be5-27b9-4ee5-beaf-7261e0a6d6dc",
       "name": "Route Recurring Action"
     },
     {
@@ -1607,15 +1608,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -328
+        -240,
+        3128
       ],
-      "id": "5bf495fb-708d-463b-9de2-50c419fb04e5",
+      "id": "a6b74999-83aa-4b31-9fcb-c6e255da1ee5",
       "name": "Get Recurring",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1628,15 +1629,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        -136
+        -240,
+        3320
       ],
-      "id": "21605597-e355-45a2-8339-7df2e483d856",
+      "id": "365edffd-517a-42fd-91a3-4a429b288ec7",
       "name": "Add Recurring",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1649,15 +1650,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        56
+        -240,
+        3512
       ],
-      "id": "d14a0e60-e7e2-4a2f-8ed7-5676060b4892",
+      "id": "8e603ce2-18c8-48f9-96d9-549e61bbb779",
       "name": "Pay Recurring",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1670,15 +1671,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        248
+        -240,
+        3704
       ],
-      "id": "8c71bfbd-5f5d-4f56-b203-b988371d784c",
+      "id": "d0b51f48-1f1f-4698-a428-164d053e66be",
       "name": "Pause Recurring",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1691,15 +1692,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        440
+        -240,
+        3896
       ],
-      "id": "c45146af-3496-4611-984d-44cbb919cc3c",
+      "id": "09e98b7e-0906-4070-bbbc-46f886f5b492",
       "name": "Delete Recurring",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1710,10 +1711,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        56
+        -16,
+        3512
       ],
-      "id": "bdcf9db9-c2cb-439d-bac0-b1544e42afd0",
+      "id": "2bbc1677-cf38-4acf-b62d-7e16cf0c65a6",
       "name": "Format Recurring Response"
     },
     {
@@ -1725,10 +1726,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        912,
-        56
+        208,
+        3512
       ],
-      "id": "f3516f8b-0378-4daf-b48b-d981b5bf561d",
+      "id": "b186a7a7-2bc8-4d1c-a684-3934b195f25d",
       "name": "Respond Recurring"
     },
     {
@@ -1741,10 +1742,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        16,
-        952
+        -688,
+        4408
       ],
-      "id": "f60f5ec7-1cdc-495c-ae75-846fad2bd734",
+      "id": "e545e42c-e7ac-4384-a5d3-d2b0986c6281",
       "name": "Settings Webhook",
       "webhookId": "settings-webhook-id"
     },
@@ -1851,10 +1852,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        240,
-        920
+        -464,
+        4376
       ],
-      "id": "bd389681-1e88-4bc2-8d0f-44336c87dd61",
+      "id": "9c236334-e544-48ab-a7e2-9a38f263b5f8",
       "name": "Route Settings Action"
     },
     {
@@ -1866,15 +1867,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        664
+        -240,
+        4120
       ],
-      "id": "05f42809-3933-4626-9513-d547431947b0",
+      "id": "9366e2ef-e5cd-4622-bd16-24c073bae0ba",
       "name": "Get Settings",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1887,15 +1888,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        856
+        -240,
+        4312
       ],
-      "id": "0803c976-5e4c-40a0-90d6-6e149f65510b",
+      "id": "feb5735f-4bf4-4f6e-827f-c84a3acd8a0b",
       "name": "Set Mode",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1908,15 +1909,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        1048
+        -240,
+        4504
       ],
-      "id": "58ad7db3-a892-4e41-afcd-069b8c58d145",
+      "id": "dc7308c3-6f60-4f68-b8ae-25253d820288",
       "name": "Set Currency",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1929,15 +1930,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        1240
+        -240,
+        4696
       ],
-      "id": "ab0071a0-2bd5-430f-85c6-3bcce528cb59",
+      "id": "e77a97ff-38ab-4421-b3bd-4f06b486c93e",
       "name": "Set Budget",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -1948,10 +1949,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        952
+        -16,
+        4408
       ],
-      "id": "f07d2003-d5da-4bf7-aca0-c3a8f3988590",
+      "id": "0f3fc682-80fa-4409-a72a-1b5dcb09d32e",
       "name": "Format Settings Response"
     },
     {
@@ -1963,10 +1964,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        912,
-        952
+        208,
+        4408
       ],
-      "id": "b8dfd5c8-d61f-4021-8a5c-6fd5f9dcc8de",
+      "id": "36429b57-444d-4119-85d1-4b16b8741fca",
       "name": "Respond Settings"
     },
     {
@@ -1979,10 +1980,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        16,
-        1560
+        -688,
+        5016
       ],
-      "id": "baa47e60-7f8a-4b9a-830d-b1b8f5664333",
+      "id": "56e33d31-0a66-4b01-9bad-c8e6d3860294",
       "name": "Budget Webhook",
       "webhookId": "budget-webhook-id"
     },
@@ -2043,10 +2044,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        240,
-        1560
+        -464,
+        5016
       ],
-      "id": "5afee978-ffd7-4c0f-a373-6e5f2d87e048",
+      "id": "9819f09a-ff29-4a4d-809b-32ac5ebb2caf",
       "name": "Route Budget Action"
     },
     {
@@ -2058,15 +2059,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        1464
+        -240,
+        4920
       ],
-      "id": "e6f0fff4-a0c4-423f-a465-81146a801d1c",
+      "id": "7c6666c3-b672-45b5-9f18-3b0273796b3f",
       "name": "Get Budget",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2079,15 +2080,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        1656
+        -240,
+        5112
       ],
-      "id": "6c7419d8-ff49-4165-aed9-1759a4658a02",
+      "id": "ddaa6d65-7762-435b-b877-0b079863718f",
       "name": "Set Budget New",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2098,10 +2099,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        1560
+        -16,
+        5016
       ],
-      "id": "01ac0e11-3b62-434b-9ca4-9be5aa1ca9a4",
+      "id": "23d465a6-bec7-4402-b569-f768bda87826",
       "name": "Format Budget Response"
     },
     {
@@ -2113,10 +2114,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        912,
-        1560
+        208,
+        5016
       ],
-      "id": "68a99268-abd3-4ad8-a61b-70207fa54ca7",
+      "id": "32f0062b-f8a6-4d60-b66b-a07b072e590a",
       "name": "Respond Budget"
     },
     {
@@ -2129,10 +2130,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        16,
-        2200
+        -688,
+        5816
       ],
-      "id": "goals-webhook-001",
+      "id": "803c5938-b441-439d-91d6-577fc2b82255",
       "name": "Goals Webhook",
       "webhookId": "goals-webhook-id"
     },
@@ -2285,10 +2286,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        240,
-        2200
+        -464,
+        5752
       ],
-      "id": "goals-route-action-001",
+      "id": "ab487db5-00f5-4871-8303-00b039890c27",
       "name": "Route Goal Action"
     },
     {
@@ -2300,15 +2301,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        1880
+        -240,
+        5336
       ],
-      "id": "goals-get-001",
+      "id": "4454fcc9-4d37-43d8-aed5-02c5d9521b3c",
       "name": "Get Goals",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2321,15 +2322,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        2072
+        -240,
+        5528
       ],
-      "id": "goals-add-001",
+      "id": "af718b69-c2e7-4ca5-99b8-48ededbc59d4",
       "name": "Add Goal",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2342,15 +2343,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        2264
+        -240,
+        5720
       ],
-      "id": "goals-deposit-001",
+      "id": "8c02c49f-1e66-49d7-adaa-4841b20f3977",
       "name": "Deposit Goal",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2363,15 +2364,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        2456
+        -240,
+        5912
       ],
-      "id": "goals-withdraw-001",
+      "id": "c9e40b8d-45f5-4a1a-baca-ea938e142eb6",
       "name": "Withdraw Goal",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2384,15 +2385,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        2648
+        -240,
+        6104
       ],
-      "id": "goals-complete-001",
+      "id": "f7546f79-8547-4e88-9d14-4a9e379d83e2",
       "name": "Complete Goal",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2405,15 +2406,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        464,
-        2840
+        -240,
+        6296
       ],
-      "id": "goals-delete-001",
+      "id": "0e04d892-e9a7-440d-aeff-fa8005adb3dd",
       "name": "Delete Goal",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -2424,10 +2425,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        688,
-        2200
+        -16,
+        5816
       ],
-      "id": "goals-format-001",
+      "id": "9e77a04c-f8b1-41df-be1f-7724f5743bba",
       "name": "Format Goal Response"
     },
     {
@@ -2439,10 +2440,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        912,
-        2200
+        208,
+        5816
       ],
-      "id": "goals-respond-001",
+      "id": "d2ee2514-3df9-4e2c-87be-33d611f0d0c8",
       "name": "Respond Goals"
     }
   ],
@@ -2507,7 +2508,25 @@
       "main": [
         [
           {
+            "node": "Check Subscription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Subscription": {
+      "main": [
+        [
+          {
             "node": "Check Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Subscription Expired",
             "type": "main",
             "index": 0
           }
@@ -3445,6 +3464,7 @@
   },
   "pinData": {},
   "meta": {
-    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1fe4e639ffc46975e8f90de7e16a7bfebd538687c60791a8ceecf7b15dc9fb18"
   }
 }

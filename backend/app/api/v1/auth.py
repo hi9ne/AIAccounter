@@ -2,7 +2,7 @@
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 
 from ...database import get_db
@@ -41,6 +41,8 @@ async def telegram_auth(
                 last_name=auth_data.last_name,
                 language_code=auth_data.language_code,
                 is_active=True,
+                registered_date=datetime.utcnow(),
+                subscription_expires_at=(datetime.utcnow() + timedelta(days=3))
             )
             db.add(user)
             await db.commit()
@@ -104,6 +106,7 @@ async def get_current_user_info(
         "language_code": current_user.language_code,
         "is_active": current_user.is_active,
         "subscription_expires_at": current_user.subscription_expires_at,
+        "registered_date": current_user.registered_date,
         "is_admin": current_user.is_admin
     }
 

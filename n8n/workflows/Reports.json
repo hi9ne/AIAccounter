@@ -10,10 +10,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -1504,
-        624
+        224,
+        576
       ],
-      "id": "a7fd5923-87cd-40bd-ab65-ebcf3ce50f55",
+      "id": "169ac2e0-80e2-4842-9d8b-28e406e7b281",
       "name": "Reports Webhook",
       "webhookId": "reports-webhook-id"
     },
@@ -64,10 +64,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1280,
-        624
+        448,
+        576
       ],
-      "id": "4c63492e-59a5-4c22-a6b2-53c4d6bd980e",
+      "id": "f864c1ad-6156-454b-b2dc-422a4be9f5c6",
       "name": "Normalize Webhook Data"
     },
     {
@@ -84,10 +84,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1728,
-        48
+        0,
+        0
       ],
-      "id": "d3382f64-b4ef-4b78-ad0a-d29c94a1f3ef",
+      "id": "4ccf5a72-0e83-4eb4-b7dc-64681b3e78ac",
       "name": "Daily 21:00"
     },
     {
@@ -104,10 +104,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1728,
-        240
+        0,
+        192
       ],
-      "id": "86b11487-670f-40c5-983d-56f6f9641517",
+      "id": "beae34d4-9c84-422d-8052-450df5b94e0d",
       "name": "Weekly Sunday 10:00"
     },
     {
@@ -124,10 +124,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1728,
-        432
+        0,
+        384
       ],
-      "id": "18f5d87a-08bd-411f-afcf-f993c301653f",
+      "id": "ab243ce4-e725-41f4-b772-7724849d4990",
       "name": "Monthly 1st 10:00"
     },
     {
@@ -139,15 +139,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1504,
-        48
+        224,
+        0
       ],
-      "id": "f2df28e2-e8a3-43f4-909c-bab0c058b3ce",
+      "id": "b2e0542f-af48-485b-9141-efa16fb4dc1e",
       "name": "Get Users Daily",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -160,15 +160,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1504,
-        240
+        224,
+        192
       ],
-      "id": "c20e3183-3978-4ee2-8711-a01233d89650",
+      "id": "a2ad29f6-ed20-41df-b09d-ef32f194f10e",
       "name": "Get Users Weekly",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -181,15 +181,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1504,
-        432
+        224,
+        384
       ],
-      "id": "90e0c170-106d-4710-84cd-9abd6204a9f5",
+      "id": "55e5ee78-598c-4ec6-870e-e6f21a447d73",
       "name": "Get Users Monthly",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -240,10 +240,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1280,
-        48
+        448,
+        0
       ],
-      "id": "eff6734f-a122-4023-bc48-41b76b3d5f71",
+      "id": "256ca65f-e03c-4112-af1e-4acf4b398db8",
       "name": "Set Daily"
     },
     {
@@ -293,10 +293,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1280,
-        240
+        448,
+        192
       ],
-      "id": "579ed6e2-c244-4ba1-ab18-3d538db2f03a",
+      "id": "95a2df3b-a3b4-4134-a7ae-9314752bffbb",
       "name": "Set Weekly"
     },
     {
@@ -346,10 +346,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1280,
-        432
+        448,
+        384
       ],
-      "id": "f20c113e-b560-47b4-8205-ab533bc47c7e",
+      "id": "72ea7b80-2d66-48c5-9861-e7277bff03cf",
       "name": "Set Monthly"
     },
     {
@@ -455,10 +455,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        -1056,
-        304
+        672,
+        256
       ],
-      "id": "ce78d3a7-e233-43a4-b9a5-68882b444bab",
+      "id": "53e0d24c-c1c8-4a51-8bbe-560cca30b067",
       "name": "Report Router"
     },
     {
@@ -470,15 +470,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -832,
-        48
+        896,
+        0
       ],
-      "id": "cb5eb1f5-b03c-4453-b132-eb6b7a7489ab",
+      "id": "67b2f781-22ce-4c55-bb1e-ebe778f44fcf",
       "name": "Get Daily Data",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -491,15 +491,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -832,
-        240
+        896,
+        192
       ],
-      "id": "569bf51a-589e-4cff-a088-3294de28be7c",
+      "id": "7a666ee0-3009-4d17-a9e2-055b3b9f9276",
       "name": "Get Weekly Data",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -512,15 +512,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -832,
-        432
+        896,
+        384
       ],
-      "id": "fafe7e3a-043e-4db8-919e-bbf9c7feb1d9",
+      "id": "3e04cc82-b555-4265-b29c-7c7dcaaab2be",
       "name": "Get Monthly Data",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -533,15 +533,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -832,
-        624
+        896,
+        576
       ],
-      "id": "f96076bd-c939-4c19-b0de-c5a36a34ac4c",
+      "id": "f627abb6-133b-4c2f-a6cf-843a3b35c6fa",
       "name": "Get Period Data",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -552,10 +552,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -608,
-        48
+        1120,
+        0
       ],
-      "id": "7a1ca3a7-32ae-4c24-9364-0ae909a44b1f",
+      "id": "02410dad-f3e7-4fab-a289-0bf2bb05d25d",
       "name": "Format Daily"
     },
     {
@@ -565,10 +565,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -608,
-        240
+        1120,
+        192
       ],
-      "id": "a4f61a87-e961-41ef-bcc5-11dc1dbdc8d1",
+      "id": "b5a7eccd-cec4-4535-9a62-522ace40ec06",
       "name": "Format Weekly"
     },
     {
@@ -578,10 +578,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -608,
-        432
+        1120,
+        384
       ],
-      "id": "60967632-3696-491f-8f35-75cbdad45b46",
+      "id": "c359ace5-7925-42db-b48f-e6ea5f740569",
       "name": "Format Monthly"
     },
     {
@@ -591,10 +591,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -608,
-        624
+        1120,
+        576
       ],
-      "id": "0e4166b3-cea7-431f-b39f-5db5f2687410",
+      "id": "973824d7-7e57-41ad-906f-afc0ed9c1880",
       "name": "Format Period"
     },
     {
@@ -609,16 +609,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -384,
-        48
+        1344,
+        0
       ],
-      "id": "a0cf9b1d-c2d3-4e8d-917f-ec3ef3ceeed2",
+      "id": "6692e681-1895-484a-be1d-be10aa835426",
       "name": "Send Daily",
       "webhookId": "677b78ed-9c07-4f47-9f16-635367fd12a1",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -634,16 +634,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -384,
-        240
+        1344,
+        192
       ],
-      "id": "8ae06dc2-34a8-4be3-96a9-3c0a1e36c21f",
+      "id": "02ae0404-6b9d-4d21-9e74-614f06ff59c3",
       "name": "Send Weekly Text",
       "webhookId": "dd603590-8658-4ae0-b907-1fb77d732709",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -659,16 +659,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -384,
-        432
+        1344,
+        384
       ],
-      "id": "98664d9e-9a11-4e7d-8f3e-cfb62c65c693",
+      "id": "f1137cb3-0c76-4cb9-b409-f302463ba1af",
       "name": "Send Monthly Text",
       "webhookId": "278c1ae9-1475-4fbc-ba3a-1cf8f44ef794",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -684,16 +684,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -384,
-        624
+        1344,
+        576
       ],
-      "id": "c031d022-b569-4a98-88b2-711e41f437ef",
+      "id": "70758ceb-3c4c-4977-b52a-01499b74b6ce",
       "name": "Send Period Text",
       "webhookId": "6492ee7f-5b71-49da-9d71-4b5d91aa939c",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -714,10 +714,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -160,
-        48
+        1568,
+        0
       ],
-      "id": "eeb1b71d-ddaf-4f52-9a4a-eb79d094cba9",
+      "id": "ba6aee50-33b7-4344-943e-205164c8c69a",
       "name": "Daily Result"
     },
     {
@@ -727,10 +727,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -160,
-        240
+        1568,
+        192
       ],
-      "id": "72916e48-e757-4eef-b709-92c7a52e8cd1",
+      "id": "06bbf0d3-af95-4571-ad07-0a530a65da02",
       "name": "Prep Weekly PDF"
     },
     {
@@ -740,10 +740,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -160,
-        432
+        1568,
+        384
       ],
-      "id": "1ecb0dfe-4962-47bb-9036-719e3423b265",
+      "id": "d4a2c9e1-56ca-4c21-9fe1-0c671ae1e72e",
       "name": "Prep Monthly PDF"
     },
     {
@@ -753,30 +753,30 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -160,
-        624
+        1568,
+        576
       ],
-      "id": "a0ee106a-9de1-42f8-9df0-67ad12ef3c84",
+      "id": "133cd4b9-6f73-4589-9f32-a6f78be4c5ce",
       "name": "Prep Period PDF"
     },
     {
       "parameters": {
         "resource": "pdf",
-        "pdfTemplateId": "bad77b2358deda5e",
+        "pdfTemplateId": "5a677b23ed6c2fe6",
         "jsonParameters": true,
         "propertiesJson": "={{ JSON.stringify($json) }}"
       },
       "type": "n8n-nodes-base.apiTemplateIo",
       "typeVersion": 1,
       "position": [
-        64,
-        240
+        1792,
+        192
       ],
-      "id": "8d6cae56-2f6b-49c5-a73d-05dd69cd0081",
+      "id": "9b8774e8-b2ee-41f5-8e1e-4102af46883f",
       "name": "Generate Weekly PDF",
       "credentials": {
         "apiTemplateIoApi": {
-          "id": "Qa32Fv2fVQLxXf6h",
+          "id": "SFjzNA4aZEge94vQ",
           "name": "APITemplate.io account"
         }
       }
@@ -784,21 +784,21 @@
     {
       "parameters": {
         "resource": "pdf",
-        "pdfTemplateId": "90577b2358dd6f88",
+        "pdfTemplateId": "c1177b23eddd4e88",
         "jsonParameters": true,
         "propertiesJson": "={{ JSON.stringify($json) }}"
       },
       "type": "n8n-nodes-base.apiTemplateIo",
       "typeVersion": 1,
       "position": [
-        64,
-        432
+        1792,
+        384
       ],
-      "id": "4258d105-cfeb-48cc-b49f-d101f8d6cb97",
+      "id": "9c40499d-c6c6-4f0a-8ac9-2cd7d591f282",
       "name": "Generate Monthly PDF",
       "credentials": {
         "apiTemplateIoApi": {
-          "id": "Qa32Fv2fVQLxXf6h",
+          "id": "SFjzNA4aZEge94vQ",
           "name": "APITemplate.io account"
         }
       }
@@ -811,14 +811,14 @@
       "type": "n8n-nodes-base.apiTemplateIo",
       "typeVersion": 1,
       "position": [
-        64,
-        624
+        1792,
+        576
       ],
-      "id": "2e1f52ce-fdaf-40e4-8b0e-e55b189997c1",
+      "id": "6c137205-67d3-4d03-95f5-26af8177eac4",
       "name": "Generate Period PDF",
       "credentials": {
         "apiTemplateIoApi": {
-          "id": "Qa32Fv2fVQLxXf6h",
+          "id": "SFjzNA4aZEge94vQ",
           "name": "APITemplate.io account"
         }
       }
@@ -836,16 +836,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        288,
-        240
+        2016,
+        192
       ],
-      "id": "20da04db-81d9-4321-bf10-ecc746b535b6",
+      "id": "63e489fb-3e53-486e-a202-4a5d109a10a4",
       "name": "Send Weekly PDF",
       "webhookId": "46486394-7325-456c-ab04-a20d2b3b8776",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -862,16 +862,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        288,
-        432
+        2016,
+        384
       ],
-      "id": "c2d069b0-d371-4299-822d-c84f7f3a36cb",
+      "id": "7e4d6187-3c28-4dad-b63c-fb6015f040e3",
       "name": "Send Monthly PDF",
       "webhookId": "5aa7525e-2532-4ba8-8be4-c049bde8a190",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -888,16 +888,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        288,
-        624
+        2016,
+        576
       ],
-      "id": "798d9feb-45c1-460c-a02b-8a92810c311b",
+      "id": "3230666b-d4d7-4083-9882-57c47ccf49d9",
       "name": "Send Period PDF",
       "webhookId": "967108b5-d356-47cc-a1d8-23c62b7dd37a",
       "credentials": {
         "telegramApi": {
-          "id": "VsCo0z8ZzisDZOpw",
-          "name": "AIAccounter"
+          "id": "muLBxDioRmwKQgZe",
+          "name": "Telegram account"
         }
       }
     },
@@ -910,15 +910,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        512,
-        240
+        2240,
+        192
       ],
-      "id": "e107f8c8-9b7a-428e-b00e-34c0ab2aeae7",
+      "id": "d7840c7f-19bc-4293-8ac4-efee5e91641c",
       "name": "Save Weekly",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -931,15 +931,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        512,
-        432
+        2240,
+        384
       ],
-      "id": "5d5607b4-d21a-436a-af90-154a716f4917",
+      "id": "306813f0-be04-468a-8598-a217ca8edb18",
       "name": "Save Monthly",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -952,15 +952,15 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        512,
-        624
+        2240,
+        576
       ],
-      "id": "adc6d213-712e-4964-9663-792995684bfa",
+      "id": "a8e83c0c-19eb-4ff9-b4e1-030aa13c07ff",
       "name": "Save Period",
       "credentials": {
         "postgres": {
-          "id": "5T19Mbva6dh2EvkZ",
-          "name": "Chyngyz account 2"
+          "id": "vJuvkUWrU29pjm5o",
+          "name": "Postgres account"
         }
       }
     },
@@ -981,10 +981,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        736,
-        240
+        2464,
+        192
       ],
-      "id": "af61f82f-a4d0-4917-8c2e-b9c6f9288c03",
+      "id": "8b4d4a08-2c96-4cb9-9d72-3b408e9667f9",
       "name": "Weekly Result"
     },
     {
@@ -1004,10 +1004,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        736,
-        432
+        2464,
+        384
       ],
-      "id": "827bfcae-660f-4286-88e7-05545424ce3f",
+      "id": "5660d910-6ebb-417c-806f-5e8b027301a3",
       "name": "Monthly Result"
     },
     {
@@ -1027,10 +1027,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        736,
-        624
+        2464,
+        576
       ],
-      "id": "cbe7287a-1b6f-4dc2-84aa-518568d90295",
+      "id": "71808329-509c-49a6-8170-8792b57ed80c",
       "name": "Period Result"
     }
   ],
@@ -1455,6 +1455,7 @@
   },
   "pinData": {},
   "meta": {
-    "instanceId": "3bd415084c202701a4e18d9b066a68ad477720c950e1c2cba4cb2537b78acc07"
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1fe4e639ffc46975e8f90de7e16a7bfebd538687c60791a8ceecf7b15dc9fb18"
   }
 }
