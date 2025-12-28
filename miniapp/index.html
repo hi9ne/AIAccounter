@@ -618,6 +618,12 @@
             <div id="active-filters" class="active-filters-container" style="display: none;"></div>
 
             <div class="screen-body">
+                <div class="tx-history-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <div style="font-weight:600">История транзакций</div>
+                    <div>
+                        <button class="btn secondary" onclick="openDeleteAllConfirm()" style="margin-right:8px"><i class="fas fa-trash-alt"></i> Удалить все</button>
+                    </div>
+                </div>
                 <div id="transactions-history" class="tx-history"></div>
             </div>
         </div>
@@ -1083,14 +1089,65 @@
             </div>
         </div>
 
-        <!-- Export Modal -->
-        <div id="export-modal" class="modal">
-            <div class="modal-backdrop" onclick="closeExportModal()"></div>
-            <div class="modal-box">
-                <div class="modal-head">
-                    <h3 data-i18n="export_transactions">Экспорт данных</h3>
-                    <button class="btn-icon" onclick="closeExportModal()"><i class="fas fa-xmark"></i></button>
+        <!-- Modals: confirm delete, edit, export -->
+            <div id="confirm-delete-all-modal" class="modal">
+                <div class="modal-backdrop" onclick="closeConfirmDeleteAllModal()"></div>
+                <div class="modal-box">
+                    <div class="modal-head">
+                        <h3>Удалить все транзакции</h3>
+                        <button class="btn-icon" onclick="closeConfirmDeleteAllModal()"><i class="fas fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Вы уверены, что хотите удалить все транзакции? Это действие нельзя отменить.</p>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeConfirmDeleteAllModal()">Отмена</button>
+                        <button type="button" class="btn danger" onclick="confirmDeleteAll()">Удалить всё</button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Edit Transaction Modal -->
+            <div id="edit-transaction-modal" class="modal centered">
+                <div class="modal-backdrop" onclick="closeEditTransactionModal()"></div>
+                <div class="modal-box">
+                    <div class="modal-head">
+                        <h3 id="edit-transaction-modal-title">Редактировать транзакцию</h3>
+                        <button class="btn-icon" onclick="closeEditTransactionModal()"><i class="fas fa-xmark"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-field">
+                            <label>Сумма</label>
+                            <input id="edit-transaction-amount" type="number" step="0.01" placeholder="Сумма" class="input">
+                        </div>
+                        <div class="form-field">
+                            <label>Категория</label>
+                            <input id="edit-transaction-category" type="text" placeholder="Категория" class="input">
+                        </div>
+                        <div class="form-field">
+                            <label>Описание</label>
+                            <input id="edit-transaction-desc" type="text" placeholder="Описание" class="input">
+                        </div>
+                        <div class="form-field">
+                            <label>Дата</label>
+                            <input id="edit-transaction-date" type="date" class="input">
+                        </div>
+                        <div id="edit-transaction-error" class="form-error" style="display:none;color:var(--danger);margin-top:8px;font-size:13px;"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn secondary" onclick="closeEditTransactionModal()">Отмена</button>
+                        <button type="button" class="btn danger" onclick="deleteCurrentTransaction()">Удалить</button>
+                        <button type="button" class="btn primary" onclick="saveTransactionEdits()">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+            <div id="export-modal" class="modal">
+                <div class="modal-backdrop" onclick="closeExportModal()"></div>
+                <div class="modal-box">
+                    <div class="modal-head">
+                        <h3 data-i18n="export_transactions">Экспорт данных</h3>
+                        <button class="btn-icon" onclick="closeExportModal()"><i class="fas fa-xmark"></i></button>
+                    </div>
                 <div class="export-options">
                     <div class="form-field">
                         <label data-i18n="file_format">Формат файла</label>

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, union_all, func, literal, or_
+from sqlalchemy import select, union_all, func, literal, or_, update
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from datetime import date
@@ -209,3 +210,75 @@ async def get_transactions(
         logger.warning(f"[TRANSACTIONS] Cached for user {current_user.user_id}")
     
     return result_data
+
+
+@router.delete("")
+async def delete_all_transactions(
+    type: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Soft-delete all transactions for the current user. Optional query param `type` = 'expense'|'income' to limit."""
+    # Keep this for backwards-compatibility but delegate to /clear
+    return await _clear_transactions(type, current_user, db)
+
+
+@router.delete("/clear")
+async def clear_transactions(
+    type: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Clear all transactions (soft-delete). Prefer calling /transactions/clear for clarity."""
+    return await _clear_transactions(type, current_user, db)
+
+
+async def _clear_transactions(type: Optional[str], current_user: User, db: AsyncSession):
+    deleted_expenses = 0
+    deleted_income = 0
+
+    # Expenses
+    if type is None or type == 'expense' or type == 'all':
+        upd = (
+            update(Expense)
+            .where(Expense.user_id == current_user.user_id, Expense.deleted_at.is_(None))
+            .values(deleted_at=datetime.utcnow())
+        )
+        res = await db.execute(upd)
+        deleted_expenses = res.rowcount or 0
+
+    # Income
+    if type is None or type == 'income' or type == 'all':
+        upd2 = (
+            update(Income)
+            .where(Income.user_id == current_user.user_id, Income.deleted_at.is_(None))
+            .values(deleted_at=datetime.utcnow())
+        )
+        res2 = await db.execute(upd2)
+        deleted_income = res2.rowcount or 0
+
+    await db.commit()
+
+    # Invalidate caches
+    try:
+        from ...services.cache import cache_service
+        from ...services.memory_cache import hybrid_cache
+        await cache_service.delete_pattern(f"stats:{current_user.user_id}:*")
+        await cache_service.delete_pattern(f"overview:{current_user.user_id}:*")
+        await hybrid_cache.delete_pattern(f"batch:{current_user.user_id}:*")
+        await hybrid_cache.delete_pattern(f"transactions:{current_user.user_id}:*")
+    except Exception:
+        pass
+
+    # Websocket notification
+    try:
+        from ...services.websocket import ws_manager
+        await ws_manager.send_personal_message({
+            "type": "transactions_cleared",
+            "data": {"deleted_expenses": deleted_expenses, "deleted_income": deleted_income}
+        }, current_user.user_id)
+    except Exception:
+        pass
+
+    return {"deleted_expenses": deleted_expenses, "deleted_income": deleted_income}
+

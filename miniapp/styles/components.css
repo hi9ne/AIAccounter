@@ -724,6 +724,11 @@
     justify-content: center;
 }
 
+/* Centered variant for dialogs like edit */
+.modal.centered {
+    align-items: center;
+}
+
 .modal.open,
 .modal.active {
     display: flex;
@@ -749,6 +754,23 @@
     animation: slideUp 0.3s ease;
 }
 
+/* Centered modal style */
+.modal.centered .modal-box {
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    max-width: 640px;
+    max-height: 80vh;
+    animation: fadeInScale 0.18s ease;
+}
+
+.modal-centered-box {
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+}
+
+@keyframes fadeInScale {
+    from { transform: scale(0.98); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
 .modal-box.large {
     max-height: 95vh;
 }

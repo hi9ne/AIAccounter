@@ -217,11 +217,29 @@ const cache = {
     },
     
     clearMatching(prefix) {
-        for (const key of this.data.keys()) {
+        // Remove from in-memory cache
+        for (const key of Array.from(this.data.keys())) {
             if (key.startsWith(prefix)) {
                 this.data.delete(key);
                 localStorage.removeItem(`cache_${key}`);
             }
+        }
+        // Also remove any matching keys from localStorage even if not present in memory
+        try {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k) continue;
+                if (k.startsWith('cache_')) {
+                    const rawKey = k.substring('cache_'.length);
+                    if (rawKey.startsWith(prefix)) {
+                        keysToRemove.push(k);
+                    }
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+        } catch (e) {
+            debug.warn('Failed to clear matching keys from localStorage:', e);
         }
         debug.log(`🗑️ Cleared cache with prefix: ${prefix}`);
     }
@@ -1168,6 +1186,7 @@ function updateHomeTopCategories(categories) {
 }
 
 function updateRecentTransactions(transactions) {
+    debug.log('📣 updateRecentTransactions called with', transactions);
     const container = document.getElementById('recent-transactions');
     if (!container) return;
     
@@ -1212,6 +1231,14 @@ function updateRecentTransactions(transactions) {
             currency: state.currency
         };
     });
+
+    // Invalidate client-side history cache so history screen is refreshed with newest data
+    try {
+        cache.clearMatching('history:');
+        debug.log('🗑️ Cleared client-side history cache');
+    } catch (e) {
+        debug.warn('Failed to clear history cache:', e);
+    }
     
     if (allTransactions.length === 0) {
         container.innerHTML = `
@@ -1223,8 +1250,8 @@ function updateRecentTransactions(transactions) {
         return;
     }
     
-    container.innerHTML = allTransactions.map(t => `
-        <div class="tx-item-modern">
+    container.innerHTML = allTransactions.map((t, idx) => `
+        <div class="tx-item-modern" data-idx="${idx}" data-id="${t.id}" data-type="${t.type}">
             <div class="tx-icon-modern ${t.type}">
                 <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
             </div>
@@ -1235,6 +1262,19 @@ function updateRecentTransactions(transactions) {
             <div class="tx-amount-modern ${t.type}">${formatCurrency(t.amount)}</div>
         </div>
     `).join('');
+
+    // Attach click handlers for editing (with debug logs)
+    requestAnimationFrame(() => {
+        container.querySelectorAll('.tx-item-modern').forEach(el => {
+            const idx = parseInt(el.dataset.idx, 10);
+            const t = allTransactions[idx];
+            debug.log('🔗 Attaching recent tx click handler', { idx, id: t?.id });
+            el.addEventListener('click', () => {
+                debug.log('🖱️ Recent tx clicked', { id: t?.id });
+                openEditTransactionModal(t);
+            });
+        });
+    });
 }
 
 // ===== ANALYTICS =====
@@ -1242,6 +1282,184 @@ let customPeriod = {
     startDate: null,
     endDate: null
 };
+
+// ===== Transaction Edit/Delete Helpers =====
+let currentEditTransaction = null;
+
+function openEditTransactionModal(t) {
+    debug.log('🔔 openEditTransactionModal called with', t);
+    try {
+        currentEditTransaction = t;
+        const modal = document.getElementById('edit-transaction-modal');
+        if (!modal) {
+            debug.warn('⚠️ edit modal not found in DOM');
+            return;
+        }
+
+        const titleEl = document.getElementById('edit-transaction-modal-title');
+        const amountEl = document.getElementById('edit-transaction-amount');
+        const categoryEl = document.getElementById('edit-transaction-category');
+        const descEl = document.getElementById('edit-transaction-desc');
+        const dateEl = document.getElementById('edit-transaction-date');
+
+        if (!titleEl || !amountEl || !categoryEl || !descEl || !dateEl) {
+            debug.warn('⚠️ One or more modal fields are missing', { titleEl, amountEl, categoryEl, descEl, dateEl });
+            return;
+        }
+
+        titleEl.textContent = t.type === 'income' ? 'Редактировать доход' : 'Редактировать расход';
+        amountEl.value = typeof t.amount !== 'undefined' && t.amount !== null ? t.amount : '';
+        categoryEl.value = t.category || '';
+        descEl.value = t.description || '';
+        // Clear previous inline errors
+        const errEl = document.getElementById('edit-transaction-error');
+        if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+        // date string like YYYY-MM-DD
+        try {
+            dateEl.value = t.date ? (t.date.split ? t.date.split('T')[0] : new Date(t.date).toISOString().split('T')[0]) : '';
+        } catch (e) {
+            debug.warn('⚠️ Failed to parse transaction date', e, t.date);
+            dateEl.value = '';
+        }
+
+        modal.classList.add('open');
+        const modalBox = modal.querySelector('.modal-box');
+        if (modalBox) {
+            modalBox.classList.add('modal-centered-box');
+        }
+        // Focus amount input for quick edit
+        try {
+            amountEl.focus();
+            amountEl.select && amountEl.select();
+        } catch (e) {
+            debug.warn('Failed to focus amount input:', e);
+        }
+        haptic.medium();
+        debug.log('✅ Edit modal opened for tx', t.id);
+    } catch (e) {
+        console.error('❌ openEditTransactionModal failed:', e);
+        showError('Не удалось открыть модалку редактирования');
+    }
+}
+
+function closeEditTransactionModal() {
+    const modal = document.getElementById('edit-transaction-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    // Clean up debug styling
+    try {
+        modal.style.zIndex = '';
+        const modalBox = modal.querySelector('.modal-box');
+        if (modalBox) {
+            modalBox.style.outline = '';
+            modalBox.style.zIndex = '';
+        }
+    } catch (e) {
+        debug.warn('Failed to clean modal styles:', e);
+    }
+    currentEditTransaction = null;
+}
+
+async function saveTransactionEdits() {
+    if (!currentEditTransaction) return;
+    const amount = parseFloat(document.getElementById('edit-transaction-amount').value);
+    const category = document.getElementById('edit-transaction-category').value.trim();
+    const description = document.getElementById('edit-transaction-desc').value.trim();
+    const date = document.getElementById('edit-transaction-date').value;
+
+    if (!amount || !date) {
+        showError('Сумма и дата обязательны');
+        return;
+    }
+
+    try {
+        // Clear inline error
+        const errEl = document.getElementById('edit-transaction-error');
+        if (errEl) {
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+        }
+
+        const payload = { amount, category, description, date };
+        debug.log('📡 Saving transaction edits with payload:', payload);
+        if (currentEditTransaction.type === 'expense') {
+            await api.updateExpense(currentEditTransaction.id, payload);
+        } else {
+            await api.updateIncome(currentEditTransaction.id, payload);
+        }
+        showSuccess('Изменения сохранены');
+        closeEditTransactionModal();
+        // Refresh lists
+        loadAnalytics();
+        loadHistory(true);
+        loadRecentTransactions();
+    } catch (e) {
+        console.error('❌ saveTransactionEdits error object:', e);
+        let message = e && e.message ? e.message : String(e);
+        // Try to extract details from structured error
+        if (e && e.details) {
+            if (Array.isArray(e.details)) {
+                message = e.details.map(d => (d.loc ? d.loc.join('.') + ': ' : '') + (d.msg || JSON.stringify(d))).join(', ');
+            } else if (typeof e.details === 'object') {
+                message = e.details.detail || e.details.message || JSON.stringify(e.details);
+            }
+        }
+        // Show inline if possible
+        const errEl = document.getElementById('edit-transaction-error');
+        if (errEl) {
+            errEl.textContent = message;
+            errEl.style.display = 'block';
+            haptic.error();
+        } else {
+            showError('Не удалось сохранить изменения: ' + message);
+        }
+    }
+}
+
+async function deleteCurrentTransaction() {
+    if (!currentEditTransaction) return;
+    if (!confirm('Удалить выбранную транзакцию?')) return;
+    try {
+        if (currentEditTransaction.type === 'expense') {
+            await api.deleteExpense(currentEditTransaction.id);
+        } else {
+            await api.deleteIncome(currentEditTransaction.id);
+        }
+        showSuccess('Транзакция удалена');
+        closeEditTransactionModal();
+        loadAnalytics();
+        loadHistory(true);
+        loadRecentTransactions();
+    } catch (e) {
+        showError('Не удалось удалить транзакцию: ' + (e.message || e));
+    }
+}
+
+function openDeleteAllConfirm() {
+    const modal = document.getElementById('confirm-delete-all-modal');
+    if (!modal) return;
+    modal.classList.add('open');
+}
+function closeConfirmDeleteAllModal() {
+    const modal = document.getElementById('confirm-delete-all-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+}
+
+async function confirmDeleteAll() {
+    try {
+        await api.deleteAllTransactions('all');
+        showSuccess('Все транзакции удалены');
+        closeConfirmDeleteAllModal();
+        loadAnalytics();
+        loadHistory(true);
+        loadRecentTransactions();
+    } catch (e) {
+        showError('Не удалось удалить транзакции: ' + (e.message || e));
+    }
+}
+
 
 function applyCustomPeriod() {
     const startDate = document.getElementById('custom-start-date')?.value;
@@ -2244,6 +2462,7 @@ function updateHistoryUI(transactions) {
 
 // Render paginated transactions (optimized with DocumentFragment)
 function renderHistoryTransactions(transactions) {
+    debug.log('📣 renderHistoryTransactions called with', transactions);
     debug.log('🎨 renderHistoryTransactions called:', { count: transactions.length, hasMore: historyState.hasMore, loading: historyState.loading });
     const container = document.getElementById('transactions-history');
     if (!container) return;
@@ -2255,6 +2474,16 @@ function renderHistoryTransactions(transactions) {
     if (transactions.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><p>Нет транзакций</p></div>';
         return;
+    }
+
+    // Add small header actions if needed
+    const header = document.querySelector('.tx-history-header-actions');
+    if (!header) {
+        const h = document.createElement('div');
+        h.className = 'tx-history-header-actions';
+        h.style = 'display:flex;justify-content:flex-end;margin-bottom:8px';
+        h.innerHTML = `<button class="btn secondary" onclick="openDeleteAllConfirm()"><i class="fas fa-trash-alt"></i> Удалить все</button>`;
+        container.parentNode.insertBefore(h, container);
     }
     
     // Group by date
@@ -2280,6 +2509,8 @@ function renderHistoryTransactions(transactions) {
         items.forEach(t => {
             const item = document.createElement('div');
             item.className = 'transaction-item';
+            item.dataset.id = t.id;
+            item.dataset.type = t.type;
             item.innerHTML = `
                 <div class="transaction-icon ${t.type}">
                     <i class="fas fa-${t.type === 'income' ? 'arrow-down' : 'arrow-up'}"></i>
@@ -2292,9 +2523,9 @@ function renderHistoryTransactions(transactions) {
                     <div class="transaction-value ${t.type}">${formatCurrency(t.amount)}</div>
                 </div>
             `;
+            item.addEventListener('click', () => openEditTransactionModal(t));
             dateGroup.appendChild(item);
         });
-        
         fragment.appendChild(dateGroup);
     });
     

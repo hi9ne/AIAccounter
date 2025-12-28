@@ -59,19 +59,23 @@ class APIHelper {
                 
                 if (!response.ok) {
                     let errorMessage = `HTTP ${response.status}`;
+                    let parsedError = null;
                     try {
                         const error = await response.json();
+                        parsedError = error;
                         // Обработка формата ошибок FastAPI
                         if (Array.isArray(error)) {
                             errorMessage = error.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
                         } else {
-                            errorMessage = error.detail || error.message || errorMessage;
+                            errorMessage = error.detail || error.message || JSON.stringify(error) || errorMessage;
                         }
                     } catch (e) {
                         // Не JSON ответ
                     }
-                    console.error('API Error:', errorMessage);
-                    throw new Error(errorMessage);
+                    console.error('API Error:', errorMessage, parsedError);
+                    const err = new Error(errorMessage);
+                    err.details = parsedError;
+                    throw err;
                 }
                 
                 // 204 No Content - возвращаем пустой объект
@@ -192,6 +196,13 @@ class APIHelper {
 
     async createExpense(data) {
         return this.post('/expenses/', data);
+    }
+
+    // Bulk delete transactions (type optional: 'expense' | 'income' | 'all')
+    async deleteAllTransactions(type = 'all') {
+        const query = type && type !== 'all' ? `?type=${type}` : '';
+        // Prefer explicit clear endpoint if available
+        return this.delete(`/transactions/clear${query}`);
     }
 
     async updateExpense(id, data) {
