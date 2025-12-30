@@ -5,8 +5,8 @@
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "position": [
-        11376,
-        20024
+        12320,
+        23552
       ],
       "id": "6f124005-6db3-4bca-97a8-8b203f2c9092",
       "name": "Error Trigger"
@@ -18,8 +18,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        11600,
-        20024
+        12544,
+        23552
       ],
       "id": "6ac19ad5-f501-48a4-8efb-c31d4e2e2a52",
       "name": "Process Error"
@@ -50,8 +50,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        11824,
-        20024
+        12768,
+        23552
       ],
       "id": "fe756d59-c394-4bae-a6e8-a4fedec3bc35",
       "name": "Should Notify User?"
@@ -67,8 +67,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        12048,
-        19928
+        12992,
+        23456
       ],
       "id": "89dcb178-580b-4d60-9167-9324ede55c0c",
       "name": "Notify User About Error",
@@ -92,8 +92,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        12048,
-        20120
+        12992,
+        23648
       ],
       "id": "d696469d-2ef5-4e95-a7c3-5083813559fa",
       "name": "Notify Admin",
@@ -115,8 +115,8 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        11376,
-        18992
+        12320,
+        22512
       ],
       "id": "c5b51e82-e37d-48a3-9e39-a867db83dd7e",
       "name": "Telegram Trigger",
@@ -137,8 +137,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        11600,
-        18992
+        12544,
+        22512
       ],
       "id": "7bbf881f-dae7-4c2c-8b78-340d23cbc91f",
       "name": "Ensure User",
@@ -184,8 +184,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        11824,
-        18992
+        12768,
+        22512
       ],
       "id": "27c5aef3-81d3-45f3-a58a-8e511693043f",
       "name": "Check Subscription"
@@ -201,8 +201,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        12048,
-        19088
+        12992,
+        22608
       ],
       "id": "9e269542-6261-4bf9-b86d-f7a413a5b6b1",
       "name": "Send Subscription Expired",
@@ -271,8 +271,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        12048,
-        18896
+        12992,
+        22416
       ],
       "id": "bc505a2f-d5fa-4c76-900d-c24dd1c78c31",
       "name": "Check Onboarding"
@@ -284,8 +284,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12272,
-        18704
+        13216,
+        22224
       ],
       "id": "f1761f51-0f76-4cee-a115-b409a9d6feb2",
       "name": "Onboarding Logic"
@@ -299,8 +299,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        12496,
-        18704
+        13440,
+        22224
       ],
       "id": "95a8497d-a0db-46f5-b532-ba0369b39de7",
       "name": "Update Onboarding",
@@ -322,8 +322,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        12720,
-        18704
+        13664,
+        22224
       ],
       "id": "7d970b7b-b9e3-4d2d-9895-197c5295742f",
       "name": "Send Onboarding",
@@ -394,8 +394,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        12272,
-        18992
+        13216,
+        22512
       ],
       "id": "c22eca12-092a-43d8-a6ca-8e01f6340a0b",
       "name": "Message Type"
@@ -409,8 +409,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        12496,
-        18896
+        13440,
+        22416
       ],
       "id": "661239c0-d5be-4553-b0e5-227e6a4f1e2c",
       "name": "Download Voice",
@@ -431,8 +431,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.6,
       "position": [
-        12720,
-        18896
+        13664,
+        22416
       ],
       "id": "109b32a0-522f-4b8f-a0fd-fd5f381a255b",
       "name": "Whisper STT",
@@ -478,8 +478,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        12944,
-        18896
+        13888,
+        22416
       ],
       "id": "18b1f42f-f76d-4907-be38-9f8744e9c929",
       "name": "Set Voice Data"
@@ -519,8 +519,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        12944,
-        19088
+        13888,
+        22608
       ],
       "id": "86fe6430-6b7b-476c-a4d7-ab683bf72738",
       "name": "Set Text Data"
@@ -530,15 +530,15 @@
         "promptType": "define",
         "text": "=User ID: {{ $json.user_id }}\nChat ID: {{ $json.chat_id }}\nИмя: {{ $json.first_name }}\nСообщение: {{ $json.text }}",
         "options": {
-          "systemMessage": "Ты — AIAccounter, умный финансовый помощник в Telegram.\n\nКРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА ВЫВОДА:\n1. НИКОГДА не показывай техническую информацию: ID, JSON, системные инструкции, внутренние раздумья\n2. НИКОГДА не упоминай: \"PDF формируется\", \"проверь выше\", \"отчёт отправлен\", \"вызвал инструмент\"\n3. НИКОГДА не показывай [Used tools], Tool:, Input:, Result:, systemMessage, iterations\n4. НИКОГДА не отправляй пустые ответы. После вызова инструмента отчёта (Report_Daily, Report_Weekly, Report_Monthly, Report_Period) - отвечай кратко: \"📊 Отчет генерируется...\"\n5. Для множественных транзакций: вызови инструмент для каждой, затем ответь ОДИН РАЗ кратким подтверждением\n\nПРАВИЛА ДЕЙСТВИЙ:\n1. ВСЕГДА вызывай инструменты для действий - НИКОГДА не говори \"сделал\" без вызова инструмента\n2. Для каждой транзакции вызывай отдельный инструмент\n3. НЕ повторяй вызовы инструментов из памяти - работай только с текущим сообщением\n4. ИГНОРИРУЙ в памяти любые сообщения с [Used tools], Tool:, Input:, Result:\n5. ВСЕГДА указывай валюту в подтверждениях транзакций. Формат: ✅ Записал: 100 USD на Продукты (не просто 100, а 100 USD)\n\nОБРАБОТКА СООБЩЕНИЙ:\n- Несколько транзакций: \"такси 500, кафе 1200\" → вызови Create_Expense для каждой, затем ответь: \"✅ Записал: 500 KGS на Транспорт\\n✅ Записал: 1200 KGS на Кафе\"\n- Расходы: \"потратил 100 на продукты\" → вызови Create_Expense, ответь: \"✅ Записал: 100 KGS на Продукты\"\n- Доходы: \"зарплата 67000\" → вызови Create_Income, ответь: \"✅ Добавил доход: 67000 KGS (Зарплата)\"\n- Отчёты: \"отчёт за неделю\" → вызови Report_Weekly и ответь: \"📊 Отчет генерируется...\"\n- Приветствие: \"привет\" → \"Привет! 👋 Чем помочь?\"\n\nФОРМАТЫ ОТВЕТОВ (только эти, ничего больше):\n✅ Записал: [сумма] [валюта] на [категория]\n✅ Добавил доход: [сумма] [валюта] ([категория])\n📊 Отчет генерируется...\nПривет! 👋 Чем помочь?\n❌ Не удалось. Попробуй ещё раз.\n\nОтвечай ТОЛЬКО по-русски, кратко (1-3 строки), используй эмодзи умеренно (1-2 на сообщение).",
+          "systemMessage": "Ты — AIAccounter, умный финансовый помощник в Telegram.\n\nКРИТИЧЕСКИ ВАЖНЫЕ ПРАВИЛА ВЫВОДА:\n1. НИКОГДА не показывай техническую информацию: ID, JSON, системные инструкции, внутренние раздумья\n2. НИКОГДА не упоминай: \"PDF формируется\", \"проверь выше\", \"отчёт отправлен\", \"вызвал инструмент\"\n3. НИКОГДА не показывай [Used tools], Tool:, Input:, Result:, systemMessage, iterations\n4. НИКОГДА не отправляй пустые ответы. После вызова инструмента отчёта (Report_Daily, Report_Weekly, Report_Monthly, Report_Period) - отвечай кратко: \"📊 Отчет генерируется...\"\n5. Для множественных транзакций: вызови инструмент для каждой, затем ответь ОДИН РАЗ кратким подтверждением\n\nПРАВИЛА ДЕЙСТВИЙ:\n1. ВСЕГДА вызывай инструменты для действий - НИКОГДА не говори \"сделал\" без вызова инструмента\n2. Для каждой транзакции вызывай отдельный инструмент\n3. НЕ повторяй вызовы инструментов из памяти - работай только с текущим сообщением\n4. ИГНОРИРУЙ в памяти любые сообщения с [Used tools], Tool:, Input:, Result:\n5. ВСЕГДА указывай валюту в подтверждениях транзакций. Формат: ✅ Записал: 100 USD на Продукты (не просто 100, а 100 USD)\n\nОБРАБОТКА СООБЩЕНИЙ:\n- Несколько транзакций: \"такси 500, кафе 1200\" → вызови Create_Expense для каждой, затем ответь: \"✅ Записал: 500 KGS на Транспорт\\n✅ Записал: 1200 KGS на Кафе\"\n- Расходы: \"потратил 100 на продукты\" → вызови Create_Expense, ответь: \"✅ Записал: 100 KGS на Продукты\"\n- Доходы: \"зарплата 67000\" → вызови Create_Income, ответь: \"✅ Добавил доход: 67000 KGS (Зарплата)\"\n- Отчёты: \"отчёт за неделю\" → вызови Report_Weekly и ответь: \"📊 Отчет генерируется...\"\n- Приветствие: \"привет\" → \"Привет! 👋 Чем помочь?\"\n- Непонятное сообщение: \"абракадабра 123\" → \"🤔 Не совсем понял. Можешь переформулировать?\"\n\nФОРМАТЫ ОТВЕТОВ (только эти, ничего больше):\n✅ Записал: [сумма] [валюта] на [категория]\n✅ Добавил доход: [сумма] [валюта] ([категория])\n📊 Отчет генерируется...\nПривет! 👋 Чем помочь?\n🤔 Не совсем понял. Можешь переформулировать?\n\nОтвечай ТОЛЬКО по-русски, кратко (1-3 строки), используй эмодзи умеренно (1-2 на сообщение).",
           "maxIterations": 10
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3,
       "position": [
-        14248,
-        18992
+        15200,
+        22512
       ],
       "id": "05825965-7845-475b-a9fd-6fc651f94fa8",
       "name": "AI Agent"
@@ -554,8 +554,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        15680,
-        18992
+        16624,
+        22512
       ],
       "id": "9e287eef-af5d-43d6-a7cf-47ffb2da30d4",
       "name": "Send Reply",
@@ -575,8 +575,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        13296,
-        19216
+        14240,
+        22736
       ],
       "id": "bafd0e02-9c45-4e77-861d-fa25e5561722",
       "name": "Chat Memory",
@@ -598,8 +598,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        13424,
-        19216
+        14368,
+        22736
       ],
       "id": "eb965463-56a0-4b89-8c0b-2046f8fb6b81",
       "name": "Get_Expenses",
@@ -621,8 +621,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        13552,
-        19216
+        14496,
+        22736
       ],
       "id": "115da86f-faf2-4acf-9819-20618bb73030",
       "name": "Get_Income",
@@ -644,8 +644,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        13680,
-        19216
+        14624,
+        22736
       ],
       "id": "8b198c9d-bc17-4681-a18c-d03eb0c62b1d",
       "name": "Create_Expense",
@@ -667,8 +667,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        13808,
-        19216
+        14752,
+        22736
       ],
       "id": "246a9e83-e6e4-4d79-9e98-5b6218f4a5ce",
       "name": "Create_Income",
@@ -690,8 +690,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        13936,
-        19216
+        14880,
+        22736
       ],
       "id": "b6a5c7b2-634e-4433-aa83-c5b0717d43b2",
       "name": "Delete_Expense",
@@ -713,8 +713,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        14064,
-        19216
+        15008,
+        22736
       ],
       "id": "948d9a06-3bfd-4579-9b11-252fb8a96776",
       "name": "Delete_Income",
@@ -730,8 +730,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolCalculator",
       "typeVersion": 1,
       "position": [
-        14192,
-        19216
+        15136,
+        22736
       ],
       "id": "79f91317-12a1-4dd9-934d-16856f37f606",
       "name": "Calculator"
@@ -749,8 +749,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        14320,
-        19216
+        15264,
+        22736
       ],
       "id": "69cf9a0c-2245-483b-b686-4f821b5a64cb",
       "name": "Report_Daily"
@@ -768,8 +768,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        14448,
-        19216
+        15392,
+        22736
       ],
       "id": "ed786d4f-d558-41dd-8ac3-4f7e4623cfbe",
       "name": "Report_Weekly"
@@ -787,8 +787,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        14576,
-        19216
+        15520,
+        22736
       ],
       "id": "2993a831-349c-43fd-bff4-18e6f2eedf5c",
       "name": "Report_Monthly"
@@ -806,8 +806,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        14704,
-        19216
+        15648,
+        22736
       ],
       "id": "d1bc52ab-dacd-476d-a699-492ba1a989e6",
       "name": "Report_Period"
@@ -825,8 +825,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        14832,
-        19216
+        15776,
+        22736
       ],
       "id": "df01dc46-2e2c-4837-80e9-c2bce40b224c",
       "name": "Category_Manager"
@@ -844,8 +844,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        14960,
-        19216
+        15904,
+        22736
       ],
       "id": "9bb6474e-4e7b-4e50-934f-99b8dc8a3474",
       "name": "Debt_Manager"
@@ -863,8 +863,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        15088,
-        19216
+        16032,
+        22736
       ],
       "id": "8c7e9f63-894d-4a86-a167-fa80f1de2840",
       "name": "Recurring_Manager"
@@ -882,8 +882,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        15216,
-        19216
+        16160,
+        22736
       ],
       "id": "c2b3ec2c-8665-44bb-9374-1a9fcf34e603",
       "name": "Budget_Manager"
@@ -901,8 +901,8 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.3,
       "position": [
-        15344,
-        19216
+        16288,
+        22736
       ],
       "id": "76b94744-5d19-4e6f-9c5f-cac57027e187",
       "name": "Goals_Manager"
@@ -918,8 +918,8 @@
       "type": "n8n-nodes-base.postgresTool",
       "typeVersion": 2.6,
       "position": [
-        15472,
-        19216
+        16416,
+        22736
       ],
       "id": "773b021d-1db6-40c0-87ba-3c89e1be7e83",
       "name": "Search_Transactions",
@@ -940,8 +940,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        11376,
-        19512
+        12320,
+        23040
       ],
       "id": "9bd7388e-6969-483b-982a-5ddda5fe3199",
       "name": "Categories Webhook",
@@ -1027,8 +1027,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        11600,
-        19496
+        12544,
+        23024
       ],
       "id": "fa578c2f-7817-4898-9a9f-6690cd100729",
       "name": "Route Category Action"
@@ -1042,8 +1042,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        19320
+        12768,
+        22848
       ],
       "id": "4b6e634b-06d2-4d93-820f-8cd1be976150",
       "name": "Get Categories",
@@ -1063,8 +1063,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        19512
+        12768,
+        23040
       ],
       "id": "c9f87fb4-5915-4a9b-8956-adfd6c3dd8bc",
       "name": "Add Category",
@@ -1084,8 +1084,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        19704
+        12768,
+        23232
       ],
       "id": "6948500d-a3ee-4b69-8bc4-153374237271",
       "name": "Delete Category",
@@ -1103,8 +1103,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12048,
-        19512
+        12992,
+        23040
       ],
       "id": "2f3210dd-b727-4313-a75b-4b98ea46e003",
       "name": "Format Category Response"
@@ -1118,8 +1118,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        12272,
-        19512
+        13216,
+        23040
       ],
       "id": "936b1de9-0aaf-42f0-8254-dd9e537149c0",
       "name": "Respond Categories"
@@ -1133,8 +1133,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        11280,
-        19240
+        12224,
+        22768
       ],
       "id": "35b34117-934d-4518-9f8c-1f8f275a2676",
       "name": "Sticky Note"
@@ -1149,8 +1149,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        11376,
-        20728
+        12320,
+        24256
       ],
       "id": "aa195123-5f40-48f1-8c8d-cccaf6714abc",
       "name": "Debts Webhook",
@@ -1282,8 +1282,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        11600,
-        20680
+        12544,
+        24208
       ],
       "id": "a613cf3a-8ebb-4c76-9039-fe7c616c0ab3",
       "name": "Route Debt Action"
@@ -1297,8 +1297,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        20344
+        12768,
+        23872
       ],
       "id": "c4ef4bb8-d107-4f6d-833a-4242aa81eb5a",
       "name": "Get Debts",
@@ -1318,8 +1318,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        20536
+        12768,
+        24064
       ],
       "id": "01a9de08-818d-436a-8177-c01595a349b3",
       "name": "Add Debt",
@@ -1339,8 +1339,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        20728
+        12768,
+        24256
       ],
       "id": "6a90f4dc-6406-44f2-ac4f-c4d5756bfb04",
       "name": "Pay Debt",
@@ -1360,8 +1360,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        20920
+        12768,
+        24448
       ],
       "id": "ffcb7100-380b-474a-9a59-ca2a16ea6b78",
       "name": "Settle Debt",
@@ -1381,8 +1381,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        21112
+        12768,
+        24640
       ],
       "id": "6aae8b3d-6a7e-4b60-a86a-32e218cdcc5f",
       "name": "Delete Debt",
@@ -1400,8 +1400,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12048,
-        20728
+        12992,
+        24256
       ],
       "id": "b45e065f-7489-47fb-a34e-2ece7a4f7b5b",
       "name": "Format Debt Response"
@@ -1415,8 +1415,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        12272,
-        20728
+        13216,
+        24256
       ],
       "id": "4e5c7537-9b31-4cb8-b840-e3ea83c0993a",
       "name": "Respond Debts"
@@ -1431,8 +1431,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        11376,
-        21720
+        12320,
+        25248
       ],
       "id": "2672577b-c027-4771-8f79-2fb912e66868",
       "name": "Recurring Webhook",
@@ -1564,8 +1564,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        11600,
-        21672
+        12544,
+        25200
       ],
       "id": "bfb5fb4c-6a09-4385-8780-7127c632e7eb",
       "name": "Route Recurring Action"
@@ -1579,8 +1579,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        21336
+        12768,
+        24864
       ],
       "id": "e220e367-5c6f-4ae0-b9d0-8c597838df07",
       "name": "Get Recurring",
@@ -1600,8 +1600,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        21528
+        12768,
+        25056
       ],
       "id": "b07ccafc-2206-4bcb-88f8-2b6cce30f026",
       "name": "Add Recurring",
@@ -1621,8 +1621,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        21720
+        12768,
+        25248
       ],
       "id": "03a78fe1-1259-481f-852a-06fd562e0cb9",
       "name": "Pay Recurring",
@@ -1642,8 +1642,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        21912
+        12768,
+        25440
       ],
       "id": "73da2d29-8d6d-4a77-898d-9bea66ef58c1",
       "name": "Pause Recurring",
@@ -1663,8 +1663,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        22104
+        12768,
+        25632
       ],
       "id": "87e0bf9e-e44a-4ea5-91fa-602a66d1f1ea",
       "name": "Delete Recurring",
@@ -1682,8 +1682,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12048,
-        21720
+        12992,
+        25248
       ],
       "id": "60f3fa32-05e6-4285-b984-28a555d13a9a",
       "name": "Format Recurring Response"
@@ -1697,8 +1697,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        12272,
-        21720
+        13216,
+        25248
       ],
       "id": "fea2a69a-bb17-4c99-a08c-41a101b9c6c8",
       "name": "Respond Recurring"
@@ -1713,8 +1713,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        11376,
-        22616
+        12320,
+        26144
       ],
       "id": "a606272b-210b-4b1c-96fa-98d8b5baaa88",
       "name": "Settings Webhook",
@@ -1823,8 +1823,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        11600,
-        22584
+        12544,
+        26112
       ],
       "id": "cb36c5ee-5c15-4427-a743-a7f195272bb5",
       "name": "Route Settings Action"
@@ -1838,8 +1838,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        22328
+        12768,
+        25856
       ],
       "id": "60fe3010-b7e6-4f96-9a4c-2e3688503a59",
       "name": "Get Settings",
@@ -1859,8 +1859,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        22520
+        12768,
+        26048
       ],
       "id": "793d2bef-d751-485e-8ac0-fea4d2af2dc6",
       "name": "Set Mode",
@@ -1880,8 +1880,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        22712
+        12768,
+        26240
       ],
       "id": "9beb34be-7751-45a0-a0ca-7c2f5c3f7c1e",
       "name": "Set Currency",
@@ -1901,8 +1901,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        22904
+        12768,
+        26432
       ],
       "id": "e680d54c-84fd-4d57-a940-79d573445a9d",
       "name": "Set Budget",
@@ -1920,8 +1920,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12048,
-        22616
+        12992,
+        26144
       ],
       "id": "4926a9a4-baa0-45f4-a126-a726a025584d",
       "name": "Format Settings Response"
@@ -1935,8 +1935,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        12272,
-        22616
+        13216,
+        26144
       ],
       "id": "8e8c2911-3ba6-47e4-80bd-5fa8e8f7d84d",
       "name": "Respond Settings"
@@ -1951,8 +1951,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        11376,
-        23224
+        12320,
+        26752
       ],
       "id": "b92b3787-e3b7-4d19-947d-8860b8c41930",
       "name": "Budget Webhook",
@@ -2015,8 +2015,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        11600,
-        23224
+        12544,
+        26752
       ],
       "id": "3491e78e-eed7-4f3b-b6a7-ab703d6beade",
       "name": "Route Budget Action"
@@ -2030,8 +2030,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        23128
+        12768,
+        26656
       ],
       "id": "108cdcd3-b86a-45ad-84c7-07d1e1d389b4",
       "name": "Get Budget",
@@ -2051,8 +2051,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        23320
+        12768,
+        26848
       ],
       "id": "eb356596-1108-452e-aaa0-b193fb5161b2",
       "name": "Set Budget New",
@@ -2070,8 +2070,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12048,
-        23224
+        12992,
+        26752
       ],
       "id": "52045fec-07c9-401e-a7a5-0273870ba27f",
       "name": "Format Budget Response"
@@ -2085,8 +2085,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        12272,
-        23224
+        13216,
+        26752
       ],
       "id": "f9389704-2cc3-435f-a37a-83dcb0f98189",
       "name": "Respond Budget"
@@ -2101,8 +2101,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        11376,
-        24024
+        12320,
+        27552
       ],
       "id": "dd9b4d1c-36b2-48d8-9c6f-4b17cd8592d3",
       "name": "Goals Webhook",
@@ -2257,8 +2257,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        11600,
-        23960
+        12544,
+        27488
       ],
       "id": "a72a37d8-0274-45dc-bafc-fd9a7d39025c",
       "name": "Route Goal Action"
@@ -2272,8 +2272,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        23544
+        12768,
+        27072
       ],
       "id": "dc3769f9-9969-4346-920d-498db9ca868b",
       "name": "Get Goals",
@@ -2293,8 +2293,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        23736
+        12768,
+        27264
       ],
       "id": "faa7ac28-2038-46bb-a02e-c18e6392fbb3",
       "name": "Add Goal",
@@ -2314,8 +2314,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        23928
+        12768,
+        27456
       ],
       "id": "c9f2631e-71d2-4765-88d1-3b503ed759e7",
       "name": "Deposit Goal",
@@ -2335,8 +2335,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        24120
+        12768,
+        27648
       ],
       "id": "d51d9934-9480-4fbb-9574-18fe2cb4800b",
       "name": "Withdraw Goal",
@@ -2356,8 +2356,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        24312
+        12768,
+        27840
       ],
       "id": "6ca5ceb4-aa07-42d4-979d-797e6cbeea79",
       "name": "Complete Goal",
@@ -2377,8 +2377,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        11824,
-        24504
+        12768,
+        28032
       ],
       "id": "ac45219e-8deb-4ebf-ac5b-0c0a7580c775",
       "name": "Delete Goal",
@@ -2396,8 +2396,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        12048,
-        24024
+        12992,
+        27552
       ],
       "id": "66200a9a-5b30-42dd-9939-cb539f1ea104",
       "name": "Format Goal Response"
@@ -2411,8 +2411,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        12272,
-        24024
+        13216,
+        27552
       ],
       "id": "e24d3715-48a5-4f1b-9091-2e1daa8b6d5c",
       "name": "Respond Goals"
@@ -2434,8 +2434,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        13168,
-        19216
+        14112,
+        22736
       ],
       "id": "5a838206-630a-49f3-84f1-091661fbcf79",
       "name": "GPT",
